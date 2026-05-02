@@ -5,10 +5,13 @@ import Supabase
 @Observable
 final class ProfileViewModel {
     var profile: UserProfile?
+    var connectionsCount = 0
+    var ideasCount = 0
     var isLoading = false
     var errorMessage: String?
 
     private let db = SupabaseService.shared.client.from("profiles")
+    private let client = SupabaseService.shared.client
     private let auth = SupabaseService.shared.client.auth
 
     func loadProfile() async {
@@ -16,15 +19,10 @@ final class ProfileViewModel {
         errorMessage = nil
         defer { isLoading = false }
 
-        print("[ProfileViewModel] loadProfile() started")
-
         guard let user = try? await auth.session.user else {
-            print("[ProfileViewModel] auth.session.user failed — no active session")
             errorMessage = "Not signed in"
             return
         }
-
-        print("[ProfileViewModel] user id: \(user.id)")
 
         if let existing: UserProfile = try? await db
             .select()
@@ -32,14 +30,18 @@ final class ProfileViewModel {
             .single()
             .execute()
             .value {
-            print("[ProfileViewModel] loaded existing profile")
             profile = existing
         } else {
-            print("[ProfileViewModel] no profile found — creating new one")
             let newProfile = buildNewProfile(for: user)
             try? await db.upsert(newProfile).execute()
             profile = newProfile
         }
+
+        let userId = user.id
+        async let connections = loadConnectionsCount(userId: userId)
+        async let ideas = loadIdeasCount(userId: userId)
+        connectionsCount = (try? await connections) ?? 0
+        ideasCount = (try? await ideas) ?? 0
     }
 
     func updateProfile(_ updated: UserProfile) async {
@@ -51,6 +53,29 @@ final class ProfileViewModel {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func loadConnectionsCount(userId: UUID) async throws -> Int {
+        struct R: Decodable { let id: UUID }
+        let records: [R] = try await client
+            .from("connections")
+            .select("id")
+            .or("sender_id.eq.\(userId),receiver_id.eq.\(userId)")
+            .eq("status", value: "accepted")
+            .execute()
+            .value
+        return records.count
+    }
+
+    private func loadIdeasCount(userId: UUID) async throws -> Int {
+        struct R: Decodable { let id: UUID }
+        let records: [R] = try await client
+            .from("ideas")
+            .select("id")
+            .eq("author_id", value: userId)
+            .execute()
+            .value
+        return records.count
     }
 
     private struct UserMeta: Decodable {

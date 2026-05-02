@@ -8,30 +8,30 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if viewModel.isLoading {
-                    ProgressView()
+                if viewModel.isLoading && viewModel.profile == nil {
+                    ProgressView().tint(DesignTokens.textSecondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let profile = viewModel.profile {
-                    profileContent(profile)
+                    profileScroll(profile)
                 } else {
                     VStack(spacing: 12) {
                         Text(viewModel.errorMessage ?? "Couldn't load profile")
-                            .foregroundStyle(.secondary)
-                        Button("Try Again") {
-                            Task { await viewModel.loadProfile() }
-                        }
+                            .foregroundStyle(DesignTokens.textSecondary)
+                        Button("Try Again") { Task { await viewModel.loadProfile() } }
+                            .foregroundStyle(DesignTokens.accentText)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .navigationTitle("Profile")
+            .background(DesignTokens.background.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(DesignTokens.background, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Edit") { showEdit = true }
-                        .disabled(viewModel.profile == nil)
-                }
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Sign Out", role: .destructive) {
-                        Task { await authViewModel.signOut() }
-                    }
+                    Button("Sign Out") { Task { await authViewModel.signOut() } }
+                        .font(.subheadline)
+                        .foregroundStyle(DesignTokens.textTertiary)
                 }
             }
             .sheet(isPresented: $showEdit) {
@@ -43,78 +43,118 @@ struct ProfileView: View {
         }
     }
 
-    @ViewBuilder
-    private func profileContent(_ profile: UserProfile) -> some View {
+    private func profileScroll(_ profile: UserProfile) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                HStack(spacing: 16) {
-                    avatarView(profile)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(profile.name.isEmpty ? "Your Name" : profile.name)
-                            .font(.title2.bold())
-                        if !profile.university.isEmpty {
-                            Text(profile.graduationYear > 0
-                                 ? "\(profile.university) · \(profile.graduationYear)"
-                                 : profile.university)
-                                .foregroundStyle(.secondary)
-                        }
-                        if profile.openToCollaborate {
-                            Label("Open to Collaborate", systemImage: "checkmark.seal.fill")
-                                .font(.caption)
-                                .foregroundStyle(.green)
-                        }
-                    }
-                }
-
-                if !profile.bio.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Bio").font(.headline)
-                        Text(profile.bio).foregroundStyle(.secondary)
-                    }
-                }
-
-                tagSection(title: "Skills", tags: profile.skills)
-                tagSection(title: "Interests", tags: profile.interests)
+            VStack(spacing: 24) {
+                topBar
+                ProfileHeaderView(profile: profile)
+                statsRow(profile)
+                if !profile.skills.isEmpty { skillsSection(profile.skills) }
+                if !profile.interests.isEmpty { interestsSection(profile.interests) }
+                if !profile.university.isEmpty { educationSection(profile) }
             }
-            .padding()
+            .padding(.bottom, 32)
         }
     }
 
-    @ViewBuilder
-    private func avatarView(_ profile: UserProfile) -> some View {
-        if let url = URL(string: profile.avatarURL), !profile.avatarURL.isEmpty {
-            AsyncImage(url: url) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
-                initialsCircle(profile.name)
+    private var topBar: some View {
+        HStack {
+            Spacer()
+            Button { showEdit = true } label: {
+                Text("Edit profile")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(DesignTokens.textPrimary)
+                    .padding(.horizontal, 16).padding(.vertical, 8)
+                    .background(DesignTokens.cardFill)
+                    .overlay(Capsule().stroke(DesignTokens.separator, lineWidth: 1))
+                    .clipShape(.capsule)
             }
-            .frame(width: 72, height: 72)
-            .clipShape(.circle)
-        } else {
-            initialsCircle(profile.name)
+            .disabled(viewModel.profile == nil)
         }
+        .padding(.horizontal, 18).padding(.top, 8)
     }
 
-    private func initialsCircle(_ name: String) -> some View {
-        let initial = name.first.map(String.init) ?? "?"
-        return Circle()
-            .fill(.blue.opacity(0.15))
-            .frame(width: 72, height: 72)
-            .overlay(Text(initial).font(.title.bold()).foregroundStyle(.blue))
+    private func statsRow(_ profile: UserProfile) -> some View {
+        HStack(spacing: 0) {
+            statCell(value: viewModel.ideasCount, label: "IDEAS")
+            Rectangle().fill(DesignTokens.separator).frame(width: 1, height: 32)
+            statCell(value: viewModel.connectionsCount, label: "CONNECTIONS")
+            Rectangle().fill(DesignTokens.separator).frame(width: 1, height: 32)
+            statCell(value: profile.skills.count, label: "SKILLS")
+        }
+        .padding(.vertical, 16)
+        .background(DesignTokens.cardFill)
+        .clipShape(.rect(cornerRadius: 16))
+        .padding(.horizontal, 18)
     }
 
-    @ViewBuilder
-    private func tagSection(title: String, tags: [String]) -> some View {
-        if !tags.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(title).font(.headline)
-                LazyVGrid(
-                    columns: [GridItem(.adaptive(minimum: 70), alignment: .leading)],
-                    alignment: .leading,
-                    spacing: 8
-                ) {
-                    ForEach(tags, id: \.self) { TagChip(text: $0) }
+    private func statCell(value: Int, label: String) -> some View {
+        VStack(spacing: 3) {
+            Text("\(value)").font(.title3.bold()).foregroundStyle(DesignTokens.textPrimary)
+            Text(label)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(DesignTokens.textTertiary)
+                .tracking(0.8)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func skillsSection(_ tags: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionLabel("SKILLS")
+            pillGrid(tags, filled: true)
+        }
+        .padding(.horizontal, 18)
+    }
+
+    private func interestsSection(_ tags: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionLabel("INTERESTS")
+            pillGrid(tags, filled: false)
+        }
+        .padding(.horizontal, 18)
+    }
+
+    private func educationSection(_ profile: UserProfile) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionLabel("EDUCATION")
+            VStack(alignment: .leading, spacing: 3) {
+                Text(profile.university)
+                    .font(.spaceGrotesk(15, weight: .bold))
+                    .foregroundStyle(DesignTokens.textPrimary)
+                if profile.graduationYear > 0 {
+                    Text("Class of \(profile.graduationYear)")
+                        .font(.caption)
+                        .foregroundStyle(DesignTokens.textTertiary)
                 }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(DesignTokens.cardFill)
+            .clipShape(.rect(cornerRadius: 12))
+        }
+        .padding(.horizontal, 18)
+    }
+
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(DesignTokens.textTertiary)
+            .tracking(0.8)
+    }
+
+    private func pillGrid(_ tags: [String], filled: Bool) -> some View {
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: 64), alignment: .leading)],
+            alignment: .leading, spacing: 8
+        ) {
+            ForEach(tags, id: \.self) { tag in
+                Text(tag)
+                    .font(.caption.bold())
+                    .foregroundStyle(filled ? DesignTokens.accentText : DesignTokens.textSecondary)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(Capsule().fill(filled ? DesignTokens.accentPill : Color.clear))
+                    .overlay(Capsule().stroke(filled ? Color.clear : DesignTokens.separator, lineWidth: 1))
             }
         }
     }
@@ -122,4 +162,5 @@ struct ProfileView: View {
 
 #Preview {
     ProfileView()
+        .environment(AuthViewModel())
 }
