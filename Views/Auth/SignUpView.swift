@@ -7,44 +7,36 @@ struct SignUpView: View {
     @State private var password = ""
     @State private var university = ""
     @State private var graduationYear = Calendar.current.component(.year, from: Date())
+    @State private var showError = false
 
     private let years = Array((Calendar.current.component(.year, from: Date()) - 2)...(Calendar.current.component(.year, from: Date()) + 6))
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 TextField("Full Name", text: $name)
                     .textContentType(.name)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(CustomTextFieldStyle())
 
                 TextField("Email", text: $email)
                     .textContentType(.emailAddress)
                     .keyboardType(.emailAddress)
                     .autocapitalization(.none)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(CustomTextFieldStyle())
 
                 SecureField("Password", text: $password)
                     .textContentType(.newPassword)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(CustomTextFieldStyle())
 
                 TextField("University", text: $university)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(CustomTextFieldStyle())
 
                 Picker("Graduation Year", selection: $graduationYear) {
-                    ForEach(years, id: \.self) { year in
-                        Text(String(year)).tag(year)
-                    }
+                    ForEach(years, id: \.self) { Text(String($0)).tag($0) }
                 }
                 .pickerStyle(.menu)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
-
-                if let error = authViewModel.errorMessage {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
-                }
 
                 Button {
                     Task {
@@ -57,24 +49,25 @@ struct SignUpView: View {
                         )
                     }
                 } label: {
-                    Group {
-                        if authViewModel.isLoading {
-                            ProgressView()
-                        } else {
-                            Text("Create Account")
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    Text("Create Account")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(PrimaryButtonStyle(isLoading: authViewModel.isLoading))
                 .disabled(authViewModel.isLoading || name.isEmpty || email.isEmpty || password.isEmpty || university.isEmpty)
+                .padding(.top, 8)
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, StyleConstants.horizontalPadding)
             .padding(.top, 24)
         }
         .navigationTitle("Sign Up")
         .navigationBarTitleDisplayMode(.large)
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) { authViewModel.errorMessage = nil }
+        } message: {
+            Text(authViewModel.errorMessage ?? "")
+        }
+        .onChange(of: authViewModel.errorMessage) { _, newValue in
+            showError = newValue != nil
+        }
     }
 }
 

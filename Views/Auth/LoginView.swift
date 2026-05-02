@@ -4,58 +4,56 @@ struct LoginView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @State private var email = ""
     @State private var password = ""
+    @State private var showError = false
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
+            VStack(spacing: StyleConstants.spacing) {
                 Spacer()
 
                 Text("Schub")
                     .font(.largeTitle.bold())
+                    .padding(.bottom, 16)
 
-                VStack(spacing: 16) {
+                VStack(spacing: 12) {
                     TextField("Email", text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
-                        .textFieldStyle(.roundedBorder)
+                        .textFieldStyle(CustomTextFieldStyle())
 
                     SecureField("Password", text: $password)
                         .textContentType(.password)
-                        .textFieldStyle(.roundedBorder)
-                }
-
-                if let error = authViewModel.errorMessage {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
+                        .textFieldStyle(CustomTextFieldStyle())
                 }
 
                 Button {
                     Task { await authViewModel.signIn(email: email, password: password) }
                 } label: {
-                    Group {
-                        if authViewModel.isLoading {
-                            ProgressView()
-                        } else {
-                            Text("Log In")
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    Text("Log In")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(PrimaryButtonStyle(isLoading: authViewModel.isLoading))
                 .disabled(authViewModel.isLoading || email.isEmpty || password.isEmpty)
+                .padding(.top, 8)
 
-                NavigationLink("Don't have an account? Sign Up") {
+                NavigationLink {
                     SignUpView()
+                } label: {
+                    Text("Don't have an account? Sign Up")
                 }
-                .font(.subheadline)
+                .buttonStyle(SecondaryButtonStyle())
 
                 Spacer()
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, StyleConstants.horizontalPadding)
+            .alert("Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { authViewModel.errorMessage = nil }
+            } message: {
+                Text(authViewModel.errorMessage ?? "")
+            }
+            .onChange(of: authViewModel.errorMessage) { _, newValue in
+                showError = newValue != nil
+            }
         }
     }
 }

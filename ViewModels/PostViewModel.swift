@@ -54,4 +54,10 @@ private struct IdeaInsert: Encodable {
     let description: String
     let skillsNeeded: [String]
     let stage: Idea.Stage
+
+    enum CodingKeys: String, CodingKey {
+        case title, description, stage
+        case authorId = "author_id"
+        case skillsNeeded = "skills_needed"
+    }
 }

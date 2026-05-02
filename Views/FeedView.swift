@@ -11,6 +11,18 @@ struct FeedView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = viewModel.errorMessage, viewModel.ideas.isEmpty {
                     errorView(error)
+                } else if viewModel.ideas.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "lightbulb")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.secondary)
+                        Text("No ideas yet")
+                            .font(.headline)
+                        Text("Be the first to share one")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     feedList
                 }

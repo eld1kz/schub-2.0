@@ -44,6 +44,7 @@ final class AuthViewModel {
                     "graduation_year": .integer(graduationYear)
                 ]
             )
+            isAuthenticated = true
         } catch {
             errorMessage = error.localizedDescription
         }

@@ -15,4 +15,12 @@ struct Idea: Codable, Identifiable {
         case building
         case launched
     }
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, description, stage
+        case authorId = "author_id"
+        case skillsNeeded = "skills_needed"
+        case createdAt = "created_at"
+        case likesCount = "likes_count"
+    }
 }

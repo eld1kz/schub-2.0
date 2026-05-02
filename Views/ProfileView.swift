@@ -7,10 +7,18 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if viewModel.isLoading && viewModel.profile == nil {
+                if viewModel.isLoading {
                     ProgressView()
                 } else if let profile = viewModel.profile {
                     profileContent(profile)
+                } else {
+                    VStack(spacing: 12) {
+                        Text(viewModel.errorMessage ?? "Couldn't load profile")
+                            .foregroundStyle(.secondary)
+                        Button("Try Again") {
+                            Task { await viewModel.loadProfile() }
+                        }
+                    }
                 }
             }
             .navigationTitle("Profile")
