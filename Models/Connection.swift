@@ -12,4 +12,11 @@ struct Connection: Codable, Identifiable {
         case accepted
         case declined
     }
+
+    enum CodingKeys: String, CodingKey {
+        case id, status
+        case senderId = "sender_id"
+        case receiverId = "receiver_id"
+        case createdAt = "created_at"
+    }
 }

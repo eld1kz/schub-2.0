@@ -7,6 +7,7 @@ struct ConnectionService {
 
     func sendRequest(to receiverId: UUID) async throws {
         let senderId = try await auth.session.user.id
+        guard senderId != receiverId else { return }
         try await db
             .insert(ConnectionInsert(senderId: senderId, receiverId: receiverId))
             .execute()
@@ -24,16 +25,28 @@ struct ConnectionService {
     }
 
     func respond(to connectionId: UUID, accept: Bool) async throws {
-        try await db
-            .update(StatusUpdate(status: accept ? "accepted" : "declined"))
-            .eq("id", value: connectionId.uuidString)
-            .execute()
+        if accept {
+            try await db
+                .update(StatusUpdate(status: "accepted"))
+                .eq("id", value: connectionId.uuidString)
+                .execute()
+        } else {
+            try await db
+                .delete()
+                .eq("id", value: connectionId.uuidString)
+                .execute()
+        }
     }
 }
 
 private struct ConnectionInsert: Encodable {
     let senderId: UUID
     let receiverId: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case senderId = "sender_id"
+        case receiverId = "receiver_id"
+    }
 }
 
 private struct StatusUpdate: Encodable {

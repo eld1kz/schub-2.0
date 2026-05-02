@@ -31,6 +31,11 @@ final class AuthViewModel {
         isLoading = false
     }
 
+    func signOut() async {
+        try? await auth.signOut()
+        isAuthenticated = false
+    }
+
     func signUp(name: String, email: String, password: String, university: String, graduationYear: Int) async {
         isLoading = true
         errorMessage = nil

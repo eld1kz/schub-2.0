@@ -34,7 +34,7 @@ struct UserProfileCardView: View {
 
             HStack {
                 Spacer()
-                Button(requestSent ? "Requested" : "Connect") {
+                Button(requestSent ? "Pending" : "Connect") {
                     onConnect()
                     requestSent = true
                 }

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ProfileView: View {
+    @Environment(AuthViewModel.self) private var authViewModel
     @State private var viewModel = ProfileViewModel()
     @State private var showEdit = false
 
@@ -26,6 +27,11 @@ struct ProfileView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Edit") { showEdit = true }
                         .disabled(viewModel.profile == nil)
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Sign Out", role: .destructive) {
+                        Task { await authViewModel.signOut() }
+                    }
                 }
             }
             .sheet(isPresented: $showEdit) {

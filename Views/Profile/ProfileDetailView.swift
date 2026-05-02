@@ -26,7 +26,7 @@ struct ProfileDetailView: View {
                     }
                 }
 
-                Button(requestSent ? "Request Sent" : "Connect") {
+                Button(requestSent ? "Pending" : "Connect") {
                     requestSent = true
                     Task { try? await ConnectionService().sendRequest(to: profile.id) }
                 }
