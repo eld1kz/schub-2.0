@@ -1,6 +1,6 @@
 import Foundation
 
-struct UserProfile: Codable, Identifiable {
+struct UserProfile: Codable, Identifiable, Hashable {
     let id: UUID
     var name: String = ""
     var university: String = ""

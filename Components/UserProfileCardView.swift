@@ -8,8 +8,15 @@ struct UserProfileCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(profile.name.isEmpty ? "Anonymous" : profile.name)
-                    .font(.headline)
+                HStack(spacing: 6) {
+                    Text(profile.name.isEmpty ? "Anonymous" : profile.name)
+                        .font(.headline)
+                    if profile.openToCollaborate {
+                        Label("Open", systemImage: "checkmark.seal.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.green)
+                    }
+                }
                 if !profile.university.isEmpty {
                     Text(profile.university)
                         .font(.subheadline)

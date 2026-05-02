@@ -11,6 +11,9 @@ struct DiscoverView: View {
                 profileList
             }
             .navigationTitle("Discover")
+            .navigationDestination(for: UserProfile.self) { profile in
+                ProfileDetailView(profile: profile)
+            }
             .task { await viewModel.loadProfiles() }
         }
     }
@@ -62,9 +65,12 @@ struct DiscoverView: View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(viewModel.filteredProfiles) { profile in
-                    UserProfileCardView(profile: profile) {
-                        Task { try? await ConnectionService().sendRequest(to: profile.id) }
+                    NavigationLink(value: profile) {
+                        UserProfileCardView(profile: profile) {
+                            Task { try? await ConnectionService().sendRequest(to: profile.id) }
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
                 if viewModel.filteredProfiles.isEmpty && !viewModel.isLoading {
                     Text("No profiles match your filters")
