@@ -12,8 +12,8 @@ struct PostView: View {
                         .lineLimit(3, reservesSpace: true)
                 }
 
-                Section {
-                    TagEditorSection(title: "Skills Needed", tags: $viewModel.skillsNeeded)
+                Section("Skills Needed") {
+                    TagEditorSection(tags: $viewModel.skillsNeeded)
                 }
 
                 Section("Stage") {

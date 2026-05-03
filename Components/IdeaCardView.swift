@@ -3,59 +3,222 @@ import SwiftUI
 struct IdeaCardView: View {
     let item: FeedIdea
     var onConnect: () -> Void = {}
+
     @State private var requestSent = false
+    @State private var liked = false
+    @State private var expanded = false
+    @State private var pressed = false
+
+    private let indigo   = Color(hex: "#4F46E5")
+    private let ink      = Color(hex: "#0A0A0A")
+    private let surface  = Color(hex: "#F9F9F9")
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            authorRow
-            Text(item.idea.title)
-                .font(.headline)
-                .fixedSize(horizontal: false, vertical: true)
-            skillsRow
-            connectRow
+        VStack(alignment: .leading, spacing: 14) {
+            headerRow
+            contentBlock
+            if !item.idea.skillsNeeded.isEmpty { skillsRow }
+            actionRow
         }
-        .padding()
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background)
-        .clipShape(.rect(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.07), radius: 6, y: 2)
+        .background(surface)
+        .clipShape(.rect(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+        .scaleEffect(pressed ? 0.984 : 1)
+        .animation(.easeOut(duration: 0.12), value: pressed)
+        .onLongPressGesture(minimumDuration: 0, pressing: { p in pressed = p }, perform: {})
     }
 
-    private var authorRow: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(item.authorName.isEmpty ? "Anonymous" : item.authorName)
-                .font(.subheadline.bold())
-            if !item.authorUniversity.isEmpty {
-                Text(item.authorUniversity)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+    // MARK: Header
+
+    private var headerRow: some View {
+        HStack(alignment: .top, spacing: 10) {
+            avatarCircle
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.authorName.isEmpty ? "Anonymous" : item.authorName)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(ink)
+                HStack(spacing: 4) {
+                    if !item.authorUniversity.isEmpty {
+                        Text(item.authorUniversity)
+                            .font(.caption)
+                            .foregroundStyle(Color(hex: "#6B7280"))
+                        Text("·")
+                            .font(.caption)
+                            .foregroundStyle(Color(hex: "#6B7280"))
+                    }
+                    Text(timeAgo)
+                        .font(.caption)
+                        .foregroundStyle(Color(hex: "#6B7280"))
+                }
             }
+            Spacer()
+            stageBadge
         }
     }
 
-    @ViewBuilder
-    private var skillsRow: some View {
-        if !item.idea.skillsNeeded.isEmpty {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(item.idea.skillsNeeded, id: \.self) {
-                        TagChip(text: $0)
+    private var avatarCircle: some View {
+        Circle()
+            .fill(LinearGradient(
+                colors: [Color(hex: "#4F46E5"), Color(hex: "#7C3AED")],
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            ))
+            .frame(width: 36, height: 36)
+            .overlay(
+                Text(item.authorName.first.map(String.init) ?? "?")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+            )
+    }
+
+    private var stageBadge: some View {
+        Text(item.idea.stage.displayLabel)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10).padding(.vertical, 4)
+            .background(item.idea.stage.badgeColor)
+            .clipShape(.capsule)
+    }
+
+    // MARK: Content
+
+    private var contentBlock: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(item.idea.title)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(ink)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if !item.idea.description.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.idea.description)
+                        .font(.subheadline)
+                        .foregroundStyle(Color(hex: "#374151"))
+                        .lineLimit(expanded ? nil : 3)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if item.idea.description.count > 120 {
+                        Button(expanded ? "Show less" : "Read more") {
+                            withAnimation(.easeOut(duration: 0.2)) { expanded.toggle() }
+                        }
+                        .font(.caption.bold())
+                        .foregroundStyle(indigo)
                     }
                 }
             }
         }
     }
 
-    private var connectRow: some View {
-        HStack {
-            Spacer()
-            Button(requestSent ? "Requested" : "Connect") {
-                onConnect()
-                requestSent = true
+    // MARK: Skills
+
+    private var skillsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(item.idea.skillsNeeded, id: \.self) { skill in
+                    Text(skill)
+                        .font(.caption.bold())
+                        .foregroundStyle(indigo)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(indigo.opacity(0.1))
+                        .clipShape(.capsule)
+                }
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-            .disabled(requestSent)
+        }
+    }
+
+    // MARK: Actions
+
+    private var actionRow: some View {
+        HStack(spacing: 0) {
+            likeButton
+            Spacer()
+            commentButton
+            Spacer()
+            connectButton
+            Spacer()
+            shareButton
+        }
+    }
+
+    private var likeButton: some View {
+        Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { liked.toggle() }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: liked ? "hand.thumbsup.fill" : "hand.thumbsup")
+                    .font(.system(size: 15))
+                    .foregroundStyle(liked ? indigo : Color(hex: "#6B7280"))
+                let count = item.idea.likesCount + (liked ? 1 : 0)
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.caption.bold())
+                        .foregroundStyle(liked ? indigo : Color(hex: "#6B7280"))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var commentButton: some View {
+        Button {} label: {
+            Image(systemName: "bubble.left")
+                .font(.system(size: 15))
+                .foregroundStyle(Color(hex: "#6B7280"))
+        }
+        .buttonStyle(.plain)
+        .disabled(true)
+    }
+
+    private var connectButton: some View {
+        Button {
+            guard !requestSent else { return }
+            onConnect()
+            withAnimation(.easeOut(duration: 0.2)) { requestSent = true }
+        } label: {
+            Text(requestSent ? "Pending" : "Connect")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16).padding(.vertical, 7)
+                .background(requestSent ? Color(hex: "#6B7280") : indigo)
+                .clipShape(.capsule)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var shareButton: some View {
+        Button {} label: {
+            Image(systemName: "square.and.arrow.up")
+                .font(.system(size: 15))
+                .foregroundStyle(Color(hex: "#6B7280"))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Helpers
+
+    private var timeAgo: String {
+        let seconds = -item.idea.createdAt.timeIntervalSinceNow
+        if seconds < 3600 { return "\(Int(seconds / 60))m ago" }
+        if seconds < 86400 { return "\(Int(seconds / 3600))h ago" }
+        return "\(Int(seconds / 86400))d ago"
+    }
+}
+
+fileprivate extension Idea.Stage {
+    var displayLabel: String {
+        switch self {
+        case .idea:     return "Idea"
+        case .building: return "Building"
+        case .launched: return "Launched"
+        }
+    }
+
+    var badgeColor: Color {
+        switch self {
+        case .idea:     return Color(hex: "#7C3AED")
+        case .building: return Color(hex: "#4F46E5")
+        case .launched: return Color(hex: "#16A34A")
         }
     }
 }
@@ -66,14 +229,15 @@ struct IdeaCardView: View {
             id: UUID(),
             authorId: UUID(),
             title: "AI study buddy for university students",
-            description: "",
+            description: "A personalized AI tutor that adapts to each student's learning style, helping them understand complex topics through guided questions rather than direct answers.",
             skillsNeeded: ["Swift", "ML", "Backend"],
             stage: .building,
-            createdAt: Date(),
-            likesCount: 0
+            createdAt: Date().addingTimeInterval(-7200),
+            likesCount: 14
         ),
         authorName: "Eldar Ugay",
         authorUniversity: "MIT"
     ))
     .padding()
+    .background(Color(hex: "#0e0e10"))
 }
