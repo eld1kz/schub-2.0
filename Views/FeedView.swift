@@ -1,65 +1,148 @@
 import SwiftUI
 
+private enum FeedTab { case posts, ideas }
+
 struct FeedView: View {
-    @State private var viewModel = FeedViewModel()
+    @State private var feedViewModel = FeedViewModel()
+    @State private var postViewModel = PostFeedViewModel()
+    @State private var activeTab: FeedTab = .posts
+    @State private var showComposer = false
 
     var body: some View {
         NavigationStack {
-            Group {
-                if viewModel.isLoading && viewModel.ideas.isEmpty {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = viewModel.errorMessage, viewModel.ideas.isEmpty {
-                    errorView(error)
-                } else if viewModel.ideas.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "lightbulb")
-                            .font(.system(size: 44))
-                            .foregroundStyle(.secondary)
-                        Text("No ideas yet")
-                            .font(.headline)
-                        Text("Be the first to share one")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    feedList
+            ZStack(alignment: .bottomTrailing) {
+                VStack(spacing: 0) {
+                    tabBar
+                    Rectangle().fill(DesignTokens.separator).frame(height: 1)
+                    tabContent
                 }
+                fab
             }
+            .background(DesignTokens.background.ignoresSafeArea())
             .navigationTitle("Feed")
-            .task { await viewModel.loadFeed() }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(DesignTokens.background, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .sheet(isPresented: $showComposer) {
+                PostComposerSheet { content in try await postViewModel.createPost(content: content) }
+                    .presentationDetents([.medium, .large])
+                    .presentationBackground(DesignTokens.background)
+            }
+            .task {
+                await postViewModel.load()
+                await feedViewModel.loadFeed()
+            }
         }
     }
 
-    private var feedList: some View {
-        ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(viewModel.ideas) { item in
-                    IdeaCardView(item: item) {
-                        Task { try? await ConnectionService().sendRequest(to: item.idea.authorId) }
+    // MARK: Tab bar
+
+    private var tabBar: some View {
+        HStack(spacing: 0) {
+            tabButton("Posts", tab: .posts)
+            tabButton("Ideas", tab: .ideas)
+            Spacer()
+        }
+        .background(DesignTokens.background)
+    }
+
+    private func tabButton(_ label: String, tab: FeedTab) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) { activeTab = tab }
+        } label: {
+            VStack(spacing: 0) {
+                Text(label)
+                    .font(.system(size: 14, weight: activeTab == tab ? .bold : .medium))
+                    .foregroundStyle(activeTab == tab ? DesignTokens.textPrimary : DesignTokens.textTertiary)
+                    .padding(.vertical, 13).padding(.horizontal, 22)
+                Rectangle()
+                    .fill(activeTab == tab ? DesignTokens.accentText : Color.clear)
+                    .frame(height: 2)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Content
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch activeTab {
+        case .posts:
+            if postViewModel.isLoading && postViewModel.posts.isEmpty {
+                loadingView
+            } else if postViewModel.posts.isEmpty {
+                emptyState(icon: "bubble.left.and.bubble.right",
+                           title: "No posts yet",
+                           subtitle: "Be the first to share what you're building")
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(postViewModel.posts) { PostCard(item: $0) }
                     }
                 }
+                .refreshable { await postViewModel.load() }
             }
-            .padding()
+        case .ideas:
+            if feedViewModel.isLoading && feedViewModel.ideas.isEmpty {
+                loadingView
+            } else if feedViewModel.ideas.isEmpty {
+                emptyState(icon: "lightbulb",
+                           title: "No ideas yet",
+                           subtitle: "Be the first to share an idea")
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(feedViewModel.ideas) { item in
+                            IdeaCardView(item: item) {
+                                Task { try? await ConnectionService().sendRequest(to: item.idea.authorId) }
+                            }
+                        }
+                    }
+                    .padding(16)
+                }
+                .refreshable { await feedViewModel.loadFeed() }
+            }
         }
-        .refreshable { await viewModel.loadFeed() }
     }
 
-    private func errorView(_ message: String) -> some View {
-        VStack(spacing: 12) {
-            Text("Couldn't load feed")
-                .font(.headline)
-            Text(message)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            Button("Retry") {
-                Task { await viewModel.loadFeed() }
-            }
-            .buttonStyle(.bordered)
+    // MARK: FAB
+
+    private var fab: some View {
+        Button { showComposer = true } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(.black)
+                .frame(width: 54, height: 54)
+                .background(DesignTokens.accentText)
+                .clipShape(Circle())
+                .shadow(color: DesignTokens.accentText.opacity(0.4), radius: 12, x: 0, y: 4)
         }
-        .padding()
+        .padding(.trailing, 20).padding(.bottom, 24)
+    }
+
+    // MARK: Helpers
+
+    private var loadingView: some View {
+        ProgressView().tint(DesignTokens.textSecondary)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func emptyState(icon: String, title: String, subtitle: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 44))
+                .foregroundStyle(DesignTokens.textTertiary)
+            Text(title)
+                .font(.spaceGrotesk(18, weight: .bold))
+                .foregroundStyle(DesignTokens.textPrimary)
+            Text(subtitle)
+                .font(.subheadline)
+                .foregroundStyle(DesignTokens.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

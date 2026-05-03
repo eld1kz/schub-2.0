@@ -2,243 +2,433 @@ import SwiftUI
 
 struct DiscoverView: View {
     @State private var viewModel = DiscoverViewModel()
+    @FocusState private var searchFocused: Bool
+
+    private let bg      = Color(hex: "#F9F9F9")
+    private let inputBg = Color(hex: "#F3F4F6")
+    private let ink     = Color(hex: "#0A0A0A")
+    private let muted   = Color(hex: "#6B7280")
+    private let indigo  = Color(hex: "#4F46E5")
 
     var body: some View {
         NavigationStack {
-            Group {
-                if viewModel.isLoading && viewModel.matches.isEmpty {
-                    ProgressView().tint(DesignTokens.textSecondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if !viewModel.hasSkills {
-                    noSkillsState
-                } else if viewModel.matches.isEmpty {
-                    emptyState
+            VStack(spacing: 0) {
+                searchBar
+                Divider()
+                if viewModel.isSearching {
+                    filterPills
+                    Divider()
+                    searchResultsList
                 } else {
-                    matchList
+                    defaultContent
                 }
             }
-            .background(DesignTokens.background.ignoresSafeArea())
+            .background(bg.ignoresSafeArea())
             .navigationTitle("Discover")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(DesignTokens.background, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(bg, for: .navigationBar)
             .navigationDestination(for: UserProfile.self) { ProfileDetailView(profile: $0) }
             .task { await viewModel.loadProfiles() }
-            .refreshable { await viewModel.loadProfiles() }
         }
     }
 
-    private var matchList: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("Best matches for you")
-                    .font(.spaceGrotesk(20, weight: .bold))
-                    .foregroundStyle(DesignTokens.textPrimary)
-                    .padding(.horizontal, 18)
-                    .padding(.top, 18)
+    // MARK: Search bar
 
-                LazyVStack(spacing: 14) {
-                    ForEach(viewModel.matches) { match in
-                        NavigationLink(value: match.profile) {
-                            MatchCard(match: match) {
-                                Task { try? await ConnectionService().sendRequest(to: match.profile.id) }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 18)
+    private var searchBar: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 14))
+                    .foregroundStyle(muted)
+                TextField("Search people, ideas, opportunities", text: $viewModel.searchText)
+                    .font(.system(size: 15))
+                    .foregroundStyle(ink)
+                    .focused($searchFocused)
+                    .autocorrectionDisabled()
+                    .submitLabel(.search)
+                if !viewModel.searchText.isEmpty {
+                    Button { viewModel.searchText = "" } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(muted)
                     }
                 }
-                .padding(.bottom, 28)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .background(inputBg)
+            .clipShape(.rect(cornerRadius: 10))
+
+            if searchFocused || viewModel.isSearching {
+                Button("Cancel") {
+                    viewModel.searchText = ""
+                    searchFocused = false
+                }
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(indigo)
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .animation(.easeInOut(duration: 0.2), value: searchFocused || viewModel.isSearching)
+    }
+
+    // MARK: Filter pills
+
+    private var filterPills: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(SearchFilter.allCases, id: \.self) { filter in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.15)) { viewModel.selectedFilter = filter }
+                    } label: {
+                        Text(filter.rawValue)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(viewModel.selectedFilter == filter ? .white : muted)
+                            .padding(.horizontal, 14).padding(.vertical, 7)
+                            .background(viewModel.selectedFilter == filter ? indigo : inputBg)
+                            .clipShape(.capsule)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
+        }
+        .background(bg)
+    }
+
+    // MARK: Search results
+
+    private var searchResultsList: some View {
+        Group {
+            if viewModel.searchResults.isEmpty {
+                Text("No results for \"\(viewModel.searchText)\"")
+                    .font(.system(size: 15))
+                    .foregroundStyle(muted)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(viewModel.searchResults) { result in
+                            resultRow(result)
+                            Divider().padding(.leading, 64)
+                        }
+                    }
+                    .padding(.vertical, 6)
+                }
             }
         }
     }
 
-    private var noSkillsState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "person.badge.plus")
-                .font(.system(size: 52))
-                .foregroundStyle(DesignTokens.textTertiary)
-            Text("Add your skills first")
-                .font(.spaceGrotesk(20, weight: .bold))
-                .foregroundStyle(DesignTokens.textPrimary)
-            Text("We match you with people whose skills\ncomplement yours — like a co-founder search.")
-                .font(.subheadline)
-                .foregroundStyle(DesignTokens.textSecondary)
-                .multilineTextAlignment(.center)
-            Text("Go to Profile → Edit Profile → Skills")
-                .font(.caption)
-                .foregroundStyle(DesignTokens.textTertiary)
-                .padding(.top, 4)
+    @ViewBuilder
+    private func resultRow(_ result: SearchResult) -> some View {
+        switch result {
+        case .person(let p):
+            NavigationLink(value: p) {
+                SearchRow(icon: "person.fill", iconColor: indigo,
+                          title: p.name.isEmpty ? "Unknown" : p.name,
+                          subtitle: p.university,
+                          initial: p.name.first.map(String.init))
+            }.buttonStyle(.plain)
+        case .idea(let i):
+            SearchRow(icon: "lightbulb.fill", iconColor: Color(hex: "#F59E0B"),
+                      title: i.idea.title,
+                      subtitle: "by \(i.authorName)")
+        case .opportunity(let o):
+            SearchRow(icon: "briefcase.fill", iconColor: Color(hex: "#3B82F6"),
+                      title: o.title,
+                      subtitle: o.type.rawValue.capitalized)
         }
-        .padding(32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var emptyState: some View {
-        VStack(spacing: 12) {
-            Text("No matches yet")
-                .font(.spaceGrotesk(18, weight: .bold))
-                .foregroundStyle(DesignTokens.textPrimary)
-            Text("Check back as more people join Schub.")
-                .font(.subheadline)
-                .foregroundStyle(DesignTokens.textSecondary)
+    // MARK: Default content
+
+    private var defaultContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if !viewModel.matches.isEmpty {
+                    SectionHeader(title: "People you may know")
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(viewModel.matches.prefix(8)) { match in
+                                NavigationLink(value: match.profile) {
+                                    CompactPersonCard(profile: match.profile)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, 16).padding(.bottom, 16)
+                    }
+                    Divider()
+                }
+
+                if !viewModel.ideas.isEmpty {
+                    SectionHeader(title: "Trending ideas")
+                    ForEach(viewModel.ideas.prefix(4)) { item in
+                        CompactIdeaRow(item: item)
+                        Divider().padding(.leading, 60)
+                    }
+                    Divider()
+                }
+
+                if !viewModel.opportunities.isEmpty {
+                    SectionHeader(title: "Latest opportunities")
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(viewModel.opportunities.prefix(6)) { opp in
+                                CompactOpportunityCard(opportunity: opp)
+                            }
+                        }
+                        .padding(.horizontal, 16).padding(.bottom, 16)
+                    }
+                    Divider()
+                }
+
+                if viewModel.isLoading {
+                    ProgressView().frame(maxWidth: .infinity).padding(32)
+                }
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .refreshable { await viewModel.loadProfiles() }
     }
 }
 
-// MARK: - Match Card
+// MARK: - Section Header
 
-private struct MatchCard: View {
-    let match: MatchedProfile
-    var onConnect: () -> Void
-
-    @State private var requestSent = false
-    @State private var pressed = false
-
-    private let indigo  = Color(hex: "#4F46E5")
-    private let ink     = Color(hex: "#0A0A0A")
-    private let surface = Color(hex: "#F9F9F9")
+private struct SectionHeader: View {
+    let title: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            headerRow
-            if !match.complementarySkills.isEmpty || !match.sharedSkills.isEmpty {
-                skillsSection
-            }
-            actionRow
+        HStack {
+            Text(title)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(Color(hex: "#0A0A0A"))
+            Spacer()
+            Button("See all") {}
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Color(hex: "#4F46E5"))
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(surface)
-        .clipShape(.rect(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-        .scaleEffect(pressed ? 0.984 : 1)
-        .animation(.easeOut(duration: 0.12), value: pressed)
-        .onLongPressGesture(minimumDuration: 0, pressing: { p in pressed = p }, perform: {})
+        .padding(.horizontal, 16)
+        .padding(.top, 20).padding(.bottom, 12)
     }
+}
 
-    private var headerRow: some View {
-        HStack(alignment: .top, spacing: 12) {
-            avatarCircle
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(match.profile.name.isEmpty ? "Unknown" : match.profile.name)
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(ink)
-                        if !match.profile.university.isEmpty {
-                            Text(match.profile.university)
-                                .font(.caption)
-                                .foregroundStyle(Color(hex: "#6B7280"))
-                        }
-                    }
-                    Spacer()
-                    matchBadge
-                }
-                if match.profile.openToCollaborate {
-                    HStack(spacing: 4) {
-                        Circle().fill(Color(hex: "#4ade80")).frame(width: 5, height: 5)
-                        Text("Open to collaborate")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(Color(hex: "#4ade80"))
-                    }
+// MARK: - Search Row
+
+private struct SearchRow: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let subtitle: String
+    var initial: String? = nil
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(initial != nil
+                          ? LinearGradient(colors: [Color(hex: "#4F46E5"), Color(hex: "#7C3AED")],
+                                          startPoint: .topLeading, endPoint: .bottomTrailing)
+                          : LinearGradient(colors: [iconColor.opacity(0.15), iconColor.opacity(0.15)],
+                                          startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 36, height: 36)
+                if let initial {
+                    Text(initial)
+                        .font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
+                } else {
+                    Image(systemName: icon)
+                        .font(.system(size: 14)).foregroundStyle(iconColor)
                 }
             }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color(hex: "#0A0A0A"))
+                    .lineLimit(1)
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color(hex: "#6B7280"))
+                        .lineLimit(1)
+                }
+            }
+            Spacer()
+            Image(systemName: icon)
+                .font(.system(size: 11)).foregroundStyle(Color(hex: "#D1D5DB"))
         }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .background(Color(hex: "#F9F9F9"))
     }
+}
 
-    private var avatarCircle: some View {
-        Circle()
-            .fill(LinearGradient(
-                colors: [Color(hex: "#4F46E5"), Color(hex: "#7C3AED")],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            ))
-            .frame(width: 44, height: 44)
-            .overlay(
-                Text(match.profile.name.first.map(String.init) ?? "?")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(.white)
-            )
-    }
+// MARK: - Compact Person Card
 
-    private var matchBadge: some View {
-        Text("\(match.matchScore)% match")
-            .font(.system(size: 11, weight: .bold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 10).padding(.vertical, 4)
-            .background(badgeColor)
-            .clipShape(.capsule)
-    }
+private struct CompactPersonCard: View {
+    let profile: UserProfile
+    @State private var requestSent = false
 
-    private var badgeColor: Color {
-        match.matchScore >= 75 ? Color(hex: "#16A34A") :
-        match.matchScore >= 50 ? indigo :
-        Color(hex: "#6B7280")
-    }
+    private let indigo = Color(hex: "#4F46E5")
 
-    private var skillsSection: some View {
+    var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if !match.complementarySkills.isEmpty {
-                skillGroup(
-                    label: "Complements your skills",
-                    skills: match.complementarySkills,
-                    fg: indigo, bg: indigo.opacity(0.1)
+            Circle()
+                .fill(LinearGradient(
+                    colors: [Color(hex: "#4F46E5"), Color(hex: "#7C3AED")],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                ))
+                .frame(width: 44, height: 44)
+                .overlay(
+                    Text(profile.name.first.map(String.init) ?? "?")
+                        .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
                 )
-            }
-            if !match.sharedSkills.isEmpty {
-                skillGroup(
-                    label: "Skills in common",
-                    skills: match.sharedSkills,
-                    fg: Color(hex: "#6B7280"), bg: Color(hex: "#6B7280").opacity(0.08)
-                )
-            }
-        }
-    }
 
-    private func skillGroup(label: String, skills: [String], fg: Color, bg: Color) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(label)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(fg)
-                .tracking(0.2)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(skills, id: \.self) { skill in
+            VStack(alignment: .leading, spacing: 2) {
+                Text(profile.name.isEmpty ? "Unknown" : profile.name)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Color(hex: "#0A0A0A"))
+                    .lineLimit(1)
+                if !profile.university.isEmpty {
+                    let year = profile.graduationYear > 0 ? " '\(String(profile.graduationYear).suffix(2))" : ""
+                    Text("\(profile.university)\(year)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color(hex: "#6B7280"))
+                        .lineLimit(1)
+                }
+            }
+
+            if !profile.skills.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(Array(profile.skills.prefix(2)), id: \.self) { skill in
                         Text(skill)
-                            .font(.caption.bold())
-                            .foregroundStyle(fg)
-                            .padding(.horizontal, 10).padding(.vertical, 4)
-                            .background(bg)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(indigo)
+                            .padding(.horizontal, 7).padding(.vertical, 3)
+                            .background(indigo.opacity(0.08))
                             .clipShape(.capsule)
                     }
                 }
             }
-        }
-    }
 
-    private var actionRow: some View {
-        HStack {
-            if !match.sharedInterests.isEmpty {
-                Text(match.sharedInterests.prefix(2).joined(separator: " · "))
-                    .font(.caption)
-                    .foregroundStyle(Color(hex: "#6B7280"))
-            }
             Spacer()
+
             Button {
                 guard !requestSent else { return }
-                onConnect()
                 withAnimation(.easeOut(duration: 0.2)) { requestSent = true }
+                Task { try? await ConnectionService().sendRequest(to: profile.id) }
             } label: {
-                Text(requestSent ? "Pending" : "Connect")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 18).padding(.vertical, 8)
-                    .background(requestSent ? Color(hex: "#6B7280") : indigo)
+                Text(requestSent ? "Pending" : "+ Connect")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(requestSent ? Color(hex: "#6B7280") : indigo)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 7)
+                    .background(Color.white)
+                    .overlay(Capsule().stroke(requestSent ? Color(hex: "#6B7280") : indigo, lineWidth: 1))
                     .clipShape(.capsule)
             }
             .buttonStyle(.plain)
         }
+        .padding(14)
+        .frame(width: 160, height: 180)
+        .background(Color.white)
+        .clipShape(.rect(cornerRadius: 14))
+        .shadow(color: .black.opacity(0.07), radius: 8, x: 0, y: 2)
+    }
+}
+
+// MARK: - Compact Idea Row
+
+private struct CompactIdeaRow: View {
+    let item: FeedIdea
+
+    private func stageColor(_ s: Idea.Stage) -> Color {
+        switch s {
+        case .idea: Color(hex: "#7C3AED")
+        case .building: Color(hex: "#4F46E5")
+        case .launched: Color(hex: "#16A34A")
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "lightbulb.fill")
+                .font(.system(size: 15))
+                .foregroundStyle(Color(hex: "#F59E0B"))
+                .frame(width: 36, height: 36)
+                .background(Color(hex: "#F59E0B").opacity(0.1))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.idea.title)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color(hex: "#0A0A0A"))
+                    .lineLimit(1)
+                Text(item.authorName + (item.authorUniversity.isEmpty ? "" : " · \(item.authorUniversity)"))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color(hex: "#6B7280"))
+                    .lineLimit(1)
+            }
+            Spacer()
+            let c = stageColor(item.idea.stage)
+            Text(item.idea.stage.rawValue.capitalized)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(c)
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(c.opacity(0.1))
+                .clipShape(.capsule)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .background(Color(hex: "#F9F9F9"))
+    }
+}
+
+// MARK: - Compact Opportunity Card
+
+private struct CompactOpportunityCard: View {
+    let opportunity: Opportunity
+
+    private var typeColor: Color {
+        switch opportunity.type {
+        case .hackathon:  .orange
+        case .grant:      .green
+        case .internship: .blue
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(opportunity.type.rawValue.capitalized)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(typeColor)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(typeColor.opacity(0.1))
+                    .clipShape(.capsule)
+                Spacer()
+                Text(opportunity.deadline.formatted(.dateTime.month(.abbreviated).day()))
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color(hex: "#6B7280"))
+            }
+            Text(opportunity.title)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(Color(hex: "#0A0A0A"))
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+            if !opportunity.description.isEmpty {
+                Text(opportunity.description)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color(hex: "#6B7280"))
+                    .lineLimit(2)
+            }
+            Spacer()
+            if let url = URL(string: opportunity.link), !opportunity.link.isEmpty {
+                Link("View →", destination: url)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color(hex: "#4F46E5"))
+            }
+        }
+        .padding(14)
+        .frame(width: 180, height: 160)
+        .background(Color.white)
+        .clipShape(.rect(cornerRadius: 14))
+        .shadow(color: .black.opacity(0.07), radius: 8, x: 0, y: 2)
     }
 }
 
