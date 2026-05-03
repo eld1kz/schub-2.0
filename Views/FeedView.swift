@@ -7,9 +7,10 @@ struct FeedView: View {
     @State private var postViewModel = PostFeedViewModel()
     @State private var activeTab: FeedTab = .posts
     @State private var showComposer = false
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ZStack(alignment: .bottomTrailing) {
                 VStack(spacing: 0) {
                     tabBar
@@ -27,6 +28,14 @@ struct FeedView: View {
                 PostComposerSheet { content in try await postViewModel.createPost(content: content) }
                     .presentationDetents([.medium, .large])
                     .presentationBackground(DesignTokens.background)
+            }
+            .navigationDestination(for: FeedIdea.self) { idea in
+                IdeaDetailView(
+                    item: idea,
+                    onCommentCountChange: { count in
+                        feedViewModel.setCommentCount(ideaId: idea.id, count: count)
+                    }
+                )
             }
             .task {
                 await postViewModel.load()
@@ -94,9 +103,22 @@ struct FeedView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(feedViewModel.ideas) { item in
-                            IdeaCardView(item: item) {
-                                Task { try? await ConnectionService().sendRequest(to: item.idea.authorId) }
-                            }
+                            IdeaCardView(
+                                item: item,
+                                onConnect: { Task { try? await ConnectionService().sendRequest(to: item.idea.authorId) } },
+                                isLiked: feedViewModel.likedIdeaIds.contains(item.idea.id),
+                                onToggleLike: { Task { await feedViewModel.toggleLike(ideaId: item.idea.id) } },
+                                onTap: {
+                                    print("[FeedView] card body tapped — idea: \(item.id)")
+                                    navigationPath.append(item)
+                                    print("[FeedView] path count: \(navigationPath.count)")
+                                },
+                                onCommentTap: {
+                                    print("[FeedView] onCommentTap fired — idea: \(item.id)")
+                                    navigationPath.append(item)
+                                    print("[FeedView] path count after comment tap: \(navigationPath.count)")
+                                }
+                            )
                         }
                     }
                     .padding(16)

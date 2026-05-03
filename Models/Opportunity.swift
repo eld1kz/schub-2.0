@@ -13,5 +13,6 @@ struct Opportunity: Codable, Identifiable {
         case hackathon
         case grant
         case internship
+        case competition
     }
 }

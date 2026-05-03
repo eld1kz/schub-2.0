@@ -62,9 +62,10 @@ struct OpportunityCardView: View {
 private extension Opportunity.OpportunityType {
     var color: Color {
         switch self {
-        case .hackathon: .orange
-        case .grant:     .green
-        case .internship: .blue
+        case .hackathon:   .orange
+        case .grant:       .green
+        case .internship:  .blue
+        case .competition: .purple
         }
     }
 }

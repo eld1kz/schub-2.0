@@ -72,7 +72,7 @@ final class ProfileViewModel {
         let records: [R] = try await client
             .from("ideas")
             .select("id")
-            .eq("author_id", value: userId)
+            .eq("author_id", value: userId.uuidString)
             .execute()
             .value
         return records.count

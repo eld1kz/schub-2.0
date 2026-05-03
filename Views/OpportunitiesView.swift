@@ -8,8 +8,6 @@ struct OpportunitiesView: View {
             Group {
                 if viewModel.isLoading && viewModel.opportunities.isEmpty {
                     ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = viewModel.errorMessage, viewModel.opportunities.isEmpty {
-                    errorView(error)
                 } else if viewModel.opportunities.isEmpty {
                     emptyState
                 } else {
@@ -47,19 +45,7 @@ struct OpportunitiesView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func errorView(_ message: String) -> some View {
-        VStack(spacing: 12) {
-            Text("Couldn't load opportunities")
-                .font(.headline)
-            Text(message)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            Button("Retry") { Task { await viewModel.load() } }
-                .buttonStyle(.bordered)
-        }
-        .padding()
-    }
+
 }
 
 #Preview {

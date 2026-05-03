@@ -2,7 +2,7 @@ import Foundation
 import Supabase
 
 struct ConnectionService {
-    private let db = SupabaseService.shared.client.from("connections")
+    private let db   = SupabaseService.shared.client.from("connections")
     private let auth = SupabaseService.shared.client.auth
 
     func sendRequest(to receiverId: UUID) async throws {
@@ -11,6 +11,11 @@ struct ConnectionService {
         try await db
             .insert(ConnectionInsert(senderId: senderId, receiverId: receiverId))
             .execute()
+        await NotificationService().insert(
+            recipientId: receiverId,
+            senderId: senderId,
+            type: .connectionRequest
+        )
     }
 
     func fetchIncoming() async throws -> [Connection] {
@@ -42,7 +47,6 @@ struct ConnectionService {
 private struct ConnectionInsert: Encodable {
     let senderId: UUID
     let receiverId: UUID
-
     enum CodingKeys: String, CodingKey {
         case senderId = "sender_id"
         case receiverId = "receiver_id"

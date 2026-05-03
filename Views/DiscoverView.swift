@@ -386,9 +386,10 @@ private struct CompactOpportunityCard: View {
 
     private var typeColor: Color {
         switch opportunity.type {
-        case .hackathon:  .orange
-        case .grant:      .green
-        case .internship: .blue
+        case .hackathon:   .orange
+        case .grant:       .green
+        case .internship:  .blue
+        case .competition: .purple
         }
     }
 

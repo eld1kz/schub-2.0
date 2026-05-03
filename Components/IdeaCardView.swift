@@ -3,9 +3,12 @@ import SwiftUI
 struct IdeaCardView: View {
     let item: FeedIdea
     var onConnect: () -> Void = {}
+    var isLiked: Bool = false
+    var onToggleLike: () -> Void = {}
+    var onTap: () -> Void = {}
+    var onCommentTap: () -> Void = {}
 
     @State private var requestSent = false
-    @State private var liked = false
     @State private var expanded = false
     @State private var pressed = false
 
@@ -15,9 +18,12 @@ struct IdeaCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            headerRow
-            contentBlock
-            if !item.idea.skillsNeeded.isEmpty { skillsRow }
+            Group {
+                headerRow
+                contentBlock
+                if !item.idea.skillsNeeded.isEmpty { skillsRow }
+            }
+            .onTapGesture { onTap() }
             actionRow
         }
         .padding(16)
@@ -143,17 +149,18 @@ struct IdeaCardView: View {
 
     private var likeButton: some View {
         Button {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { liked.toggle() }
+            onToggleLike()
         } label: {
             HStack(spacing: 5) {
-                Image(systemName: liked ? "hand.thumbsup.fill" : "hand.thumbsup")
+                Image(systemName: isLiked ? "hand.thumbsup.fill" : "hand.thumbsup")
                     .font(.system(size: 15))
-                    .foregroundStyle(liked ? indigo : Color(hex: "#6B7280"))
-                let count = item.idea.likesCount + (liked ? 1 : 0)
-                if count > 0 {
-                    Text("\(count)")
+                    .foregroundStyle(isLiked ? indigo : Color(hex: "#6B7280"))
+                    .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isLiked)
+                if item.idea.likesCount > 0 {
+                    Text("\(item.idea.likesCount)")
                         .font(.caption.bold())
-                        .foregroundStyle(liked ? indigo : Color(hex: "#6B7280"))
+                        .foregroundStyle(isLiked ? indigo : Color(hex: "#6B7280"))
+                        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isLiked)
                 }
             }
         }
@@ -161,13 +168,22 @@ struct IdeaCardView: View {
     }
 
     private var commentButton: some View {
-        Button {} label: {
-            Image(systemName: "bubble.left")
-                .font(.system(size: 15))
-                .foregroundStyle(Color(hex: "#6B7280"))
+        Button {
+            print("[IdeaCard] comment button tapped")
+            onCommentTap()
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "bubble.left")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Color(hex: "#6B7280"))
+                if item.idea.commentsCount > 0 {
+                    Text("\(item.idea.commentsCount)")
+                        .font(.caption.bold())
+                        .foregroundStyle(Color(hex: "#6B7280"))
+                }
+            }
         }
         .buttonStyle(.plain)
-        .disabled(true)
     }
 
     private var connectButton: some View {
