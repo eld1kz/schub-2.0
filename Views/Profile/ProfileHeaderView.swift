@@ -1,11 +1,16 @@
 import SwiftUI
+import PhotosUI
 
 struct ProfileHeaderView: View {
     let profile: UserProfile
+    var isEditable = false
+    var onAvatarSelected: ((Data) -> Void)? = nil
+
+    @State private var pickerItem: PhotosPickerItem?
 
     var body: some View {
         VStack(spacing: 12) {
-            avatarCircle
+            avatarSection
             Text(profile.name.isEmpty ? "Your Name" : profile.name)
                 .font(.spaceGrotesk(22, weight: .bold))
                 .tracking(-0.3)
@@ -33,33 +38,36 @@ struct ProfileHeaderView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var avatarCircle: some View {
-        ZStack {
-            if let url = URL(string: profile.avatarURL), !profile.avatarURL.isEmpty {
-                AsyncImage(url: url) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: { gradientCircle }
-                .frame(width: 76, height: 76)
-                .clipShape(Circle())
-            } else {
-                gradientCircle
-                    .frame(width: 76, height: 76)
-                    .clipShape(Circle())
+    @ViewBuilder
+    private var avatarSection: some View {
+        if isEditable {
+            PhotosPicker(selection: $pickerItem, matching: .images,
+                         preferredItemEncoding: .compatible, photoLibrary: .shared()) {
+                AvatarView(url: profile.avatarURL, name: profile.name, size: 76)
+                    .overlay(alignment: .bottomTrailing) {
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(5)
+                            .background(Color(hex: "#4F46E5"))
+                            .clipShape(Circle())
+                            .offset(x: 2, y: 2)
+                    }
             }
+            .onChange(of: pickerItem) { _, item in
+                Task {
+                    print("[ProfileHeader] picker item changed")
+                    if let data = try? await item?.loadTransferable(type: Data.self) {
+                        print("[ProfileHeader] loaded \(data.count) bytes")
+                        onAvatarSelected?(data)
+                    } else {
+                        print("[ProfileHeader] loadTransferable returned nil")
+                    }
+                }
+            }
+        } else {
+            AvatarView(url: profile.avatarURL, name: profile.name, size: 76)
         }
-    }
-
-    private var gradientCircle: some View {
-        Circle()
-            .fill(LinearGradient(
-                colors: [Color(hex: "#6c5ce7"), Color(hex: "#a855f7")],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            ))
-            .overlay(
-                Text(profile.name.first.map(String.init) ?? "?")
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(.white)
-            )
     }
 
     private var collabBadge: some View {
@@ -89,7 +97,8 @@ struct ProfileHeaderView: View {
         interests: ["AI"],
         openToCollaborate: true,
         avatarURL: ""
-    ))
+    ), isEditable: true)
     .padding()
     .background(DesignTokens.background)
+    .preferredColorScheme(.dark)
 }

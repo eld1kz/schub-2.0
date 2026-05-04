@@ -118,7 +118,8 @@ final class DiscoverViewModel {
                 ideas = rawIdeas.map { FeedIdea(
                     idea: $0,
                     authorName: map[$0.authorId]?.name ?? "Anonymous",
-                    authorUniversity: map[$0.authorId]?.university ?? ""
+                    authorUniversity: map[$0.authorId]?.university ?? "",
+                    authorAvatarURL: map[$0.authorId]?.avatarURL ?? ""
                 )}
             }
         } catch {

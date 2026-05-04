@@ -95,17 +95,7 @@ struct NotificationsView: View {
     }
 
     private func avatarView(for item: NotificationItem) -> some View {
-        ZStack {
-            Circle()
-                .fill(LinearGradient(
-                    colors: [Color(hex: "#4F46E5"), Color(hex: "#7C3AED")],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                ))
-                .frame(width: 40, height: 40)
-            Text(item.senderName.first.map(String.init) ?? "?")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(.white)
-        }
+        AvatarView(url: item.senderAvatarURL, name: item.senderName, size: 40)
         .overlay(alignment: .bottomTrailing) {
             Circle()
                 .fill(typeIconColor(item.notification.type))

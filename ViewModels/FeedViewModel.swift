@@ -6,6 +6,7 @@ struct FeedIdea: Identifiable, Hashable {
     var idea: Idea
     let authorName: String
     let authorUniversity: String
+    let authorAvatarURL: String
 
     static func == (lhs: FeedIdea, rhs: FeedIdea) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }
@@ -38,14 +39,15 @@ final class FeedViewModel {
 
             let authorIds = Array(Set(fetchedIdeas.map { $0.authorId.uuidString }))
             let profiles: [UserProfile] = try await client
-                .from("profiles").select("id, name, university")
+                .from("profiles").select("id, name, university, avatar_url")
                 .in("id", values: authorIds).execute().value
             let profileMap = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
 
             ideas = fetchedIdeas.map { FeedIdea(
                 idea: $0,
                 authorName: profileMap[$0.authorId]?.name ?? "Anonymous",
-                authorUniversity: profileMap[$0.authorId]?.university ?? ""
+                authorUniversity: profileMap[$0.authorId]?.university ?? "",
+                authorAvatarURL: profileMap[$0.authorId]?.avatarURL ?? ""
             )}
 
             if let userId = myUserId {

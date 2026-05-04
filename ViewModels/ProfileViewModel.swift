@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import Supabase
 
 @MainActor
@@ -42,6 +43,33 @@ final class ProfileViewModel {
         async let ideas = loadIdeasCount(userId: userId)
         connectionsCount = (try? await connections) ?? 0
         ideasCount = (try? await ideas) ?? 0
+    }
+
+    func uploadAvatar(data: Data) async {
+        guard let profile else { return }
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            let jpegData = UIImage(data: data).flatMap { $0.jpegData(compressionQuality: 0.8) } ?? data
+            let path = "\(profile.id.uuidString).jpg"
+            print("[Avatar] uploading \(jpegData.count) bytes to path: \(path)")
+            try await client.storage
+                .from("avatars")
+                .upload(path: path, file: jpegData,
+                        options: FileOptions(contentType: "image/jpeg", upsert: true))
+            print("[Avatar] upload succeeded")
+            let publicURL = try client.storage.from("avatars").getPublicURL(path: path)
+            let urlWithBust = publicURL.absoluteString + "?t=\(Int(Date().timeIntervalSince1970))"
+            print("[Avatar] public URL: \(urlWithBust)")
+            var updated = profile
+            updated.avatarURL = urlWithBust
+            try await db.upsert(updated).execute()
+            self.profile = updated
+            print("[Avatar] profile saved")
+        } catch {
+            print("[Avatar] FAILED: \(error)")
+            errorMessage = error.localizedDescription
+        }
     }
 
     func updateProfile(_ updated: UserProfile) async {

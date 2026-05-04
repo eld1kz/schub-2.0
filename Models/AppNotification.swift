@@ -31,6 +31,7 @@ struct NotificationItem: Identifiable {
     var id: UUID { notification.id }
     var notification: AppNotification
     let senderName: String
+    let senderAvatarURL: String
 
     var displayMessage: String {
         switch notification.type {

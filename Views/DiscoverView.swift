@@ -269,16 +269,7 @@ private struct CompactPersonCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Circle()
-                .fill(LinearGradient(
-                    colors: [Color(hex: "#4F46E5"), Color(hex: "#7C3AED")],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                ))
-                .frame(width: 44, height: 44)
-                .overlay(
-                    Text(profile.name.first.map(String.init) ?? "?")
-                        .font(.system(size: 16, weight: .bold)).foregroundStyle(.white)
-                )
+            AvatarView(url: profile.avatarURL, name: profile.name, size: 44)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(profile.name.isEmpty ? "Unknown" : profile.name)

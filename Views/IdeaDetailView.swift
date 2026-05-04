@@ -102,16 +102,7 @@ struct IdeaDetailView: View {
     }
 
     private var avatarCircle: some View {
-        Circle()
-            .fill(LinearGradient(
-                colors: [Color(hex: "#4F46E5"), Color(hex: "#7C3AED")],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            ))
-            .frame(width: 36, height: 36)
-            .overlay(
-                Text(item.authorName.first.map(String.init) ?? "?")
-                    .font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
-            )
+        AvatarView(url: item.authorAvatarURL, name: item.authorName, size: 36)
     }
 
     private var stageBadge: some View {
@@ -266,7 +257,8 @@ private extension Idea.Stage {
                 likesCount: 14
             ),
             authorName: "Eldar Ugay",
-            authorUniversity: "MIT"
+            authorUniversity: "MIT",
+            authorAvatarURL: ""
         ))
     }
     .preferredColorScheme(.dark)

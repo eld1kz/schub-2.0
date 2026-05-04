@@ -47,7 +47,9 @@ struct ProfileView: View {
         ScrollView {
             VStack(spacing: 24) {
                 topBar
-                ProfileHeaderView(profile: profile)
+                ProfileHeaderView(profile: profile, isEditable: true) { data in
+                    Task { await viewModel.uploadAvatar(data: data) }
+                }
                 statsRow(profile)
                 if !profile.skills.isEmpty { skillsSection(profile.skills) }
                 if !profile.interests.isEmpty { interestsSection(profile.interests) }

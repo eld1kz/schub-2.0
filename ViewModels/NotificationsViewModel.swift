@@ -22,7 +22,7 @@ final class NotificationsViewModel {
 
             let senderIds = Array(Set(notifications.map { $0.senderId.uuidString }))
             let profiles: [UserProfile] = (try? await client
-                .from("profiles").select("id, name")
+                .from("profiles").select("id, name, avatar_url")
                 .in("id", values: senderIds)
                 .execute().value) ?? []
             let profileMap = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
@@ -30,7 +30,8 @@ final class NotificationsViewModel {
             items = notifications.map { notif in
                 NotificationItem(
                     notification: notif,
-                    senderName: profileMap[notif.senderId]?.name ?? "Someone"
+                    senderName: profileMap[notif.senderId]?.name ?? "Someone",
+                    senderAvatarURL: profileMap[notif.senderId]?.avatarURL ?? ""
                 )
             }
         } catch { }

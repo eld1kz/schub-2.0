@@ -1,8 +1,10 @@
 import SwiftUI
+import PhotosUI
 
 struct EditProfileView: View {
     let viewModel: ProfileViewModel
     @State private var draft: UserProfile
+    @State private var pickerItem: PhotosPickerItem?
     @Environment(\.dismiss) private var dismiss
 
     private let years = Array((Calendar.current.component(.year, from: Date()) - 4)...(Calendar.current.component(.year, from: Date()) + 6))
@@ -71,29 +73,42 @@ struct EditProfileView: View {
     // MARK: Avatar
 
     private var avatarSection: some View {
-        ZStack(alignment: .bottomTrailing) {
-            Circle()
-                .fill(LinearGradient(
-                    colors: [Color(hex: "#6c5ce7"), Color(hex: "#a855f7")],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                ))
-                .frame(width: 76, height: 76)
-                .overlay(
-                    Text(draft.name.first.map(String.init) ?? "?")
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundStyle(.white)
-                )
-            Circle()
-                .fill(Color(hex: "#1e1e22"))
-                .frame(width: 24, height: 24)
-                .overlay(
-                    Image(systemName: "pencil")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(DesignTokens.textSecondary)
-                )
-                .offset(x: 2, y: 2)
+        PhotosPicker(selection: $pickerItem, matching: .images,
+                     preferredItemEncoding: .compatible, photoLibrary: .shared()) {
+            ZStack(alignment: .bottomTrailing) {
+                AvatarView(url: draft.avatarURL, name: draft.name, size: 76)
+                Circle()
+                    .fill(Color(hex: "#1e1e22"))
+                    .frame(width: 24, height: 24)
+                    .overlay(
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(DesignTokens.textSecondary)
+                    )
+                    .offset(x: 2, y: 2)
+            }
         }
         .padding(.top, 20)
+        .onChange(of: pickerItem) { _, item in
+            Task {
+                print("[EditProfile] picker item changed: \(String(describing: item))")
+                guard let item else { return }
+                do {
+                    guard let data = try await item.loadTransferable(type: Data.self) else {
+                        print("[EditProfile] loadTransferable returned nil")
+                        return
+                    }
+                    print("[EditProfile] loaded \(data.count) bytes, uploading...")
+                    await viewModel.uploadAvatar(data: data)
+                    if let url = viewModel.profile?.avatarURL {
+                        draft.avatarURL = url
+                        print("[EditProfile] draft avatarURL updated: \(url)")
+                    }
+                } catch {
+                    print("[EditProfile] loadTransferable FAILED: \(error)")
+                }
+            }
+        }
     }
 
     // MARK: Fields
