@@ -35,9 +35,12 @@ extension Post {
     }
 }
 
-struct FeedPost: Identifiable {
+struct FeedPost: Identifiable, Hashable {
     var id: UUID { post.id }
     let post: Post
     let authorName: String
     let authorUniversity: String
+
+    static func == (lhs: FeedPost, rhs: FeedPost) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }

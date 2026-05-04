@@ -5,12 +5,10 @@ struct IdeaCardView: View {
     var onConnect: () -> Void = {}
     var isLiked: Bool = false
     var onToggleLike: () -> Void = {}
-    var onTap: () -> Void = {}
     var onCommentTap: () -> Void = {}
 
     @State private var requestSent = false
     @State private var expanded = false
-    @State private var pressed = false
 
     private let indigo   = Color(hex: "#4F46E5")
     private let ink      = Color(hex: "#0A0A0A")
@@ -18,12 +16,9 @@ struct IdeaCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Group {
-                headerRow
-                contentBlock
-                if !item.idea.skillsNeeded.isEmpty { skillsRow }
-            }
-            .onTapGesture { onTap() }
+            headerRow
+            contentBlock
+            if !item.idea.skillsNeeded.isEmpty { skillsRow }
             actionRow
         }
         .padding(16)
@@ -31,9 +26,6 @@ struct IdeaCardView: View {
         .background(surface)
         .clipShape(.rect(cornerRadius: 16))
         .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-        .scaleEffect(pressed ? 0.984 : 1)
-        .animation(.easeOut(duration: 0.12), value: pressed)
-        .onLongPressGesture(minimumDuration: 0, pressing: { p in pressed = p }, perform: {})
     }
 
     // MARK: Header

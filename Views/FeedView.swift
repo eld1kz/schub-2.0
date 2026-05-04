@@ -37,6 +37,9 @@ struct FeedView: View {
                     }
                 )
             }
+            .navigationDestination(for: FeedPost.self) { post in
+                PostDetailView(item: post)
+            }
             .task {
                 await postViewModel.load()
                 await feedViewModel.loadFeed()
@@ -87,7 +90,15 @@ struct FeedView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(postViewModel.posts) { PostCard(item: $0) }
+                        ForEach(postViewModel.posts) { item in
+                            NavigationLink(value: item) {
+                                PostCard(item: item, onCommentTap: {
+                                    print("[FeedView] post comment tapped")
+                                    navigationPath.append(item)
+                                })
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
                 .refreshable { await postViewModel.load() }
@@ -103,22 +114,19 @@ struct FeedView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(feedViewModel.ideas) { item in
-                            IdeaCardView(
-                                item: item,
-                                onConnect: { Task { try? await ConnectionService().sendRequest(to: item.idea.authorId) } },
-                                isLiked: feedViewModel.likedIdeaIds.contains(item.idea.id),
-                                onToggleLike: { Task { await feedViewModel.toggleLike(ideaId: item.idea.id) } },
-                                onTap: {
-                                    print("[FeedView] card body tapped — idea: \(item.id)")
-                                    navigationPath.append(item)
-                                    print("[FeedView] path count: \(navigationPath.count)")
-                                },
-                                onCommentTap: {
-                                    print("[FeedView] onCommentTap fired — idea: \(item.id)")
-                                    navigationPath.append(item)
-                                    print("[FeedView] path count after comment tap: \(navigationPath.count)")
-                                }
-                            )
+                            NavigationLink(value: item) {
+                                IdeaCardView(
+                                    item: item,
+                                    onConnect: { Task { try? await ConnectionService().sendRequest(to: item.idea.authorId) } },
+                                    isLiked: feedViewModel.likedIdeaIds.contains(item.idea.id),
+                                    onToggleLike: { Task { await feedViewModel.toggleLike(ideaId: item.idea.id) } },
+                                    onCommentTap: {
+                                        print("[FeedView] comment tapped")
+                                        navigationPath.append(item)
+                                    }
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(16)

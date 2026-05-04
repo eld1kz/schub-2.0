@@ -181,6 +181,15 @@ struct IdeaDetailView: View {
 
     private var commentInputBar: some View {
         VStack(spacing: 0) {
+            if let err = vm.errorMessage {
+                Text(err)
+                    .font(.caption)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14).padding(.vertical, 6)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.red.opacity(0.85))
+                    .onTapGesture { vm.errorMessage = nil }
+            }
             Divider()
             HStack(spacing: 10) {
                 Circle()
@@ -222,6 +231,7 @@ struct IdeaDetailView: View {
 
     private func sendComment() {
         let text = commentText
+        print("[IdeaDetail] send tapped — text: '\(text)', myUserId: \(String(describing: vm.myUserId))")
         commentText = ""
         Task { await vm.sendComment(content: text) }
     }

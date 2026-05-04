@@ -7,6 +7,7 @@ final class IdeaDetailViewModel {
     var comments: [Comment] = []
     var isLoading = false
     var isSending = false
+    var errorMessage: String?
 
     var myUserId: UUID?
     var myName = ""
@@ -34,11 +35,24 @@ final class IdeaDetailViewModel {
             }
         }
 
-        comments = (try? await client
+        var fetched: [Comment] = (try? await client
             .from("comments").select()
             .eq("idea_id", value: idea.id.uuidString)
             .order("created_at", ascending: true)
             .execute().value) ?? []
+
+        if !fetched.isEmpty {
+            let ids = Array(Set(fetched.map { $0.authorId.uuidString }))
+            let profiles: [UserProfile] = (try? await client
+                .from("profiles").select("id, name, university")
+                .in("id", values: ids).execute().value) ?? []
+            let map = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
+            for i in fetched.indices {
+                fetched[i].authorName       = map[fetched[i].authorId]?.name ?? ""
+                fetched[i].authorUniversity = map[fetched[i].authorId]?.university ?? ""
+            }
+        }
+        comments = fetched
     }
 
     func sendComment(content: String) async {
@@ -62,25 +76,22 @@ final class IdeaDetailViewModel {
         defer { isSending = false }
 
         struct Insert: Encodable {
-            let id: UUID; let ideaId: UUID; let authorId: UUID
-            let authorName: String; let authorUniversity: String; let content: String
+            let ideaId: UUID; let authorId: UUID; let content: String
             enum CodingKeys: String, CodingKey {
-                case id, content
-                case ideaId           = "idea_id"
-                case authorId         = "author_id"
-                case authorName       = "author_name"
-                case authorUniversity = "author_university"
+                case content
+                case ideaId   = "idea_id"
+                case authorId = "author_id"
             }
         }
         do {
             try await client.from("comments").insert(
-                Insert(id: optimistic.id, ideaId: idea.id, authorId: userId,
-                       authorName: optimistic.authorName,
-                       authorUniversity: myUniversity, content: text)
+                Insert(ideaId: idea.id, authorId: userId, content: text)
             ).execute()
             print("[Comment] Insert succeeded")
         } catch {
             print("[Comment] Insert FAILED: \(error)")
+            errorMessage = error.localizedDescription
+            comments.removeLast()
         }
 
         await NotificationService().insert(

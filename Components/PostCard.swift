@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PostCard: View {
     let item: FeedPost
+    var onCommentTap: () -> Void = {}
     @State private var liked = false
     @State private var reposted = false
 
@@ -74,7 +75,7 @@ struct PostCard: View {
             }
             Spacer()
             actionBtn(icon: "bubble.left", count: item.post.commentsCount,
-                      color: DesignTokens.textTertiary, action: {})
+                      color: DesignTokens.textTertiary, action: { onCommentTap() })
             Spacer()
             actionBtn(icon: "arrow.2.squarepath",
                       count: item.post.repostsCount + (reposted ? 1 : 0),
