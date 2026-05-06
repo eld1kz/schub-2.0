@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import Auth
 
 @MainActor
 @Observable
@@ -7,6 +8,7 @@ final class PostViewModel {
     var title = ""
     var description = ""
     var skillsNeeded: [String] = []
+    var rolesNeeded: [String] = []
     var stage: Idea.Stage = .idea
     var isLoading = false
     var errorMessage: String?
@@ -30,6 +32,7 @@ final class PostViewModel {
                 title: trimmedTitle,
                 description: description.trimmingCharacters(in: .whitespaces),
                 skillsNeeded: skillsNeeded,
+                rolesNeeded: rolesNeeded,
                 stage: stage
             )
             try await db.insert(payload).execute()
@@ -44,6 +47,7 @@ final class PostViewModel {
         title = ""
         description = ""
         skillsNeeded = []
+        rolesNeeded = []
         stage = .idea
     }
 }
@@ -53,11 +57,13 @@ private struct IdeaInsert: Encodable {
     let title: String
     let description: String
     let skillsNeeded: [String]
+    let rolesNeeded: [String]
     let stage: Idea.Stage
 
     enum CodingKeys: String, CodingKey {
         case title, description, stage
-        case authorId = "author_id"
+        case authorId     = "author_id"
         case skillsNeeded = "skills_needed"
+        case rolesNeeded  = "roles_needed"
     }
 }

@@ -7,10 +7,15 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 @main
 struct Schub_2_0App: App {
     @State private var authViewModel = AuthViewModel()
+
+    init() {
+        configureTabBarAppearance()
+    }
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -29,11 +34,37 @@ struct Schub_2_0App: App {
         WindowGroup {
             if authViewModel.isAuthenticated {
                 AppView()
+                    .preferredColorScheme(.dark)
             } else {
                 LoginView()
+                    .preferredColorScheme(.dark)
             }
         }
         .environment(authViewModel)
         .modelContainer(sharedModelContainer)
+    }
+
+    private func configureTabBarAppearance() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(Color(hex: "#0e0e10"))
+        appearance.shadowColor = UIColor.white.withAlphaComponent(0.06)
+
+        let normalColor = UIColor(Color.white.opacity(0.38))
+        let selectedColor = UIColor(Color.white.opacity(0.95))
+
+        [appearance.stackedLayoutAppearance,
+         appearance.inlineLayoutAppearance,
+         appearance.compactInlineLayoutAppearance].forEach { itemAppearance in
+            itemAppearance.normal.iconColor = normalColor
+            itemAppearance.normal.titleTextAttributes = [.foregroundColor: normalColor]
+            itemAppearance.selected.iconColor = selectedColor
+            itemAppearance.selected.titleTextAttributes = [.foregroundColor: selectedColor]
+        }
+
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+        UITabBar.appearance().unselectedItemTintColor = normalColor
+        UITabBar.appearance().tintColor = selectedColor
     }
 }

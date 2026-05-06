@@ -4,6 +4,7 @@ struct ProfileView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @State private var viewModel = ProfileViewModel()
     @State private var showEdit = false
+    @State private var showErrorAlert = false
 
     var body: some View {
         NavigationStack {
@@ -38,6 +39,16 @@ struct ProfileView: View {
                 if let profile = viewModel.profile {
                     EditProfileView(viewModel: viewModel, profile: profile)
                 }
+            }
+            .alert("Profile Photo Error", isPresented: $showErrorAlert) {
+                Button("OK", role: .cancel) {
+                    viewModel.errorMessage = nil
+                }
+            } message: {
+                Text(viewModel.errorMessage ?? "Couldn't save your profile photo.")
+            }
+            .onChange(of: viewModel.errorMessage) { _, newValue in
+                showErrorAlert = newValue != nil
             }
             .task { await viewModel.loadProfile() }
         }

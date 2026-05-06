@@ -152,19 +152,25 @@ struct NotificationsView: View {
 
     private func typeIcon(_ type: AppNotification.NotificationType) -> String {
         switch type {
-        case .like:                "hand.thumbsup.fill"
-        case .comment:             "bubble.left.fill"
-        case .connectionRequest:   "person.badge.plus"
-        case .connectionAccepted:  "checkmark"
+        case .like:                    "hand.thumbsup.fill"
+        case .comment:                 "bubble.left.fill"
+        case .connectionRequest:       "person.badge.plus"
+        case .connectionAccepted:      "checkmark"
+        case .applied:                 "person.fill.badge.plus"
+        case .applicationAccepted:     "checkmark.seal.fill"
+        case .applicationDeclined:     "xmark.seal.fill"
         }
     }
 
     private func typeIconColor(_ type: AppNotification.NotificationType) -> Color {
         switch type {
-        case .like:                indigo
-        case .comment:             Color(hex: "#3B82F6")
-        case .connectionRequest:   Color(hex: "#F59E0B")
-        case .connectionAccepted:  Color(hex: "#16A34A")
+        case .like:                    indigo
+        case .comment:                 Color(hex: "#3B82F6")
+        case .connectionRequest:       Color(hex: "#F59E0B")
+        case .connectionAccepted:      Color(hex: "#16A34A")
+        case .applied:                 Color(hex: "#7C3AED")
+        case .applicationAccepted:     Color(hex: "#16A34A")
+        case .applicationDeclined:     Color(hex: "#EF4444")
         }
     }
 

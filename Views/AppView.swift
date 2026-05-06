@@ -1,27 +1,67 @@
 import SwiftUI
 
+private enum AppTab: Hashable {
+    case feed
+    case discover
+    case opportunities
+    case inbox
+    case profile
+}
+
 struct AppView: View {
-    @State private var notifVM = NotificationsViewModel()
+    @State private var selectedTab: AppTab = .feed
+    @State private var showCreateSheet = false
+    @State private var activeComposer: ComposerDestination?
 
     var body: some View {
-        TabView {
-            FeedView()
+        TabView(selection: $selectedTab) {
+            FeedView(onCreateTap: presentCreateOptions)
+                .tag(AppTab.feed)
                 .tabItem { Label("Feed", systemImage: "house") }
 
             DiscoverView()
+                .tag(AppTab.discover)
                 .tabItem { Label("Discover", systemImage: "magnifyingglass") }
 
-            PostView()
-                .tabItem { Label("Post", systemImage: "plus.circle.fill") }
+            OpportunitiesView()
+                .tag(AppTab.opportunities)
+                .tabItem { Label("Opportunities", systemImage: "sparkles.rectangle.stack") }
 
-            NotificationsView(viewModel: notifVM)
-                .tabItem { Label("Notifications", systemImage: "bell") }
-                .badge(notifVM.unreadCount)
+            InboxView()
+                .tag(AppTab.inbox)
+                .tabItem { Label("Inbox", systemImage: "bubble.left.and.bubble.right") }
 
             ProfileView()
+                .tag(AppTab.profile)
                 .tabItem { Label("Profile", systemImage: "person") }
         }
-        .task { await notifVM.load() }
+        .sheet(isPresented: $showCreateSheet) {
+            PostComposerSheet { destination in
+                showCreateSheet = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    activeComposer = destination
+                }
+            }
+            .presentationDetents([.height(320)])
+            .presentationDragIndicator(.hidden)
+            .presentationBackground(DesignTokens.background)
+        }
+        .fullScreenCover(item: $activeComposer) { destination in
+            switch destination {
+            case .update:
+                UpdateComposerView {
+                    activeComposer = nil
+                }
+            case .idea:
+                IdeaComposerFlowView {
+                    activeComposer = nil
+                }
+            }
+        }
+    }
+
+    private func presentCreateOptions() {
+        showCreateSheet = true
     }
 }
 

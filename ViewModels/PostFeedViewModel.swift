@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import Auth
 
 @MainActor
 @Observable
@@ -23,7 +24,7 @@ final class PostFeedViewModel {
 
             let authorIds = Array(Set(rawPosts.map { $0.authorId.uuidString }))
             let profiles: [UserProfile] = (try? await client
-                .from("profiles").select("id, name, university")
+                .from("profiles").select("id, name, university, avatar_url")
                 .in("id", values: authorIds).execute().value) ?? []
             let map = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
 
@@ -31,7 +32,8 @@ final class PostFeedViewModel {
                 FeedPost(
                     post: post,
                     authorName: map[post.authorId]?.name ?? "Anonymous",
-                    authorUniversity: map[post.authorId]?.university ?? ""
+                    authorUniversity: map[post.authorId]?.university ?? "",
+                    authorAvatarURL: map[post.authorId]?.avatarURL ?? ""
                 )
             }
         } catch {

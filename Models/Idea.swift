@@ -6,6 +6,7 @@ struct Idea: Codable, Identifiable {
     var title: String
     var description: String
     var skillsNeeded: [String]
+    var rolesNeeded: [String] = []
     var stage: Stage
     let createdAt: Date
     var likesCount: Int
@@ -20,10 +21,11 @@ struct Idea: Codable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, stage
-        case authorId     = "author_id"
-        case skillsNeeded = "skills_needed"
-        case createdAt    = "created_at"
-        case likesCount   = "likes_count"
+        case authorId      = "author_id"
+        case skillsNeeded  = "skills_needed"
+        case rolesNeeded   = "roles_needed"
+        case createdAt     = "created_at"
+        case likesCount    = "likes_count"
         case commentsCount = "comments_count"
     }
 }
@@ -36,6 +38,7 @@ extension Idea {
         title         = try c.decode(String.self,  forKey: .title)
         description   = try c.decode(String.self,  forKey: .description)
         skillsNeeded  = (try? c.decode([String].self, forKey: .skillsNeeded)) ?? []
+        rolesNeeded   = (try? c.decode([String].self, forKey: .rolesNeeded)) ?? []
         stage         = (try? c.decode(Stage.self, forKey: .stage)) ?? .idea
         createdAt     = try c.decode(Date.self,    forKey: .createdAt)
         likesCount    = (try? c.decode(Int.self,   forKey: .likesCount)) ?? 0

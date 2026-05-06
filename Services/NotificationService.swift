@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import Auth
 
 struct NotificationService {
     private let client = SupabaseService.shared.client

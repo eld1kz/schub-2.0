@@ -3,11 +3,17 @@ import SwiftUI
 private enum FeedTab { case posts, ideas }
 
 struct FeedView: View {
+    var onCreateTap: () -> Void = {}
+
     @State private var feedViewModel = FeedViewModel()
     @State private var postViewModel = PostFeedViewModel()
+    @State private var notifVM = NotificationsViewModel()
     @State private var activeTab: FeedTab = .posts
-    @State private var showComposer = false
+    @State private var showNotifications = false
     @State private var navigationPath = NavigationPath()
+    @State private var applyingTo: FeedIdea? = nil
+
+    private let indigo = Color(hex: "#4F46E5")
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -20,14 +26,35 @@ struct FeedView: View {
                 fab
             }
             .background(DesignTokens.background.ignoresSafeArea())
-            .navigationTitle("Feed")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(DesignTokens.background, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .sheet(isPresented: $showComposer) {
-                PostComposerSheet { content in try await postViewModel.createPost(content: content) }
-                    .presentationDetents([.medium, .large])
-                    .presentationBackground(DesignTokens.background)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Schub")
+                        .font(.spaceGrotesk(22, weight: .bold))
+                        .foregroundStyle(DesignTokens.textPrimary)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showNotifications = true } label: {
+                        Image(systemName: "bell")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(DesignTokens.textPrimary)
+                            .overlay(alignment: .topTrailing) {
+                                if notifVM.unreadCount > 0 {
+                                    Circle()
+                                        .fill(.red)
+                                        .frame(width: 8, height: 8)
+                                        .offset(x: 3, y: -3)
+                                }
+                            }
+                    }
+                }
+            }
+            .sheet(item: $applyingTo) { feedIdea in
+                ApplySheet(idea: feedIdea.idea) {
+                    feedViewModel.appliedIdeaIds.insert(feedIdea.id)
+                }
             }
             .navigationDestination(for: FeedIdea.self) { idea in
                 IdeaDetailView(
@@ -40,9 +67,26 @@ struct FeedView: View {
             .navigationDestination(for: FeedPost.self) { post in
                 PostDetailView(item: post)
             }
+            .navigationDestination(isPresented: $showNotifications) {
+                NotificationsView(viewModel: notifVM)
+            }
             .task {
                 await postViewModel.load()
                 await feedViewModel.loadFeed()
+                await notifVM.load()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .schubContentCreated)) { _ in
+                Task {
+                    await postViewModel.load()
+                    await feedViewModel.loadFeed()
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .schubProfileUpdated)) { _ in
+                Task {
+                    await postViewModel.load()
+                    await feedViewModel.loadFeed()
+                    await notifVM.load()
+                }
             }
         }
     }
@@ -68,7 +112,7 @@ struct FeedView: View {
                     .foregroundStyle(activeTab == tab ? DesignTokens.textPrimary : DesignTokens.textTertiary)
                     .padding(.vertical, 13).padding(.horizontal, 22)
                 Rectangle()
-                    .fill(activeTab == tab ? DesignTokens.accentText : Color.clear)
+                    .fill(activeTab == tab ? indigo : Color.clear)
                     .frame(height: 2)
             }
         }
@@ -117,7 +161,9 @@ struct FeedView: View {
                             NavigationLink(value: item) {
                                 IdeaCardView(
                                     item: item,
-                                    onConnect: { Task { try? await ConnectionService().sendRequest(to: item.idea.authorId) } },
+                                    myUserId: feedViewModel.myUserId,
+                                    alreadyApplied: feedViewModel.appliedIdeaIds.contains(item.id),
+                                    onApplyTap: { applyingTo = item },
                                     isLiked: feedViewModel.likedIdeaIds.contains(item.idea.id),
                                     onToggleLike: { Task { await feedViewModel.toggleLike(ideaId: item.idea.id) } },
                                     onCommentTap: {
@@ -139,14 +185,14 @@ struct FeedView: View {
     // MARK: FAB
 
     private var fab: some View {
-        Button { showComposer = true } label: {
+        Button(action: onCreateTap) {
             Image(systemName: "plus")
                 .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(.black)
+                .foregroundStyle(.white)
                 .frame(width: 54, height: 54)
-                .background(DesignTokens.accentText)
+                .background(indigo)
                 .clipShape(Circle())
-                .shadow(color: DesignTokens.accentText.opacity(0.4), radius: 12, x: 0, y: 4)
+                .shadow(color: indigo.opacity(0.4), radius: 12, x: 0, y: 4)
         }
         .padding(.trailing, 20).padding(.bottom, 24)
     }

@@ -25,17 +25,19 @@ final class ProfileViewModel {
             return
         }
 
-        if let existing: UserProfile = try? await db
-            .select()
-            .eq("id", value: user.id)
-            .single()
-            .execute()
-            .value {
-            profile = existing
-        } else {
-            let newProfile = buildNewProfile(for: user)
-            try? await db.upsert(newProfile).execute()
-            profile = newProfile
+        do {
+            if let existing = try await fetchProfile(for: user.id) {
+                profile = existing
+            } else {
+                let newProfile = buildNewProfile(for: user)
+                try await db.upsert(newProfile).execute()
+                profile = newProfile
+            }
+        } catch is CancellationError {
+            return
+        } catch {
+            errorMessage = error.localizedDescription
+            return
         }
 
         let userId = user.id
@@ -46,26 +48,44 @@ final class ProfileViewModel {
     }
 
     func uploadAvatar(data: Data) async {
-        guard let profile else { return }
         isLoading = true
+        errorMessage = nil
         defer { isLoading = false }
+
         do {
-            let jpegData = UIImage(data: data).flatMap { $0.jpegData(compressionQuality: 0.8) } ?? data
-            let path = "\(profile.id.uuidString).jpg"
+            guard let user = try? await auth.session.user else {
+                errorMessage = "Not signed in"
+                return
+            }
+
+            let currentProfile = try await resolveCurrentProfile(for: user)
+            let jpegData = preparedAvatarData(from: data)
+            let path = "\(user.id.uuidString.lowercased())/avatar.jpg"
             print("[Avatar] uploading \(jpegData.count) bytes to path: \(path)")
+
             try await client.storage
                 .from("avatars")
-                .upload(path: path, file: jpegData,
-                        options: FileOptions(contentType: "image/jpeg", upsert: true))
+                .upload(path, data: jpegData,
+                        options: FileOptions(
+                            cacheControl: "31536000",
+                            contentType: "image/jpeg",
+                            upsert: true
+                        ))
+
             print("[Avatar] upload succeeded")
+
             let publicURL = try client.storage.from("avatars").getPublicURL(path: path)
             let urlWithBust = publicURL.absoluteString + "?t=\(Int(Date().timeIntervalSince1970))"
             print("[Avatar] public URL: \(urlWithBust)")
-            var updated = profile
+
+            var updated = currentProfile
             updated.avatarURL = urlWithBust
             try await db.upsert(updated).execute()
             self.profile = updated
+            NotificationCenter.default.post(name: .schubProfileUpdated, object: nil)
             print("[Avatar] profile saved")
+        } catch is CancellationError {
+            return
         } catch {
             print("[Avatar] FAILED: \(error)")
             errorMessage = error.localizedDescription
@@ -76,8 +96,19 @@ final class ProfileViewModel {
         isLoading = true
         defer { isLoading = false }
         do {
-            try await db.upsert(updated).execute()
-            profile = updated
+            guard let user = try? await auth.session.user else {
+                errorMessage = "Not signed in"
+                return
+            }
+
+            let currentProfile = try await resolveCurrentProfile(for: user)
+            let merged = mergedProfile(current: currentProfile, incoming: updated)
+
+            try await db.upsert(merged).execute()
+            profile = merged
+            NotificationCenter.default.post(name: .schubProfileUpdated, object: nil)
+        } catch is CancellationError {
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -128,5 +159,100 @@ final class ProfileViewModel {
             university: meta.university,
             graduationYear: meta.graduationYear
         )
+    }
+
+    private func resolveCurrentProfile(for user: User) async throws -> UserProfile {
+        if let profile {
+            return profile
+        }
+
+        if let existing = try await fetchProfile(for: user.id) {
+            self.profile = existing
+            return existing
+        }
+
+        let newProfile = buildNewProfile(for: user)
+        try await db.upsert(newProfile).execute()
+        self.profile = newProfile
+        return newProfile
+    }
+
+    private func mergedProfile(current: UserProfile, incoming: UserProfile) -> UserProfile {
+        var merged = incoming
+
+        if merged.avatarURL.isEmpty {
+            merged.avatarURL = current.avatarURL
+        }
+
+        if merged.skills.isEmpty && !current.skills.isEmpty {
+            merged.skills = current.skills
+        }
+
+        if merged.interests.isEmpty && !current.interests.isEmpty {
+            merged.interests = current.interests
+        }
+
+        if merged.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           !current.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            merged.bio = current.bio
+        }
+
+        if merged.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           !current.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            merged.name = current.name
+        }
+
+        if merged.university.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           !current.university.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            merged.university = current.university
+        }
+
+        if merged.graduationYear == 0 && current.graduationYear != 0 {
+            merged.graduationYear = current.graduationYear
+        }
+
+        return merged
+    }
+
+    private func fetchProfile(for userId: UUID) async throws -> UserProfile? {
+        let profiles: [UserProfile] = try await db
+            .select()
+            .eq("id", value: userId)
+            .limit(1)
+            .execute()
+            .value
+
+        return profiles.first
+    }
+
+    private func preparedAvatarData(from data: Data) -> Data {
+        guard let image = UIImage(data: data) else { return data }
+
+        let maxDimension: CGFloat = 1200
+        let resized = resizedImage(image, maxDimension: maxDimension)
+        let targetBytes = 1_500_000
+        let qualities: [CGFloat] = [0.82, 0.72, 0.6, 0.5, 0.4]
+
+        for quality in qualities {
+            if let jpegData = resized.jpegData(compressionQuality: quality), jpegData.count <= targetBytes {
+                return jpegData
+            }
+        }
+
+        return resized.jpegData(compressionQuality: 0.3) ?? data
+    }
+
+    private func resizedImage(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let size = image.size
+        let longestSide = max(size.width, size.height)
+        guard longestSide > maxDimension else { return image }
+
+        let scale = maxDimension / longestSide
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
 }

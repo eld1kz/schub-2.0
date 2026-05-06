@@ -1,10 +1,13 @@
 import Foundation
 import Supabase
+import Auth
 
 @MainActor
 @Observable
 final class IdeaDetailViewModel {
     var comments: [Comment] = []
+    var applications: [Application] = []
+    var isAuthor = false
     var isLoading = false
     var isSending = false
     var errorMessage: String?
@@ -26,6 +29,7 @@ final class IdeaDetailViewModel {
 
         if let userId = try? await client.auth.session.user.id {
             myUserId = userId
+            isAuthor = userId == idea.authorId
             if let profile: UserProfile = try? await client
                 .from("profiles").select()
                 .eq("id", value: userId.uuidString)
@@ -33,6 +37,7 @@ final class IdeaDetailViewModel {
                 myName       = profile.name
                 myUniversity = profile.university
             }
+            if isAuthor { await loadApplications() }
         }
 
         var fetched: [Comment] = (try? await client
@@ -101,5 +106,55 @@ final class IdeaDetailViewModel {
             ideaId: idea.id,
             message: idea.title
         )
+    }
+
+    func loadApplications() async {
+        var apps = (try? await ApplicationService().fetchApplications(for: idea.id)) ?? []
+        if !apps.isEmpty {
+            let ids = Array(Set(apps.map { $0.applicantId.uuidString }))
+            let profiles: [UserProfile] = (try? await client
+                .from("profiles").select("id, name, university")
+                .in("id", values: ids).execute().value) ?? []
+            let map = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0) })
+            for i in apps.indices {
+                apps[i].applicantName       = map[apps[i].applicantId]?.name ?? ""
+                apps[i].applicantUniversity = map[apps[i].applicantId]?.university ?? ""
+            }
+        }
+        applications = apps
+    }
+
+    func acceptApplication(_ applicationId: UUID) async {
+        try? await ApplicationService().updateStatus(applicationId: applicationId, status: "accepted")
+        if let idx = applications.firstIndex(where: { $0.id == applicationId }) {
+            applications[idx].status = "accepted"
+            let app = applications[idx]
+            if let userId = myUserId {
+                await NotificationService().insert(
+                    recipientId: app.applicantId,
+                    senderId: userId,
+                    type: .applicationAccepted,
+                    ideaId: idea.id,
+                    message: app.role
+                )
+            }
+        }
+    }
+
+    func declineApplication(_ applicationId: UUID) async {
+        try? await ApplicationService().updateStatus(applicationId: applicationId, status: "declined")
+        if let idx = applications.firstIndex(where: { $0.id == applicationId }) {
+            applications[idx].status = "declined"
+            let app = applications[idx]
+            if let userId = myUserId {
+                await NotificationService().insert(
+                    recipientId: app.applicantId,
+                    senderId: userId,
+                    type: .applicationDeclined,
+                    ideaId: idea.id,
+                    message: app.role
+                )
+            }
+        }
     }
 }

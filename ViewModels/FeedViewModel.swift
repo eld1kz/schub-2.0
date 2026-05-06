@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import Auth
 
 struct FeedIdea: Identifiable, Hashable {
     var id: UUID { idea.id }
@@ -17,6 +18,7 @@ struct FeedIdea: Identifiable, Hashable {
 final class FeedViewModel {
     var ideas: [FeedIdea] = []
     var likedIdeaIds: Set<UUID> = []
+    var appliedIdeaIds: Set<UUID> = []
     var myUserId: UUID?
     var isLoading = false
     var errorMessage: String?
@@ -60,6 +62,16 @@ final class FeedViewModel {
                     .eq("user_id", value: userId.uuidString)
                     .execute().value) ?? []
                 likedIdeaIds = Set(likes.map { $0.ideaId })
+
+                struct AppRecord: Decodable {
+                    let ideaId: UUID
+                    enum CodingKeys: String, CodingKey { case ideaId = "idea_id" }
+                }
+                let apps: [AppRecord] = (try? await client
+                    .from("applications").select("idea_id")
+                    .eq("applicant_id", value: userId.uuidString)
+                    .execute().value) ?? []
+                appliedIdeaIds = Set(apps.map { $0.ideaId })
             }
         } catch {
             errorMessage = error.localizedDescription

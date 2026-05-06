@@ -16,7 +16,7 @@ struct OpportunityCardView: View {
             // Title
             Text(opportunity.title)
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color(hex: "#0A0A0A"))
+                .foregroundStyle(DesignTokens.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.bottom, 3)
 
@@ -24,14 +24,14 @@ struct OpportunityCardView: View {
             HStack(spacing: 4) {
                 Text(opportunity.organization)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color(hex: "#6B7280"))
+                    .foregroundStyle(DesignTokens.textSecondary)
                 if !opportunity.location.isEmpty {
                     Text("·")
                         .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: "#9CA3AF"))
+                        .foregroundStyle(DesignTokens.textTertiary)
                     Text(opportunity.location)
                         .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: "#6B7280"))
+                        .foregroundStyle(DesignTokens.textSecondary)
                 }
             }
             .padding(.bottom, 10)
@@ -40,7 +40,7 @@ struct OpportunityCardView: View {
             if !opportunity.description.isEmpty {
                 Text(opportunity.description)
                     .font(.system(size: 13))
-                    .foregroundStyle(Color(hex: "#374151"))
+                    .foregroundStyle(DesignTokens.textSecondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.bottom, 12)
@@ -81,9 +81,8 @@ struct OpportunityCardView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(DesignTokens.cardFill)
         .clipShape(.rect(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.07), radius: 10, x: 0, y: 3)
     }
 
     private var typeBadge: some View {
@@ -95,6 +94,10 @@ struct OpportunityCardView: View {
             .clipShape(.capsule)
     }
 
+    private var isClosingSoon: Bool {
+        opportunity.deadline.timeIntervalSinceNow < 7 * 24 * 3600
+    }
+
     private var deadlineLabel: some View {
         HStack(spacing: 4) {
             Image(systemName: "calendar")
@@ -102,7 +105,7 @@ struct OpportunityCardView: View {
             Text(opportunity.deadline.formatted(.dateTime.month(.abbreviated).day().year()))
                 .font(.system(size: 12))
         }
-        .foregroundStyle(Color(hex: "#6B7280"))
+        .foregroundStyle(isClosingSoon ? Color.red : Color(hex: "#6B7280"))
     }
 }
 

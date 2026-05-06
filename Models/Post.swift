@@ -40,6 +40,7 @@ struct FeedPost: Identifiable, Hashable {
     let post: Post
     let authorName: String
     let authorUniversity: String
+    let authorAvatarURL: String
 
     static func == (lhs: FeedPost, rhs: FeedPost) -> Bool { lhs.id == rhs.id }
     func hash(into hasher: inout Hasher) { hasher.combine(id) }

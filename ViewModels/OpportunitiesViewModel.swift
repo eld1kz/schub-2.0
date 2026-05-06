@@ -12,7 +12,7 @@ final class OpportunitiesViewModel {
         opportunities = Self.hardcoded
     }
 
-    private static let hardcoded: [Opportunity] = {
+    static let hardcoded: [Opportunity] = {
         func date(_ s: String) -> Date {
             let f = DateFormatter()
             f.dateFormat = "yyyy-MM-dd"

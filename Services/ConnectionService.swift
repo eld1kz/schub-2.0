@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import Auth
 
 struct ConnectionService {
     private let db   = SupabaseService.shared.client.from("connections")

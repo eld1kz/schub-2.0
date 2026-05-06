@@ -5,9 +5,12 @@ struct PostDetailView: View {
 
     @State private var vm: PostDetailViewModel
     @State private var commentText = ""
+    @State private var liked = false
+    @State private var reposted = false
     @FocusState private var commentFocused: Bool
 
     private let indigo = Color(hex: "#4F46E5")
+    private let green  = Color(hex: "#16A34A")
     private let muted  = Color(hex: "#6B7280")
 
     init(item: FeedPost) {
@@ -42,38 +45,34 @@ struct PostDetailView: View {
     // MARK: Post header
 
     private var postHeader: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 10) {
-                Circle()
-                    .fill(LinearGradient(
-                        colors: [Color(hex: "#4F46E5"), Color(hex: "#7C3AED")],
-                        startPoint: .topLeading, endPoint: .bottomTrailing
-                    ))
-                    .frame(width: 40, height: 40)
-                    .overlay(
-                        Text(item.authorName.first.map(String.init) ?? "?")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(.white)
-                    )
+                AvatarView(url: item.authorAvatarURL, name: item.authorName, size: 44)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.authorName.isEmpty ? "Anonymous" : item.authorName)
-                        .font(.subheadline.bold())
-                        .foregroundStyle(DesignTokens.textPrimary)
                     HStack(spacing: 4) {
+                        Text(item.authorName.isEmpty ? "Anonymous" : item.authorName)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(DesignTokens.textPrimary)
                         if !item.authorUniversity.isEmpty {
                             Text(item.authorUniversity)
-                                .font(.caption).foregroundStyle(muted)
-                            Text("·").font(.caption).foregroundStyle(muted)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(muted)
                         }
+                        Text("·").font(.caption).foregroundStyle(muted)
                         Text(timeAgo(item.post.createdAt))
                             .font(.caption).foregroundStyle(muted)
                     }
+                    Text("building in public")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(indigo)
                 }
+                Spacer()
             }
 
             Text(item.post.content)
-                .font(.body)
+                .font(.system(size: 22, weight: .regular))
                 .foregroundStyle(DesignTokens.textPrimary)
+                .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
 
             if !item.post.imageURL.isEmpty, let url = URL(string: item.post.imageURL) {
@@ -83,10 +82,89 @@ struct PostDetailView: View {
                     Rectangle().fill(DesignTokens.fieldFill)
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 220)
-                .clipShape(.rect(cornerRadius: 12))
+                .frame(height: 240)
+                .clipShape(.rect(cornerRadius: 18))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(DesignTokens.separator, lineWidth: 1)
+                )
             }
+
+            Text(fullDate(item.post.createdAt))
+                .font(.system(size: 13))
+                .foregroundStyle(DesignTokens.textSecondary)
+
+            HStack(spacing: 18) {
+                statText("\(formatCount(item.post.commentsCount)) Replies")
+                statText("\(formatCount(item.post.repostsCount + (reposted ? 1 : 0))) Reposts")
+                statText("\(formatCount(item.post.likesCount + (liked ? 1 : 0))) Likes")
+            }
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .top) {
+                Rectangle().fill(DesignTokens.separator).frame(height: 1)
+            }
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(DesignTokens.separator).frame(height: 1)
+            }
+
+            detailActionRow
         }
+    }
+
+    private func statText(_ value: String) -> some View {
+        Text(value)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(DesignTokens.textSecondary)
+    }
+
+    private var detailActionRow: some View {
+        HStack(spacing: 24) {
+            detailActionButton(
+                icon: "bubble.left",
+                color: DesignTokens.textTertiary,
+                background: indigo.opacity(0.12),
+                action: { commentFocused = true }
+            )
+            detailActionButton(
+                icon: "arrow.2.squarepath",
+                color: reposted ? green : DesignTokens.textTertiary,
+                background: green.opacity(0.12)
+            ) {
+                withAnimation(.easeOut(duration: 0.2)) { reposted.toggle() }
+            }
+            detailActionButton(
+                icon: liked ? "heart.fill" : "heart",
+                color: liked ? .pink : DesignTokens.textTertiary,
+                background: Color.pink.opacity(0.12)
+            ) {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.6)) { liked.toggle() }
+            }
+            detailActionButton(
+                icon: "square.and.arrow.up",
+                color: DesignTokens.textTertiary,
+                background: DesignTokens.fieldFill,
+                action: {}
+            )
+            Spacer()
+        }
+    }
+
+    private func detailActionButton(
+        icon: String,
+        color: Color,
+        background: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(color)
+                .frame(width: 34, height: 34)
+                .background(background)
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: Comments
@@ -217,6 +295,21 @@ struct PostDetailView: View {
         if s < 86400 { return "\(Int(s / 3600))h ago" }
         return "\(Int(s / 86400))d ago"
     }
+
+    private func fullDate(_ date: Date) -> String {
+        date.formatted(.dateTime.hour().minute().month(.abbreviated).day().year())
+    }
+
+    private func formatCount(_ count: Int) -> String {
+        switch count {
+        case 1_000_000...:
+            return String(format: "%.1fM", Double(count) / 1_000_000).replacingOccurrences(of: ".0", with: "")
+        case 1_000...:
+            return String(format: "%.1fK", Double(count) / 1_000).replacingOccurrences(of: ".0", with: "")
+        default:
+            return "\(count)"
+        }
+    }
 }
 
 #Preview {
@@ -230,7 +323,8 @@ struct PostDetailView: View {
                 likesCount: 24, commentsCount: 5, repostsCount: 3
             ),
             authorName: "Eldar Ugay",
-            authorUniversity: "MIT"
+            authorUniversity: "MIT",
+            authorAvatarURL: ""
         ))
     }
     .preferredColorScheme(.dark)

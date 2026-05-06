@@ -11,10 +11,13 @@ struct AppNotification: Codable, Identifiable {
     let createdAt: Date
 
     enum NotificationType: String, Codable {
-        case like                = "like"
-        case comment             = "comment"
-        case connectionRequest   = "connection_request"
-        case connectionAccepted  = "connection_accepted"
+        case like                  = "like"
+        case comment               = "comment"
+        case connectionRequest     = "connection_request"
+        case connectionAccepted    = "connection_accepted"
+        case applied               = "applied"
+        case applicationAccepted   = "application_accepted"
+        case applicationDeclined   = "application_declined"
     }
 
     enum CodingKeys: String, CodingKey {
@@ -45,6 +48,12 @@ struct NotificationItem: Identifiable {
             return "\(senderName) sent you a connection request"
         case .connectionAccepted:
             return "\(senderName) accepted your connection request"
+        case .applied:
+            return "\(senderName) wants to join as \(notification.message)"
+        case .applicationAccepted:
+            return "Your application was accepted: \(notification.message)"
+        case .applicationDeclined:
+            return "Your application was declined: \(notification.message)"
         }
     }
 }

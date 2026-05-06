@@ -2,15 +2,17 @@ import SwiftUI
 
 struct IdeaCardView: View {
     let item: FeedIdea
-    var onConnect: () -> Void = {}
+    var myUserId: UUID? = nil
+    var alreadyApplied: Bool = false
+    var onApplyTap: () -> Void = {}
     var isLiked: Bool = false
     var onToggleLike: () -> Void = {}
     var onCommentTap: () -> Void = {}
 
-    @State private var requestSent = false
     @State private var expanded = false
 
     private let indigo   = Color(hex: "#4F46E5")
+    private let green    = Color(hex: "#16A34A")
     private let ink      = Color(hex: "#0A0A0A")
     private let surface  = Color(hex: "#F9F9F9")
 
@@ -19,6 +21,7 @@ struct IdeaCardView: View {
             headerRow
             contentBlock
             if !item.idea.skillsNeeded.isEmpty { skillsRow }
+            if !item.idea.rolesNeeded.isEmpty { rolesRow }
             actionRow
         }
         .padding(16)
@@ -115,7 +118,33 @@ struct IdeaCardView: View {
         }
     }
 
+    // MARK: Roles
+
+    private var rolesRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(item.idea.rolesNeeded, id: \.self) { role in
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 9))
+                        Text(role)
+                            .font(.caption.bold())
+                    }
+                    .foregroundStyle(green)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(green.opacity(0.1))
+                    .clipShape(.capsule)
+                }
+            }
+        }
+    }
+
     // MARK: Actions
+
+    private var isOwnIdea: Bool {
+        guard let uid = myUserId else { return false }
+        return uid == item.idea.authorId
+    }
 
     private var actionRow: some View {
         HStack(spacing: 0) {
@@ -123,8 +152,10 @@ struct IdeaCardView: View {
             Spacer()
             commentButton
             Spacer()
-            connectButton
-            Spacer()
+            if !isOwnIdea {
+                applyButton
+                Spacer()
+            }
             shareButton
         }
     }
@@ -168,20 +199,20 @@ struct IdeaCardView: View {
         .buttonStyle(.plain)
     }
 
-    private var connectButton: some View {
+    private var applyButton: some View {
         Button {
-            guard !requestSent else { return }
-            onConnect()
-            withAnimation(.easeOut(duration: 0.2)) { requestSent = true }
+            guard !alreadyApplied else { return }
+            onApplyTap()
         } label: {
-            Text(requestSent ? "Pending" : "Connect")
+            Text(alreadyApplied ? "Applied ✓" : "Apply to join")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white)
-                .padding(.horizontal, 16).padding(.vertical, 7)
-                .background(requestSent ? Color(hex: "#6B7280") : indigo)
+                .padding(.horizontal, 14).padding(.vertical, 7)
+                .background(alreadyApplied ? Color(hex: "#6B7280") : green)
                 .clipShape(.capsule)
         }
         .buttonStyle(.plain)
+        .disabled(alreadyApplied)
     }
 
     private var shareButton: some View {

@@ -24,6 +24,12 @@ struct IdeaDetailView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     ideaHeader
                         .padding(16)
+                    if vm.isAuthor && !vm.applications.isEmpty {
+                        Divider().padding(.horizontal, 16)
+                        applicantsSection
+                            .padding(.horizontal, 16)
+                            .padding(.top, 16)
+                    }
                     Divider().padding(.horizontal, 16)
                     commentsSection
                         .padding(.horizontal, 16)
@@ -112,6 +118,89 @@ struct IdeaDetailView: View {
             .padding(.horizontal, 10).padding(.vertical, 4)
             .background(item.idea.stage.badgeColor)
             .clipShape(.capsule)
+    }
+
+    // MARK: Applicants (author only)
+
+    private let green = Color(hex: "#16A34A")
+
+    private var applicantsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("\(vm.applications.count) Applicant\(vm.applications.count == 1 ? "" : "s")")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(DesignTokens.textPrimary)
+
+            ForEach(vm.applications) { app in
+                applicantRow(app)
+            }
+        }
+        .padding(.bottom, 16)
+    }
+
+    private func applicantRow(_ app: Application) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                AvatarView(url: "", name: app.applicantName, size: 36)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(app.applicantName.isEmpty ? "Anonymous" : app.applicantName)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(DesignTokens.textPrimary)
+                    if !app.applicantUniversity.isEmpty {
+                        Text(app.applicantUniversity)
+                            .font(.caption)
+                            .foregroundStyle(DesignTokens.textTertiary)
+                    }
+                }
+
+                Spacer()
+
+                Text(app.role)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(green)
+                    .padding(.horizontal, 10).padding(.vertical, 4)
+                    .background(green.opacity(0.1))
+                    .clipShape(.capsule)
+            }
+
+            if !app.message.isEmpty {
+                Text(app.message)
+                    .font(.system(size: 13))
+                    .foregroundStyle(DesignTokens.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if app.status == "pending" {
+                HStack(spacing: 8) {
+                    Button("Accept") {
+                        Task { await vm.acceptApplication(app.id) }
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16).padding(.vertical, 7)
+                    .background(green)
+                    .clipShape(.capsule)
+                    .buttonStyle(.plain)
+
+                    Button("Decline") {
+                        Task { await vm.declineApplication(app.id) }
+                    }
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(DesignTokens.textSecondary)
+                    .padding(.horizontal, 16).padding(.vertical, 7)
+                    .background(DesignTokens.cardFill)
+                    .clipShape(.capsule)
+                    .buttonStyle(.plain)
+                }
+            } else {
+                Text(app.status == "accepted" ? "✓ Accepted" : "✗ Declined")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(app.status == "accepted" ? green : Color(hex: "#EF4444"))
+            }
+        }
+        .padding(12)
+        .background(DesignTokens.cardFill)
+        .clipShape(.rect(cornerRadius: 12))
     }
 
     // MARK: Comments
