@@ -9,9 +9,11 @@ struct ConnectionService {
     func sendRequest(to receiverId: UUID) async throws {
         let senderId = try await auth.session.user.id
         guard senderId != receiverId else { return }
+        print("[ConnectionService] sendRequest sender: \(senderId) → receiver: \(receiverId)")
         try await db
             .insert(ConnectionInsert(senderId: senderId, receiverId: receiverId))
             .execute()
+        print("[ConnectionService] connection row inserted, sending notification…")
         await NotificationService().insert(
             recipientId: receiverId,
             senderId: senderId,

@@ -8,6 +8,9 @@ struct IdeaCardView: View {
     var isLiked: Bool = false
     var onToggleLike: () -> Void = {}
     var onCommentTap: () -> Void = {}
+    var authorConnectState: ConnectState? = nil
+    var onConnectToAuthor: () -> Void = {}
+    var onMessageAuthor: () -> Void = {}
 
     @State private var expanded = false
 
@@ -56,7 +59,45 @@ struct IdeaCardView: View {
                 }
             }
             Spacer()
-            stageBadge
+            if !isOwnIdea, let state = authorConnectState {
+                authorConnectPill(state)
+            } else {
+                stageBadge
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func authorConnectPill(_ state: ConnectState) -> some View {
+        let indigo = Color(hex: "#4F46E5")
+        switch state {
+        case .none:
+            Button(action: onConnectToAuthor) {
+                Image(systemName: "person.badge.plus")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(8)
+                    .background(indigo)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+        case .pending:
+            Image(systemName: "clock")
+                .font(.system(size: 13))
+                .foregroundStyle(DesignTokens.textTertiary)
+                .padding(8)
+                .background(DesignTokens.fieldFill)
+                .clipShape(Circle())
+        case .connected:
+            Button(action: onMessageAuthor) {
+                Image(systemName: "message.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(8)
+                    .background(indigo)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
         }
     }
 

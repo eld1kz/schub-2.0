@@ -339,6 +339,7 @@ private struct BuilderRowCard: View {
     var isConnected: Bool = false
     var isPending: Bool = false
     var onConnect: () -> Void = {}
+    var onMessage: () -> Void = {}
 
     private let indigo = Color(hex: "#4F46E5")
 
@@ -399,27 +400,36 @@ private struct BuilderRowCard: View {
     @ViewBuilder
     private var connectButton: some View {
         if isConnected {
-            Text("Connected")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(DesignTokens.textTertiary)
+            Button(action: onMessage) {
+                HStack(spacing: 4) {
+                    Image(systemName: "message.fill").font(.system(size: 11))
+                    Text("Message").font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundStyle(.white)
                 .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(DesignTokens.fieldFill)
+                .background(indigo)
                 .clipShape(.capsule)
+            }
+            .buttonStyle(.plain)
         } else if isPending {
-            Text("Pending")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(DesignTokens.textTertiary)
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(DesignTokens.fieldFill)
-                .clipShape(.capsule)
+            HStack(spacing: 4) {
+                Image(systemName: "clock").font(.system(size: 11))
+                Text("Pending").font(.system(size: 12, weight: .semibold))
+            }
+            .foregroundStyle(DesignTokens.textTertiary)
+            .padding(.horizontal, 12).padding(.vertical, 6)
+            .background(DesignTokens.fieldFill)
+            .clipShape(.capsule)
         } else {
             Button(action: onConnect) {
-                Text("Connect")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(indigo)
-                    .clipShape(.capsule)
+                HStack(spacing: 4) {
+                    Image(systemName: "person.badge.plus").font(.system(size: 11))
+                    Text("Connect").font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .background(indigo)
+                .clipShape(.capsule)
             }
             .buttonStyle(.plain)
         }

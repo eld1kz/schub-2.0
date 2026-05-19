@@ -24,10 +24,15 @@ struct NotificationService {
                 case ideaId      = "idea_id"
             }
         }
-        try? await db.insert(Insert(
-            recipientId: recipientId, senderId: senderId,
-            type: type.rawValue, ideaId: ideaId, message: message
-        )).execute()
+        do {
+            try await db.insert(Insert(
+                recipientId: recipientId, senderId: senderId,
+                type: type.rawValue, ideaId: ideaId, message: message
+            )).execute()
+            print("[NotificationService] inserted \(type.rawValue) → recipient: \(recipientId)")
+        } catch {
+            print("[NotificationService] ❌ insert \(type.rawValue) failed: \(error)")
+        }
     }
 
     func fetchForCurrentUser() async throws -> [AppNotification] {

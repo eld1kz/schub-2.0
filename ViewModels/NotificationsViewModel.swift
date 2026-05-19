@@ -53,19 +53,28 @@ final class NotificationsViewModel {
     }
 
     func acceptConnection(from item: NotificationItem) async {
-        guard let connectionId = await findPendingConnection(from: item.notification.senderId) else { return }
+        guard let connectionId = await findPendingConnection(from: item.notification.senderId) else {
+            print("[NotificationsVM] acceptConnection — no pending connection found from \(item.notification.senderId)")
+            return
+        }
         do {
+            print("[NotificationsVM] accepting connection \(connectionId)")
             try await connService.respond(to: connectionId, accept: true)
-            if let currentUserId = try? await client.auth.session.user.id {
-                await notifService.insert(
-                    recipientId: item.notification.senderId,
-                    senderId: currentUserId,
-                    type: .connectionAccepted
-                )
-                await ensureConversation(myId: currentUserId, otherId: item.notification.senderId)
+            print("[NotificationsVM] connection accepted, sending notification…")
+            guard let currentUserId = try? await client.auth.session.user.id else {
+                print("[NotificationsVM] ❌ could not get currentUserId")
+                return
             }
+            await notifService.insert(
+                recipientId: item.notification.senderId,
+                senderId: currentUserId,
+                type: .connectionAccepted
+            )
+            await ensureConversation(myId: currentUserId, otherId: item.notification.senderId)
             removeItem(item)
-        } catch { }
+        } catch {
+            print("[NotificationsVM] ❌ acceptConnection failed: \(error)")
+        }
     }
 
     private func ensureConversation(myId: UUID, otherId: UUID) async {

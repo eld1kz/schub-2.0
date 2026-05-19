@@ -19,6 +19,7 @@ final class ChatViewModel {
     }
 
     func load() async {
+        print("[ChatVM] load() start — conv: \(conversation.id), other: \(conversation.otherUserName)")
         isLoading = true
         defer { isLoading = false }
         let fetched: [Message] = (try? await client
@@ -26,6 +27,7 @@ final class ChatViewModel {
             .eq("conversation_id", value: conversation.id.uuidString)
             .order("created_at", ascending: true)
             .execute().value) ?? []
+        print("[ChatVM] load() fetched \(fetched.count) messages")
         messages = fetched
         await markRead()
         startRealtime()

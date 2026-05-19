@@ -4,6 +4,7 @@ struct ProfileView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @State private var viewModel = ProfileViewModel()
     @State private var showEdit = false
+    @State private var showConnections = false
 
     var body: some View {
         NavigationStack {
@@ -38,6 +39,11 @@ struct ProfileView: View {
                     EditProfileView(viewModel: viewModel, profile: p)
                 }
             }
+            .navigationDestination(isPresented: $showConnections) {
+                if let uid = viewModel.profile?.id {
+                    ConnectionsListView(currentUserId: uid)
+                }
+            }
             .task { await viewModel.loadProfile() }
             .refreshable { await viewModel.loadProfile() }
         }
@@ -61,6 +67,9 @@ struct ProfileView: View {
         ScrollView {
             VStack(spacing: 10) {
                 heroCard(profile)
+                if viewModel.connectionsCount > 0 {
+                    connectionsCard
+                }
                 if !profile.bio.isEmpty {
                     aboutCard(profile.bio)
                 }
@@ -147,6 +156,30 @@ struct ProfileView: View {
         }
         .background(PC.card)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    // MARK: - Connections Card
+
+    private var connectionsCard: some View {
+        Button { showConnections = true } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    cardHeader("Connections")
+                    Text("\(viewModel.connectionsCount) builders")
+                        .font(.inter(13))
+                        .foregroundStyle(PC.p2)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(PC.p3)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(PC.card)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - About Card
