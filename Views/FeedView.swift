@@ -127,10 +127,21 @@ struct FeedView: View {
         case .posts:
             if postViewModel.isLoading && postViewModel.posts.isEmpty {
                 loadingView
+            } else if let error = postViewModel.errorMessage, postViewModel.posts.isEmpty {
+                statusState(
+                    icon: "wifi.exclamationmark",
+                    title: "Couldn't load posts",
+                    subtitle: humanized(error),
+                    actionTitle: "Try again"
+                ) {
+                    Task { await postViewModel.load() }
+                }
             } else if postViewModel.posts.isEmpty {
-                emptyState(icon: "bubble.left.and.bubble.right",
-                           title: "No posts yet",
-                           subtitle: "Be the first to share what you're building")
+                statusState(
+                    icon: "bubble.left.and.bubble.right",
+                    title: "No posts yet",
+                    subtitle: "Share a quick update and set the tone for the feed."
+                )
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
@@ -150,10 +161,21 @@ struct FeedView: View {
         case .ideas:
             if feedViewModel.isLoading && feedViewModel.ideas.isEmpty {
                 loadingView
+            } else if let error = feedViewModel.errorMessage, feedViewModel.ideas.isEmpty {
+                statusState(
+                    icon: "wifi.exclamationmark",
+                    title: "Couldn't load ideas",
+                    subtitle: humanized(error),
+                    actionTitle: "Try again"
+                ) {
+                    Task { await feedViewModel.loadFeed() }
+                }
             } else if feedViewModel.ideas.isEmpty {
-                emptyState(icon: "lightbulb",
-                           title: "No ideas yet",
-                           subtitle: "Be the first to share an idea")
+                statusState(
+                    icon: "lightbulb",
+                    title: "No ideas yet",
+                    subtitle: "Post an idea when you're ready to find people and start building."
+                )
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
@@ -201,24 +223,35 @@ struct FeedView: View {
 
     private var loadingView: some View {
         ProgressView().tint(DesignTokens.textSecondary)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 48)
     }
 
-    private func emptyState(icon: String, title: String, subtitle: String) -> some View {
-        VStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 44))
-                .foregroundStyle(DesignTokens.textTertiary)
-            Text(title)
-                .font(.spaceGrotesk(18, weight: .bold))
-                .foregroundStyle(DesignTokens.textPrimary)
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(DesignTokens.textSecondary)
-                .multilineTextAlignment(.center)
+    private func statusState(
+        icon: String,
+        title: String,
+        subtitle: String,
+        actionTitle: String? = nil,
+        action: (() -> Void)? = nil
+    ) -> some View {
+        VStack {
+            StatusCardView(
+                icon: icon,
+                title: title,
+                subtitle: subtitle,
+                actionTitle: actionTitle,
+                action: action
+            )
+            .padding(20)
+            Spacer()
         }
-        .padding(32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func humanized(_ error: String) -> String {
+        if error.localizedCaseInsensitiveContains("cancel") {
+            return "Give it another second and try again."
+        }
+        return "Check your connection and try again."
     }
 }
 

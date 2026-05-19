@@ -9,8 +9,11 @@ struct NotificationsView: View {
         NavigationStack {
             Group {
                 if viewModel.isLoading && viewModel.items.isEmpty {
-                    ProgressView().tint(DesignTokens.textSecondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    VStack {
+                        ProgressView().tint(DesignTokens.textSecondary)
+                            .padding(.top, 48)
+                        Spacer()
+                    }
                 } else if viewModel.items.isEmpty {
                     emptyState
                 } else {
@@ -134,20 +137,15 @@ struct NotificationsView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "bell.slash")
-                .font(.system(size: 44))
-                .foregroundStyle(DesignTokens.textTertiary)
-            Text("No notifications yet")
-                .font(.spaceGrotesk(18, weight: .bold))
-                .foregroundStyle(DesignTokens.textPrimary)
-            Text("Activity on your ideas and connections will appear here")
-                .font(.subheadline)
-                .foregroundStyle(DesignTokens.textSecondary)
-                .multilineTextAlignment(.center)
+        VStack {
+            StatusCardView(
+                icon: "bell.slash",
+                title: "No notifications yet",
+                subtitle: "Likes, comments, accepts, and connection activity will show up here."
+            )
+            .padding(18)
+            Spacer()
         }
-        .padding(32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func typeIcon(_ type: AppNotification.NotificationType) -> String {

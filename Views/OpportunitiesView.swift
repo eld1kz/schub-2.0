@@ -9,6 +9,7 @@ struct OpportunitiesView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                heroSection
                 filterBar
                 Rectangle()
                     .fill(DesignTokens.separator)
@@ -17,6 +18,15 @@ struct OpportunitiesView: View {
                     ProgressView()
                         .tint(DesignTokens.textSecondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if filtered.isEmpty {
+                    ScrollView {
+                        StatusCardView(
+                            icon: "sparkles.rectangle.stack",
+                            title: "No opportunities in this filter",
+                            subtitle: "Switch filters to see more student-friendly ways to build, apply, and compete."
+                        )
+                        .padding(16)
+                    }
                 } else {
                     opportunityList
                 }
@@ -28,6 +38,40 @@ struct OpportunitiesView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .task { await viewModel.load() }
         }
+    }
+
+    private var heroSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Build toward something real")
+                .font(.spaceGrotesk(28, weight: .bold))
+                .foregroundStyle(DesignTokens.textPrimary)
+
+            Text("Hackathons, grants, competitions, and internships picked to keep student teams moving.")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(DesignTokens.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let nextDeadline = filtered.sorted(by: { $0.deadline < $1.deadline }).first {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 12))
+                    Text("Next deadline: \(nextDeadline.title) · \(nextDeadline.deadline.formatted(.dateTime.month(.abbreviated).day()))")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                .foregroundStyle(DesignTokens.accentText)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(
+                colors: [indigo.opacity(0.22), Color(hex: "#132032"), DesignTokens.background],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
     }
 
     private var filterBar: some View {

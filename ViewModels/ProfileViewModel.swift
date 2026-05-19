@@ -179,38 +179,9 @@ final class ProfileViewModel {
 
     private func mergedProfile(current: UserProfile, incoming: UserProfile) -> UserProfile {
         var merged = incoming
-
         if merged.avatarURL.isEmpty {
             merged.avatarURL = current.avatarURL
         }
-
-        if merged.skills.isEmpty && !current.skills.isEmpty {
-            merged.skills = current.skills
-        }
-
-        if merged.interests.isEmpty && !current.interests.isEmpty {
-            merged.interests = current.interests
-        }
-
-        if merged.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-           !current.bio.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            merged.bio = current.bio
-        }
-
-        if merged.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-           !current.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            merged.name = current.name
-        }
-
-        if merged.university.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-           !current.university.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            merged.university = current.university
-        }
-
-        if merged.graduationYear == 0 && current.graduationYear != 0 {
-            merged.graduationYear = current.graduationYear
-        }
-
         return merged
     }
 

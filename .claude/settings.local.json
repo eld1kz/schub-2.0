@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(python3 -c ' *)",
+      "Read(//Users/eldar/Library/Mobile Documents/com~apple~CloudDocs/**)",
+      "Read(//Users/eldar/**)",
+      "WebSearch",
+      "WebFetch(domain:engineering.linkedin.com)",
+      "WebFetch(domain:www.linkedin.com)"
     ]
   }
 }

@@ -62,9 +62,24 @@ final class NotificationsViewModel {
                     senderId: currentUserId,
                     type: .connectionAccepted
                 )
+                await ensureConversation(myId: currentUserId, otherId: item.notification.senderId)
             }
             removeItem(item)
         } catch { }
+    }
+
+    private func ensureConversation(myId: UUID, otherId: UUID) async {
+        let p1 = myId.uuidString < otherId.uuidString ? myId : otherId
+        let p2 = myId.uuidString < otherId.uuidString ? otherId : myId
+        struct C: Encodable {
+            let participantOne: UUID; let participantTwo: UUID
+            enum CodingKeys: String, CodingKey {
+                case participantOne = "participant_one"; case participantTwo = "participant_two"
+            }
+        }
+        try? await client.from("conversations")
+            .insert(C(participantOne: p1, participantTwo: p2))
+            .execute()
     }
 
     func declineConnection(from item: NotificationItem) async {

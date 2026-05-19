@@ -13,8 +13,6 @@ struct IdeaCardView: View {
 
     private let indigo   = Color(hex: "#4F46E5")
     private let green    = Color(hex: "#16A34A")
-    private let ink      = Color(hex: "#0A0A0A")
-    private let surface  = Color(hex: "#F9F9F9")
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -26,9 +24,12 @@ struct IdeaCardView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(surface)
+        .background(DesignTokens.cardFill)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(DesignTokens.separator, lineWidth: 1)
+        )
         .clipShape(.rect(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
     }
 
     // MARK: Header
@@ -39,19 +40,19 @@ struct IdeaCardView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.authorName.isEmpty ? "Anonymous" : item.authorName)
                     .font(.subheadline.bold())
-                    .foregroundStyle(ink)
+                    .foregroundStyle(DesignTokens.textPrimary)
                 HStack(spacing: 4) {
                     if !item.authorUniversity.isEmpty {
                         Text(item.authorUniversity)
                             .font(.caption)
-                            .foregroundStyle(Color(hex: "#6B7280"))
+                            .foregroundStyle(DesignTokens.textSecondary)
                         Text("·")
                             .font(.caption)
-                            .foregroundStyle(Color(hex: "#6B7280"))
+                            .foregroundStyle(DesignTokens.textTertiary)
                     }
                     Text(timeAgo)
                         .font(.caption)
-                        .foregroundStyle(Color(hex: "#6B7280"))
+                        .foregroundStyle(DesignTokens.textTertiary)
                 }
             }
             Spacer()
@@ -78,14 +79,14 @@ struct IdeaCardView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(item.idea.title)
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(ink)
+                .foregroundStyle(DesignTokens.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
             if !item.idea.description.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.idea.description)
                         .font(.subheadline)
-                        .foregroundStyle(Color(hex: "#374151"))
+                        .foregroundStyle(DesignTokens.textSecondary)
                         .lineLimit(expanded ? nil : 3)
                         .fixedSize(horizontal: false, vertical: true)
 
@@ -94,7 +95,7 @@ struct IdeaCardView: View {
                             withAnimation(.easeOut(duration: 0.2)) { expanded.toggle() }
                         }
                         .font(.caption.bold())
-                        .foregroundStyle(indigo)
+                        .foregroundStyle(DesignTokens.accentText)
                     }
                 }
             }
@@ -109,9 +110,9 @@ struct IdeaCardView: View {
                 ForEach(item.idea.skillsNeeded, id: \.self) { skill in
                     Text(skill)
                         .font(.caption.bold())
-                        .foregroundStyle(indigo)
+                        .foregroundStyle(DesignTokens.accentText)
                         .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(indigo.opacity(0.1))
+                        .background(DesignTokens.accentPill)
                         .clipShape(.capsule)
                 }
             }
@@ -132,7 +133,7 @@ struct IdeaCardView: View {
                     }
                     .foregroundStyle(green)
                     .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(green.opacity(0.1))
+                    .background(DesignTokens.collabGreenFill)
                     .clipShape(.capsule)
                 }
             }
@@ -167,12 +168,12 @@ struct IdeaCardView: View {
             HStack(spacing: 5) {
                 Image(systemName: isLiked ? "hand.thumbsup.fill" : "hand.thumbsup")
                     .font(.system(size: 15))
-                    .foregroundStyle(isLiked ? indigo : Color(hex: "#6B7280"))
+                    .foregroundStyle(isLiked ? DesignTokens.accentText : DesignTokens.textTertiary)
                     .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isLiked)
                 if item.idea.likesCount > 0 {
                     Text("\(item.idea.likesCount)")
                         .font(.caption.bold())
-                        .foregroundStyle(isLiked ? indigo : Color(hex: "#6B7280"))
+                        .foregroundStyle(isLiked ? DesignTokens.accentText : DesignTokens.textTertiary)
                         .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isLiked)
                 }
             }
@@ -188,11 +189,11 @@ struct IdeaCardView: View {
             HStack(spacing: 5) {
                 Image(systemName: "bubble.left")
                     .font(.system(size: 15))
-                    .foregroundStyle(Color(hex: "#6B7280"))
+                    .foregroundStyle(DesignTokens.textTertiary)
                 if item.idea.commentsCount > 0 {
                     Text("\(item.idea.commentsCount)")
                         .font(.caption.bold())
-                        .foregroundStyle(Color(hex: "#6B7280"))
+                        .foregroundStyle(DesignTokens.textTertiary)
                 }
             }
         }
@@ -208,7 +209,7 @@ struct IdeaCardView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 14).padding(.vertical, 7)
-                .background(alreadyApplied ? Color(hex: "#6B7280") : green)
+                .background(alreadyApplied ? DesignTokens.textTertiary : green)
                 .clipShape(.capsule)
         }
         .buttonStyle(.plain)
@@ -219,7 +220,7 @@ struct IdeaCardView: View {
         Button {} label: {
             Image(systemName: "square.and.arrow.up")
                 .font(.system(size: 15))
-                .foregroundStyle(Color(hex: "#6B7280"))
+                .foregroundStyle(DesignTokens.textTertiary)
         }
         .buttonStyle(.plain)
     }

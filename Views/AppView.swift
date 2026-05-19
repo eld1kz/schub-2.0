@@ -12,6 +12,7 @@ struct AppView: View {
     @State private var selectedTab: AppTab = .feed
     @State private var showCreateSheet = false
     @State private var activeComposer: ComposerDestination?
+    @State private var inboxVM = InboxViewModel()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -27,7 +28,8 @@ struct AppView: View {
                 .tag(AppTab.opportunities)
                 .tabItem { Label("Opportunities", systemImage: "sparkles.rectangle.stack") }
 
-            InboxView()
+            InboxView(vm: inboxVM)
+                .badge(inboxVM.totalUnread)
                 .tag(AppTab.inbox)
                 .tabItem { Label("Inbox", systemImage: "bubble.left.and.bubble.right") }
 

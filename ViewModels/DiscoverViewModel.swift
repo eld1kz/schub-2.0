@@ -26,11 +26,14 @@ final class DiscoverViewModel {
     var ideas: [FeedIdea] = []
     var myProfile: UserProfile?
     var isLoading = false
+    var connectedUserIds: Set<UUID> = []
+    var sentRequestIds: Set<UUID> = []
 
     var searchText = ""
     var selectedFilter: DiscoverFilter = .all
 
     private let client = SupabaseService.shared.client
+    private let connService = ConnectionService()
 
     var filteredPeople: [MatchedProfile] {
         let searched = searchMatchedProfiles(matches)
@@ -72,6 +75,18 @@ final class DiscoverViewModel {
                 .order("created_at", ascending: false).limit(30).execute().value
 
             myProfile = (try await myFetch).first
+
+            struct ConnRow: Decodable {
+                let senderId: UUID; let receiverId: UUID; let status: String
+                enum CodingKeys: String, CodingKey {
+                    case senderId = "sender_id"; case receiverId = "receiver_id"; case status
+                }
+            }
+            let conns: [ConnRow] = (try? await client.from("connections").select("sender_id,receiver_id,status")
+                .or("sender_id.eq.\(userId),receiver_id.eq.\(userId)").execute().value) ?? []
+            connectedUserIds = Set(conns.filter { $0.status == "accepted" }.map { $0.senderId == userId ? $0.receiverId : $0.senderId })
+            sentRequestIds   = Set(conns.filter { $0.status == "pending" && $0.senderId == userId }.map { $0.receiverId })
+
             let others = try await othersFetch
             matches = computeMatches(others, against: myProfile)
 
@@ -95,6 +110,12 @@ final class DiscoverViewModel {
             matches = []
             ideas = []
         }
+    }
+
+    func connect(to userId: UUID) async {
+        guard !connectedUserIds.contains(userId), !sentRequestIds.contains(userId) else { return }
+        sentRequestIds.insert(userId)
+        try? await connService.sendRequest(to: userId)
     }
 
     private func searchMatchedProfiles(_ profiles: [MatchedProfile]) -> [MatchedProfile] {

@@ -241,14 +241,16 @@ struct UpdateComposerView: View {
         let client = SupabaseService.shared.client
         do {
             let userId = try await client.auth.session.user.id
-            let loadedProfile: UserProfile = try await client
+            let profiles: [UserProfile] = try await client
                 .from("profiles")
                 .select()
-                .eq("id", value: userId.uuidString)
-                .single()
+                .eq("id", value: userId)
+                .limit(1)
                 .execute()
                 .value
-            profile = loadedProfile
+            profile = profiles.first
+        } catch is CancellationError {
+            return
         } catch {
             profile = nil
         }

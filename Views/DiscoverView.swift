@@ -45,6 +45,10 @@ struct DiscoverView: View {
 
     private var heroSection: some View {
         VStack(alignment: .leading, spacing: 10) {
+            Text("Discover")
+                .font(.system(size: 12, weight: .bold))
+                .tracking(1)
+                .foregroundStyle(DesignTokens.accentText)
             Text("Find your people")
                 .font(.spaceGrotesk(32, weight: .bold))
                 .foregroundStyle(DesignTokens.textPrimary)
@@ -119,6 +123,7 @@ struct DiscoverView: View {
                     filterChip(filter)
                 }
             }
+            .padding(.horizontal, 1)
         }
     }
 
@@ -153,7 +158,7 @@ struct DiscoverView: View {
             if viewModel.isLoading && viewModel.featuredPeople.isEmpty {
                 loadingCard
             } else if viewModel.featuredPeople.isEmpty {
-                emptyCard("No matches yet", "Add more skills and interests to sharpen suggestions.")
+                emptyCard("No matches yet", "Add more skills and interests on your profile to sharpen suggestions.")
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
@@ -182,7 +187,12 @@ struct DiscoverView: View {
                 VStack(spacing: 12) {
                     ForEach(viewModel.readyToBuildPeople) { match in
                         NavigationLink(value: match.profile) {
-                            BuilderRowCard(match: match)
+                            BuilderRowCard(
+                                match: match,
+                                isConnected: viewModel.connectedUserIds.contains(match.id),
+                                isPending: viewModel.sentRequestIds.contains(match.id),
+                                onConnect: { Task { await viewModel.connect(to: match.id) } }
+                            )
                         }
                         .buttonStyle(.plain)
                     }
@@ -199,7 +209,7 @@ struct DiscoverView: View {
             if viewModel.isLoading && viewModel.teammatePosts.isEmpty {
                 loadingCard
             } else if viewModel.teammatePosts.isEmpty {
-                emptyCard("No teammate posts right now", "Check back soon or switch filters.")
+                emptyCard("No teammate posts right now", "Check back soon or clear your filters to widen the mix.")
             } else {
                 VStack(spacing: 12) {
                     ForEach(viewModel.teammatePosts.prefix(6)) { item in
@@ -239,23 +249,19 @@ struct DiscoverView: View {
             .frame(maxWidth: .infinity)
             .padding(28)
             .background(DesignTokens.cardFill)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(DesignTokens.separator, lineWidth: 1)
+            )
             .clipShape(.rect(cornerRadius: 20))
     }
 
     private func emptyCard(_ title: String, _ subtitle: String) -> some View {
-        VStack(spacing: 10) {
-            Text(title)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(DesignTokens.textPrimary)
-            Text(subtitle)
-                .font(.system(size: 14))
-                .foregroundStyle(DesignTokens.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(24)
-        .background(DesignTokens.cardFill)
-        .clipShape(.rect(cornerRadius: 20))
+        StatusCardView(
+            icon: "sparkles",
+            title: title,
+            subtitle: subtitle
+        )
     }
 }
 
@@ -330,6 +336,9 @@ private struct SuggestedBuilderCard: View {
 
 private struct BuilderRowCard: View {
     let match: MatchedProfile
+    var isConnected: Bool = false
+    var isPending: Bool = false
+    var onConnect: () -> Void = {}
 
     private let indigo = Color(hex: "#4F46E5")
 
@@ -352,9 +361,7 @@ private struct BuilderRowCard: View {
                             .clipShape(.capsule)
                     }
                     Spacer()
-                    Text("\(match.matchScore)%")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(indigo)
+                    connectButton
                 }
 
                 if !match.profile.university.isEmpty {
@@ -387,6 +394,35 @@ private struct BuilderRowCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(DesignTokens.cardFill)
         .clipShape(.rect(cornerRadius: 20))
+    }
+
+    @ViewBuilder
+    private var connectButton: some View {
+        if isConnected {
+            Text("Connected")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(DesignTokens.textTertiary)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .background(DesignTokens.fieldFill)
+                .clipShape(.capsule)
+        } else if isPending {
+            Text("Pending")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(DesignTokens.textTertiary)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .background(DesignTokens.fieldFill)
+                .clipShape(.capsule)
+        } else {
+            Button(action: onConnect) {
+                Text("Connect")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(indigo)
+                    .clipShape(.capsule)
+            }
+            .buttonStyle(.plain)
+        }
     }
 }
 

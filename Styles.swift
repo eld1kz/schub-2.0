@@ -5,6 +5,7 @@ import SwiftUI
 enum DesignTokens {
     static let background    = Color(hex: "#0e0e10")
     static let cardFill      = Color.white.opacity(0.04)
+    static let cardFillStrong = Color.white.opacity(0.07)
     static let fieldFill     = Color.white.opacity(0.06)
     static let separator     = Color.white.opacity(0.06)
     static let textPrimary   = Color.white.opacity(0.95)
@@ -14,6 +15,9 @@ enum DesignTokens {
     static let accentText    = Color(red: 0.35, green: 0.76, blue: 1.0)
     static let collabGreen   = Color(hex: "#4ade80")
     static let collabGreenFill = Color(hex: "#4ade80").opacity(0.12)
+    static let warning       = Color(hex: "#F59E0B")
+    static let error         = Color(hex: "#F87171")
+    static let shadow        = Color.black.opacity(0.24)
 }
 
 // MARK: - Legacy AppColors (auth views + cards still use these)
@@ -110,5 +114,81 @@ extension Font {
         default:        name = "SpaceGrotesk-Regular"
         }
         return .custom(name, size: size, relativeTo: .body)
+    }
+
+    static func inter(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
+        let name: String
+        switch weight {
+        case .semibold, .bold: name = "Inter-SemiBold"
+        case .medium:          name = "Inter-Medium"
+        default:               name = "Inter-Regular"
+        }
+        return .custom(name, size: size, relativeTo: .body)
+    }
+}
+
+// MARK: - Profile palette (PC)
+
+enum PC {
+    static let bg            = Color(hex: "#0c0c0d")
+    static let card          = Color.white.opacity(0.035)
+    static let field         = Color.white.opacity(0.05)
+    static let sep           = Color.white.opacity(0.05)
+    static let sep2          = Color.white.opacity(0.06)
+    static let p1            = Color.white.opacity(0.94)
+    static let p2            = Color.white.opacity(0.46)
+    static let p3            = Color.white.opacity(0.24)
+    static let green         = Color(hex: "#a8c896")
+    static let greenDim      = Color(hex: "#a8c896").opacity(0.10)
+    // bone accent (default)
+    static let accentPillBg  = Color(red: 240/255, green: 235/255, blue: 225/255).opacity(0.10)
+    static let accentPillText = Color(red: 240/255, green: 235/255, blue: 225/255).opacity(0.95)
+    static let accentDot     = Color(hex: "#f0ebe1")
+}
+
+struct StatusCardView: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    var actionTitle: String? = nil
+    var action: (() -> Void)? = nil
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(DesignTokens.textSecondary)
+                .frame(width: 52, height: 52)
+                .background(DesignTokens.fieldFill)
+                .clipShape(Circle())
+
+            VStack(spacing: 6) {
+                Text(title)
+                    .font(.spaceGrotesk(18, weight: .bold))
+                    .foregroundStyle(DesignTokens.textPrimary)
+                Text(subtitle)
+                    .font(.system(size: 14))
+                    .foregroundStyle(DesignTokens.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            if let actionTitle, let action {
+                Button(actionTitle, action: action)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(DesignTokens.accentText)
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity)
+        .background(DesignTokens.cardFill)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(DesignTokens.separator, lineWidth: 1)
+        )
     }
 }
