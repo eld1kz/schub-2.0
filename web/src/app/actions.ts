@@ -48,11 +48,11 @@ export async function updateProfile(formData: FormData) {
 export async function connect(receiverId: string) {
   const { supabase, userId } = await requireUser();
   await supabase.from("connections").insert({ sender_id: userId, receiver_id: receiverId });
-  revalidatePath("/discover");
+  revalidatePath("/", "layout");
 }
 
 export async function respond(connectionId: string, status: "accepted" | "declined") {
   const { supabase } = await requireUser();
   await supabase.from("connections").update({ status }).eq("id", connectionId);
-  revalidatePath("/discover");
+  revalidatePath("/", "layout");
 }

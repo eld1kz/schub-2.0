@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createIdea, createPost } from "@/app/actions";
 
-type Author = { name: string; university: string } | null;
+type Author = { id: string; name: string; university: string } | null;
 type Item =
   | { kind: "post"; id: string; created_at: string; author: Author; content: string }
   | { kind: "idea"; id: string; created_at: string; author: Author; title: string; description: string; skills_needed: string[]; stage: string };
@@ -9,8 +10,8 @@ type Item =
 export default async function FeedPage() {
   const supabase = await createClient();
   const [posts, ideas] = await Promise.all([
-    supabase.from("posts").select("id, created_at, content, author:profiles(name, university)").order("created_at", { ascending: false }).limit(50),
-    supabase.from("ideas").select("id, created_at, title, description, skills_needed, stage, author:profiles(name, university)").order("created_at", { ascending: false }).limit(50),
+    supabase.from("posts").select("id, created_at, content, author:profiles(id, name, university)").order("created_at", { ascending: false }).limit(50),
+    supabase.from("ideas").select("id, created_at, title, description, skills_needed, stage, author:profiles(id, name, university)").order("created_at", { ascending: false }).limit(50),
   ]);
 
   const items = [
@@ -47,7 +48,7 @@ export default async function FeedPage() {
         {items.map((item) => (
           <article key={item.kind + item.id} className="py-5">
             <p className="text-sm">
-              <span className="font-medium">{item.author?.name || "Unnamed"}</span>
+              <Link href={`/u/${item.author?.id}`} className="font-medium hover:underline">{item.author?.name || "Unnamed"}</Link>
               <span className="text-muted"> · {item.author?.university || "—"} · {new Date(item.created_at).toLocaleDateString()}</span>
             </p>
             {item.kind === "post" ? (
