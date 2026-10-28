@@ -147,10 +147,17 @@ struct FeedView: View {
                     LazyVStack(spacing: 0) {
                         ForEach(postViewModel.posts) { item in
                             NavigationLink(value: item) {
-                                PostCard(item: item, onCommentTap: {
-                                    print("[FeedView] post comment tapped")
-                                    navigationPath.append(item)
-                                })
+                                PostCard(
+                                    item: item,
+                                    isLiked: postViewModel.likedPostIds.contains(item.id),
+                                    isReposted: postViewModel.repostedPostIds.contains(item.id),
+                                    onCommentTap: {
+                                        print("[FeedView] post comment tapped")
+                                        navigationPath.append(item)
+                                    },
+                                    onRepost: { Task { await postViewModel.toggleRepost(post: item) } },
+                                    onToggleLike: { Task { await postViewModel.toggleLike(post: item) } }
+                                )
                             }
                             .buttonStyle(.plain)
                         }
@@ -187,7 +194,9 @@ struct FeedView: View {
                                     alreadyApplied: feedViewModel.appliedIdeaIds.contains(item.id),
                                     onApplyTap: { applyingTo = item },
                                     isLiked: feedViewModel.likedIdeaIds.contains(item.idea.id),
+                                    isReposted: feedViewModel.repostedIdeaIds.contains(item.idea.id),
                                     onToggleLike: { Task { await feedViewModel.toggleLike(ideaId: item.idea.id) } },
+                                    onRepost: { Task { await feedViewModel.toggleIdeaRepost(idea: item) } },
                                     onCommentTap: {
                                         print("[FeedView] comment tapped")
                                         navigationPath.append(item)

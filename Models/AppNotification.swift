@@ -6,6 +6,7 @@ struct AppNotification: Codable, Identifiable {
     let senderId: UUID
     let type: NotificationType
     let ideaId: UUID?
+    let targetId: UUID?
     let message: String
     var isRead: Bool
     let createdAt: Date
@@ -18,6 +19,8 @@ struct AppNotification: Codable, Identifiable {
         case applied               = "applied"
         case applicationAccepted   = "application_accepted"
         case applicationDeclined   = "application_declined"
+        case repost                = "repost"
+        case message               = "message"
     }
 
     enum CodingKeys: String, CodingKey {
@@ -25,6 +28,7 @@ struct AppNotification: Codable, Identifiable {
         case recipientId = "recipient_id"
         case senderId    = "sender_id"
         case ideaId      = "idea_id"
+        case targetId    = "target_id"
         case isRead      = "is_read"
         case createdAt   = "created_at"
     }
@@ -39,21 +43,26 @@ struct NotificationItem: Identifiable {
     var displayMessage: String {
         switch notification.type {
         case .like:
-            let ref = notification.message.isEmpty ? "your idea" : "'\(notification.message)'"
-            return "\(senderName) liked \(ref)"
+            let title = notification.message.isEmpty ? "your idea" : "'\(notification.message)'"
+            return "\(senderName) liked \(title)"
         case .comment:
-            let ref = notification.message.isEmpty ? "your idea" : "'\(notification.message)'"
-            return "\(senderName) commented on \(ref)"
+            let title = notification.message.isEmpty ? "your idea" : "'\(notification.message)'"
+            return "\(senderName) commented on \(title)"
         case .connectionRequest:
-            return "\(senderName) sent you a connection request"
+            return "\(senderName) wants to connect with you"
         case .connectionAccepted:
-            return "\(senderName) accepted your connection request"
+            return "\(senderName) accepted your connection"
         case .applied:
-            return "\(senderName) wants to join as \(notification.message)"
+            let role = notification.message.isEmpty ? "your idea" : "as \(notification.message)"
+            return "\(senderName) applied to join \(role)"
         case .applicationAccepted:
-            return "Your application was accepted: \(notification.message)"
+            return "Your application was accepted"
         case .applicationDeclined:
-            return "Your application was declined: \(notification.message)"
+            return "Your application was declined"
+        case .repost:
+            return "\(senderName) reposted your post"
+        case .message:
+            return "\(senderName) sent you a message"
         }
     }
 }

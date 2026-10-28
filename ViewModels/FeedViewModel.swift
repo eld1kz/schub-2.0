@@ -18,6 +18,7 @@ struct FeedIdea: Identifiable, Hashable {
 final class FeedViewModel {
     var ideas: [FeedIdea] = []
     var likedIdeaIds: Set<UUID> = []
+    var repostedIdeaIds: Set<UUID> = []
     var appliedIdeaIds: Set<UUID> = []
     var myUserId: UUID?
     var isLoading = false
@@ -63,6 +64,16 @@ final class FeedViewModel {
                     .execute().value) ?? []
                 likedIdeaIds = Set(likes.map { $0.ideaId })
 
+                struct RepostRecord: Decodable {
+                    let ideaId: UUID?
+                    enum CodingKeys: String, CodingKey { case ideaId = "idea_id" }
+                }
+                let reposts: [RepostRecord] = (try? await client
+                    .from("reposts").select("idea_id")
+                    .eq("user_id", value: userId.uuidString)
+                    .execute().value) ?? []
+                repostedIdeaIds = Set(reposts.compactMap { $0.ideaId })
+
                 struct AppRecord: Decodable {
                     let ideaId: UUID
                     enum CodingKeys: String, CodingKey { case ideaId = "idea_id" }
@@ -81,6 +92,45 @@ final class FeedViewModel {
     func setCommentCount(ideaId: UUID, count: Int) {
         if let idx = ideas.firstIndex(where: { $0.id == ideaId }) {
             ideas[idx].idea.commentsCount = count
+        }
+    }
+
+    func toggleIdeaRepost(idea: FeedIdea) async {
+        guard let userId = myUserId, idea.idea.authorId != userId else { return }
+        let ideaId = idea.id
+        let currentlyReposted = repostedIdeaIds.contains(ideaId)
+
+        if currentlyReposted {
+            repostedIdeaIds.remove(ideaId)
+            if let idx = ideas.firstIndex(where: { $0.id == ideaId }) {
+                ideas[idx].idea.repostsCount = max(0, ideas[idx].idea.repostsCount - 1)
+            }
+            try? await client.from("reposts")
+                .delete()
+                .eq("user_id", value: userId.uuidString)
+                .eq("idea_id", value: ideaId.uuidString)
+                .execute()
+        } else {
+            repostedIdeaIds.insert(ideaId)
+            if let idx = ideas.firstIndex(where: { $0.id == ideaId }) {
+                ideas[idx].idea.repostsCount += 1
+            }
+            struct RepostInsert: Encodable {
+                let userId: UUID; let ideaId: UUID
+                enum CodingKeys: String, CodingKey {
+                    case userId = "user_id"; case ideaId = "idea_id"
+                }
+            }
+            try? await client.from("reposts")
+                .insert(RepostInsert(userId: userId, ideaId: ideaId))
+                .execute()
+            await NotificationService().insert(
+                recipientId: idea.idea.authorId,
+                senderId: userId,
+                type: .repost,
+                ideaId: ideaId,
+                targetId: ideaId
+            )
         }
     }
 
@@ -113,12 +163,14 @@ final class FeedViewModel {
             try? await client.from("idea_likes")
                 .insert(LikeInsert(userId: userId, ideaId: ideaId))
                 .execute()
-            if let idx = ideas.firstIndex(where: { $0.id == ideaId }) {
+            if let idx = ideas.firstIndex(where: { $0.id == ideaId }),
+               ideas[idx].idea.authorId != userId {
                 await NotificationService().insert(
                     recipientId: ideas[idx].idea.authorId,
                     senderId: userId,
                     type: .like,
                     ideaId: ideaId,
+                    targetId: ideaId,
                     message: ideas[idx].idea.title
                 )
             }

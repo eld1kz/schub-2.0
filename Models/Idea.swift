@@ -18,6 +18,7 @@ struct Idea: Codable, Identifiable {
     }
 
     var commentsCount: Int = 0
+    var repostsCount: Int = 0
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, stage
@@ -27,6 +28,7 @@ struct Idea: Codable, Identifiable {
         case createdAt     = "created_at"
         case likesCount    = "likes_count"
         case commentsCount = "comments_count"
+        case repostsCount  = "reposts_count"
     }
 }
 
@@ -43,5 +45,6 @@ extension Idea {
         createdAt     = try c.decode(Date.self,    forKey: .createdAt)
         likesCount    = (try? c.decode(Int.self,   forKey: .likesCount)) ?? 0
         commentsCount = (try? c.decode(Int.self,   forKey: .commentsCount)) ?? 0
+        repostsCount  = (try? c.decode(Int.self,   forKey: .repostsCount)) ?? 0
     }
 }

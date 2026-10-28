@@ -66,6 +66,13 @@ final class ChatViewModel {
             .update(ConvUpdate(lastMessage: text, lastMessageAt: Date()))
             .eq("id", value: conversation.id.uuidString)
             .execute()
+
+        let recipientId = conversation.conversation.otherParticipant(currentUserId: currentUserId)
+        await NotificationService().insert(
+            recipientId: recipientId,
+            senderId: currentUserId,
+            type: .message
+        )
     }
 
     private func markRead() async {

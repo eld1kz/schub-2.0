@@ -2,9 +2,11 @@ import SwiftUI
 
 struct PostCard: View {
     let item: FeedPost
+    var isLiked: Bool = false
+    var isReposted: Bool = false
     var onCommentTap: () -> Void = {}
-    @State private var liked = false
-    @State private var reposted = false
+    var onRepost: () -> Void = {}
+    var onToggleLike: () -> Void = {}
 
     private let green = Color(hex: "#16A34A")
 
@@ -104,26 +106,26 @@ struct PostCard: View {
             Spacer()
             actionBtn(
                 icon: "arrow.2.squarepath",
-                count: item.post.repostsCount + (reposted ? 1 : 0),
-                color: reposted ? green : DesignTokens.textTertiary,
+                count: item.post.repostsCount,
+                color: isReposted ? green : DesignTokens.textTertiary,
             ) {
-                withAnimation(.easeOut(duration: 0.2)) { reposted.toggle() }
+                onRepost()
             }
             Spacer()
             actionBtn(
-                icon: liked ? "heart.fill" : "heart",
-                count: item.post.likesCount + (liked ? 1 : 0),
-                color: liked ? .pink : DesignTokens.textTertiary,
+                icon: isLiked ? "heart.fill" : "heart",
+                count: item.post.likesCount,
+                color: isLiked ? .pink : DesignTokens.textTertiary,
             ) {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.6)) { liked.toggle() }
+                onToggleLike()
             }
             Spacer()
-            actionBtn(
-                icon: "square.and.arrow.up",
-                count: nil,
-                color: DesignTokens.textTertiary,
-                action: {}
-            )
+            ShareLink(item: item.post.content) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 15))
+                    .foregroundStyle(DesignTokens.textTertiary)
+            }
+            .buttonStyle(.plain)
         }
         .padding(.top, 2)
     }

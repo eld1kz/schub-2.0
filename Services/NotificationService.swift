@@ -11,23 +11,25 @@ struct NotificationService {
         senderId: UUID,
         type: AppNotification.NotificationType,
         ideaId: UUID? = nil,
+        targetId: UUID? = nil,
         message: String = ""
     ) async {
         guard recipientId != senderId else { return }
         struct Insert: Encodable {
             let recipientId: UUID; let senderId: UUID
-            let type: String; let ideaId: UUID?; let message: String
+            let type: String; let ideaId: UUID?; let targetId: UUID?; let message: String
             enum CodingKeys: String, CodingKey {
                 case type, message
                 case recipientId = "recipient_id"
                 case senderId    = "sender_id"
                 case ideaId      = "idea_id"
+                case targetId    = "target_id"
             }
         }
         do {
             try await db.insert(Insert(
                 recipientId: recipientId, senderId: senderId,
-                type: type.rawValue, ideaId: ideaId, message: message
+                type: type.rawValue, ideaId: ideaId, targetId: targetId, message: message
             )).execute()
             print("[NotificationService] inserted \(type.rawValue) → recipient: \(recipientId)")
         } catch {
@@ -65,5 +67,19 @@ struct NotificationService {
             .eq("recipient_id", value: userId.uuidString)
             .eq("is_read", value: false)
             .execute()
+    }
+
+    func deleteConnectionRequest(recipientId: UUID, senderId: UUID) async {
+        do {
+            try await db
+                .delete()
+                .eq("recipient_id", value: recipientId.uuidString)
+                .eq("sender_id", value: senderId.uuidString)
+                .eq("type", value: AppNotification.NotificationType.connectionRequest.rawValue)
+                .execute()
+            print("[NotificationService] deleted connection request notification → recipient: \(recipientId)")
+        } catch {
+            print("[NotificationService] ❌ delete connection request failed: \(error)")
+        }
     }
 }

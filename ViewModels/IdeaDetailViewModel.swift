@@ -93,19 +93,21 @@ final class IdeaDetailViewModel {
                 Insert(ideaId: idea.id, authorId: userId, content: text)
             ).execute()
             print("[Comment] Insert succeeded")
+            if idea.authorId != userId {
+                await NotificationService().insert(
+                    recipientId: idea.authorId,
+                    senderId: userId,
+                    type: .comment,
+                    ideaId: idea.id,
+                    targetId: idea.id,
+                    message: idea.title
+                )
+            }
         } catch {
             print("[Comment] Insert FAILED: \(error)")
             errorMessage = error.localizedDescription
             comments.removeLast()
         }
-
-        await NotificationService().insert(
-            recipientId: idea.authorId,
-            senderId: userId,
-            type: .comment,
-            ideaId: idea.id,
-            message: idea.title
-        )
     }
 
     func loadApplications() async {

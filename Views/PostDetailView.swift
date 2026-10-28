@@ -5,8 +5,6 @@ struct PostDetailView: View {
 
     @State private var vm: PostDetailViewModel
     @State private var commentText = ""
-    @State private var liked = false
-    @State private var reposted = false
     @FocusState private var commentFocused: Bool
 
     private let indigo = Color(hex: "#4F46E5")
@@ -96,8 +94,8 @@ struct PostDetailView: View {
 
             HStack(spacing: 18) {
                 statText("\(formatCount(item.post.commentsCount)) Replies")
-                statText("\(formatCount(item.post.repostsCount + (reposted ? 1 : 0))) Reposts")
-                statText("\(formatCount(item.post.likesCount + (liked ? 1 : 0))) Likes")
+                statText("\(formatCount(item.post.repostsCount + (vm.reposted ? 1 : 0))) Reposts")
+                statText("\(formatCount(item.post.likesCount + (vm.liked ? 1 : 0))) Likes")
             }
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -128,24 +126,27 @@ struct PostDetailView: View {
             )
             detailActionButton(
                 icon: "arrow.2.squarepath",
-                color: reposted ? green : DesignTokens.textTertiary,
+                color: vm.reposted ? green : DesignTokens.textTertiary,
                 background: green.opacity(0.12)
             ) {
-                withAnimation(.easeOut(duration: 0.2)) { reposted.toggle() }
+                Task { await vm.toggleRepost() }
             }
             detailActionButton(
-                icon: liked ? "heart.fill" : "heart",
-                color: liked ? .pink : DesignTokens.textTertiary,
+                icon: vm.liked ? "heart.fill" : "heart",
+                color: vm.liked ? .pink : DesignTokens.textTertiary,
                 background: Color.pink.opacity(0.12)
             ) {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.6)) { liked.toggle() }
+                Task { await vm.toggleLike() }
             }
-            detailActionButton(
-                icon: "square.and.arrow.up",
-                color: DesignTokens.textTertiary,
-                background: DesignTokens.fieldFill,
-                action: {}
-            )
+            ShareLink(item: item.post.content) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(DesignTokens.textTertiary)
+                    .frame(width: 34, height: 34)
+                    .background(DesignTokens.fieldFill)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
             Spacer()
         }
     }

@@ -32,6 +32,18 @@ struct ConnectionService {
             .value
     }
 
+    func cancelRequest(to receiverId: UUID) async throws {
+        let senderId = try await auth.session.user.id
+        try await db
+            .delete()
+            .eq("sender_id", value: senderId.uuidString)
+            .eq("receiver_id", value: receiverId.uuidString)
+            .eq("status", value: "pending")
+            .execute()
+
+        await NotificationService().deleteConnectionRequest(recipientId: receiverId, senderId: senderId)
+    }
+
     func respond(to connectionId: UUID, accept: Bool) async throws {
         if accept {
             try await db

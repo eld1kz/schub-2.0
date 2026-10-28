@@ -6,8 +6,7 @@ struct ConnectionsListView: View {
 
     @State private var profiles: [UserProfile] = []
     @State private var isLoading = false
-    @State private var chatItem: ConversationItem?
-    @State private var showChat = false
+    @State private var chatSheet: ChatSheetData?
 
     private let client = SupabaseService.shared.client
     private let indigo = Color(hex: "#4F46E5")
@@ -47,11 +46,9 @@ struct ConnectionsListView: View {
         .toolbarBackground(DesignTokens.background, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task { await load() }
-        .sheet(isPresented: $showChat) {
-            if let item = chatItem {
-                NavigationStack {
-                    ChatView(conversation: item, currentUserId: currentUserId)
-                }
+        .sheet(item: $chatSheet) { data in
+            NavigationStack {
+                ChatView(conversation: data.item, currentUserId: data.myId)
             }
         }
     }
@@ -145,14 +142,20 @@ struct ConnectionsListView: View {
             conv = inserted
         }
 
-        chatItem = ConversationItem(
+        let item = ConversationItem(
             conversation: conv,
             otherUserName: profile.name,
             otherUserAvatar: profile.avatarURL,
             unreadCount: 0
         )
-        showChat = true
+        chatSheet = ChatSheetData(item: item, myId: currentUserId)
     }
+}
+
+private struct ChatSheetData: Identifiable {
+    let item: ConversationItem
+    let myId: UUID
+    var id: UUID { item.id }
 }
 
 #Preview {

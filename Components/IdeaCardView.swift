@@ -6,7 +6,9 @@ struct IdeaCardView: View {
     var alreadyApplied: Bool = false
     var onApplyTap: () -> Void = {}
     var isLiked: Bool = false
+    var isReposted: Bool = false
     var onToggleLike: () -> Void = {}
+    var onRepost: () -> Void = {}
     var onCommentTap: () -> Void = {}
     var authorConnectState: ConnectState? = nil
     var onConnectToAuthor: () -> Void = {}
@@ -194,6 +196,8 @@ struct IdeaCardView: View {
             Spacer()
             commentButton
             Spacer()
+            repostButton
+            Spacer()
             if !isOwnIdea {
                 applyButton
                 Spacer()
@@ -257,8 +261,24 @@ struct IdeaCardView: View {
         .disabled(alreadyApplied)
     }
 
+    private var repostButton: some View {
+        Button { onRepost() } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "arrow.2.squarepath")
+                    .font(.system(size: 15))
+                    .foregroundStyle(isReposted ? green : DesignTokens.textTertiary)
+                if item.idea.repostsCount > 0 {
+                    Text("\(item.idea.repostsCount)")
+                        .font(.caption.bold())
+                        .foregroundStyle(isReposted ? green : DesignTokens.textTertiary)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
     private var shareButton: some View {
-        Button {} label: {
+        ShareLink(item: "Check out this idea on Schub: \(item.idea.title)") {
             Image(systemName: "square.and.arrow.up")
                 .font(.system(size: 15))
                 .foregroundStyle(DesignTokens.textTertiary)

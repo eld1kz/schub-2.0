@@ -37,7 +37,7 @@ extension Post {
 
 struct FeedPost: Identifiable, Hashable {
     var id: UUID { post.id }
-    let post: Post
+    var post: Post
     let authorName: String
     let authorUniversity: String
     let authorAvatarURL: String
