@@ -34,10 +34,10 @@ body {
     @apply w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-foreground;
   }
   .btn {
-    @apply rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background disabled:opacity-50;
+    @apply rounded-md bg-foreground px-3 py-2 text-sm font-medium whitespace-nowrap text-background disabled:opacity-50;
   }
   .btn-outline {
-    @apply rounded-md border border-border px-3 py-2 text-sm font-medium;
+    @apply rounded-md border border-border px-3 py-2 text-sm font-medium whitespace-nowrap;
   }
   .label {
     @apply mb-1 block text-sm text-muted;

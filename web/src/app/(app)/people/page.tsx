@@ -4,7 +4,7 @@ import Link from "next/link";
 import { respond } from "@/app/actions";
 import { ConnectButton } from "../connect-button";
 
-export default async function DiscoverPage() {
+export default async function PeoplePage() {
   const { supabase, userId } = await requireUser();
   const [profiles, connections] = await Promise.all([
     supabase.from("profiles").select("id, name, university, bio, skills, interests, open_to_collaborate"),
