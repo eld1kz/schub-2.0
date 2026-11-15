@@ -4,14 +4,16 @@ import { requireUser } from "@/lib/supabase/server";
 import { matchScore } from "@/lib/match";
 import { formatDay, opportunityTypes, type OpportunityType } from "@/lib/opportunities";
 import { deleteOpportunity, lookForTeam, reportOpportunity, stopLooking } from "@/app/actions";
+import { teamSummaryColumns, type TeamSummary } from "@/lib/teams";
 import { ConnectButton } from "../../connect-button";
+import { TeamList } from "../../team-list";
 
 type Person = { id: string; name: string; university: string; skills: string[]; interests: string[]; open_to_collaborate: boolean };
 
 export default async function OpportunityPage(props: PageProps<"/opportunities/[id]">) {
   const { id } = await props.params;
   const { supabase, userId } = await requireUser();
-  const [opportunity, participants, me, connections, myReport, admin] = await Promise.all([
+  const [opportunity, participants, me, connections, myReport, admin, teams] = await Promise.all([
     supabase.from("opportunities").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("opportunity_participants")
@@ -22,6 +24,7 @@ export default async function OpportunityPage(props: PageProps<"/opportunities/[
     supabase.from("connections").select("sender_id, receiver_id, status"),
     supabase.from("opportunity_reports").select("reason").eq("opportunity_id", id).eq("user_id", userId).maybeSingle(),
     supabase.rpc("is_admin"),
+    supabase.from("teams").select(teamSummaryColumns).eq("opportunity_id", id).order("created_at", { ascending: false }),
   ]);
   const o = opportunity.data;
   if (!o) notFound();
@@ -94,6 +97,14 @@ export default async function OpportunityPage(props: PageProps<"/opportunities/[
             </article>
           ))}
         </div>
+      </section>
+
+      <section>
+        <div className="mb-1 flex items-center justify-between">
+          <h2 className="text-sm font-medium">Teams recruiting ({(teams.data ?? []).length})</h2>
+          <Link href={`/teams/new?opportunity=${o.id}`} className="text-sm underline">Post a team</Link>
+        </div>
+        <TeamList teams={(teams.data ?? []) as unknown as TeamSummary[]} userId={userId} empty="No teams yet. Already have one? Post it and list the roles you need." />
       </section>
 
       {o.submitted_by !== userId && (

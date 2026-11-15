@@ -6,13 +6,16 @@ import { ConnectButton } from "../../connect-button";
 export default async function UserPage(props: PageProps<"/u/[id]">) {
   const { id } = await props.params;
   const { supabase, userId } = await requireUser();
-  const [profile, ideas, connection] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", id).maybeSingle(),
+  const [profile, ideas, connection, contacts] = await Promise.all([
+    supabase.from("profiles").select("name, university, graduation_year, bio, skills, interests, open_to_collaborate").eq("id", id).maybeSingle(),
     supabase.from("ideas").select("id, title, description, skills_needed, stage").eq("author_id", id).order("created_at", { ascending: false }),
     supabase.from("connections").select("status").or(`sender_id.eq.${id},receiver_id.eq.${id}`).maybeSingle(),
+    // Returns a row only when the connection is accepted; never shown on your own page
+    id === userId ? { data: null } : supabase.rpc("contact_for", { profile_id: id }),
   ]);
   const p = profile.data;
   if (!p) notFound();
+  const contact = (contacts.data as { telegram: string; email: string }[] | null)?.[0];
 
   return (
     <div className="space-y-10">
@@ -30,6 +33,21 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
           <ConnectButton profileId={id} status={connection.data?.status} />
         )}
       </section>
+
+      {contact && (
+        <section className="rounded-md border border-border p-4 text-sm">
+          <h2 className="mb-2 font-medium">Contact</h2>
+          {!contact.telegram && !contact.email && <p className="text-muted">No contact details added yet.</p>}
+          <dl className="space-y-1">
+            {contact.telegram && (
+              <div className="flex gap-2"><dt className="text-muted">Telegram</dt><dd><a href={`https://t.me/${encodeURIComponent(contact.telegram)}`} target="_blank" rel="noreferrer" className="underline">@{contact.telegram}</a></dd></div>
+            )}
+            {contact.email && (
+              <div className="flex gap-2"><dt className="text-muted">Email</dt><dd><a href={`mailto:${contact.email}`} className="break-all underline">{contact.email}</a></dd></div>
+            )}
+          </dl>
+        </section>
+      )}
 
       {p.bio && <p className="whitespace-pre-wrap">{p.bio}</p>}
 

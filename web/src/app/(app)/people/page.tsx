@@ -8,13 +8,20 @@ export default async function PeoplePage() {
   const { supabase, userId } = await requireUser();
   const [profiles, connections] = await Promise.all([
     supabase.from("profiles").select("id, name, university, bio, skills, interests, open_to_collaborate"),
-    supabase.from("connections").select("id, sender_id, receiver_id, status, sender:profiles!sender_id(name)"),
+    supabase.from("connections").select("id, sender_id, receiver_id, status, sender:profiles!sender_id(name), receiver:profiles!receiver_id(name)"),
   ]);
 
   const all = profiles.data ?? [];
   const me = all.find((p) => p.id === userId);
   const links = connections.data ?? [];
   const incoming = links.filter((c) => c.receiver_id === userId && c.status === "pending");
+  const connected = links
+    .filter((c) => c.status === "accepted")
+    .map((c) => {
+      const sent = c.sender_id === userId;
+      const other = (sent ? c.receiver : c.sender) as unknown as { name: string } | null;
+      return { id: sent ? c.receiver_id : c.sender_id, name: other?.name || "Unnamed" };
+    });
   const statusWith = (id: string) => links.find((c) => c.sender_id === id || c.receiver_id === id)?.status;
 
   const matches = all
@@ -34,6 +41,18 @@ export default async function PeoplePage() {
                 <form action={respond.bind(null, c.id, "accepted")}><button className="btn">Accept</button></form>
                 <form action={respond.bind(null, c.id, "declined")}><button className="btn-outline">Decline</button></form>
               </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {connected.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-sm font-medium">Your connections</h2>
+          {connected.map((c) => (
+            <div key={c.id} className="flex items-center justify-between py-2 text-sm">
+              <Link href={`/u/${c.id}`} className="hover:underline">{c.name}</Link>
+              <Link href={`/u/${c.id}`} className="text-muted hover:text-foreground">Contact details</Link>
             </div>
           ))}
         </section>

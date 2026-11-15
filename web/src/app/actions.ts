@@ -40,6 +40,9 @@ export async function updateProfile(formData: FormData) {
       skills: parseList(formData.get("skills")),
       interests: parseList(formData.get("interests")),
       open_to_collaborate: formData.get("open_to_collaborate") === "on",
+      // Stored as a bare username: "@name" and "https://t.me/name" both become "name"
+      telegram: String(formData.get("telegram") ?? "").trim().replace(/^(https?:\/\/)?(t\.me\/)?@?/i, ""),
+      email: String(formData.get("email") ?? "").trim(),
     })
     .eq("id", userId);
   revalidatePath("/", "layout");
@@ -48,7 +51,10 @@ export async function updateProfile(formData: FormData) {
 
 export async function connect(receiverId: string) {
   const { supabase, userId } = await requireUser();
-  await supabase.from("connections").insert({ sender_id: userId, receiver_id: receiverId });
+  // If they already asked you, connecting back accepts their request instead of creating a second one
+  const { data: theirs } = await supabase.from("connections").select("id").eq("sender_id", receiverId).eq("receiver_id", userId).maybeSingle();
+  if (theirs) await supabase.from("connections").update({ status: "accepted" }).eq("id", theirs.id).eq("status", "pending");
+  else await supabase.from("connections").insert({ sender_id: userId, receiver_id: receiverId });
   revalidatePath("/", "layout");
 }
 
@@ -123,4 +129,61 @@ export async function stopLooking(opportunityId: string) {
   const { supabase, userId } = await requireUser();
   await supabase.from("opportunity_participants").delete().eq("opportunity_id", opportunityId).eq("user_id", userId);
   revalidatePath(`/opportunities/${opportunityId}`);
+}
+
+export async function createTeam(formData: FormData) {
+  const { supabase, userId } = await requireUser();
+  const text = (key: string) => String(formData.get(key) ?? "").trim();
+  const fail = (message: string): never => redirect(`/teams/new?error=${encodeURIComponent(message)}`);
+
+  // Keeps the casing people typed ("CTO"), drops repeats
+  const roles = text("roles").split(",").map((r) => r.trim().slice(0, 40)).filter(Boolean);
+  const unique = roles.filter((r, i) => roles.findIndex((x) => x.toLowerCase() === r.toLowerCase()) === i);
+  if (unique.length === 0) fail("Add at least one open role.");
+  if (unique.length > 10) fail("List up to 10 roles.");
+
+  const { data, error } = await supabase
+    .from("teams")
+    .insert({
+      owner_id: userId,
+      title: text("title"),
+      description: text("description"),
+      roles: unique,
+      opportunity_id: text("opportunity_id") || null,
+    })
+    .select("id")
+    .single();
+  if (error || !data) return fail(error?.code === "23514" ? "The name should be 3 to 120 characters." : "Couldn't post the team. Try again.");
+  revalidatePath("/", "layout");
+  redirect(`/teams/${data.id}`);
+}
+
+export async function deleteTeam(id: string) {
+  const { supabase } = await requireUser();
+  await supabase.from("teams").delete().eq("id", id);
+  revalidatePath("/", "layout");
+  redirect("/teams");
+}
+
+export async function applyToTeam(teamId: string, formData: FormData) {
+  const { supabase, userId } = await requireUser();
+  await supabase.from("team_applications").insert({
+    team_id: teamId,
+    user_id: userId,
+    role: String(formData.get("role") ?? ""),
+    note: String(formData.get("note") ?? "").trim(),
+  });
+  revalidatePath("/", "layout");
+}
+
+export async function withdrawApplication(teamId: string) {
+  const { supabase, userId } = await requireUser();
+  await supabase.from("team_applications").delete().eq("team_id", teamId).eq("user_id", userId);
+  revalidatePath("/", "layout");
+}
+
+export async function respondToApplication(teamId: string, applicationId: string, status: "accepted" | "declined") {
+  const { supabase } = await requireUser();
+  await supabase.from("team_applications").update({ status }).eq("id", applicationId).eq("team_id", teamId);
+  revalidatePath("/", "layout");
 }
