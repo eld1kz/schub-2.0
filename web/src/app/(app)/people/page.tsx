@@ -1,10 +1,18 @@
 import { requireUser } from "@/lib/supabase/server";
 import { matchScore } from "@/lib/match";
+import { knownSkills, SKILLS } from "@/lib/skills";
 import Link from "next/link";
 import { respond } from "@/app/actions";
 import { ConnectButton } from "../connect-button";
 
-export default async function PeoplePage() {
+const chipCount = 12;
+
+// "?skills=React,C%2B%2B": each skill encoded on its own so the commas stay readable
+const skillsHref = (skills: string[]) => (skills.length ? `/people?skills=${skills.map(encodeURIComponent).join(",")}` : "/people");
+
+export default async function PeoplePage(props: PageProps<"/people">) {
+  const { skills: skillsParam } = await props.searchParams;
+  const selected = knownSkills(typeof skillsParam === "string" ? skillsParam.split(",") : []);
   const { supabase, userId, isGuest } = await requireUser();
   const [profiles, connections] = await Promise.all([
     supabase.from("profiles").select("id, name, university, bio, skills, interests, open_to_collaborate"),
@@ -24,8 +32,19 @@ export default async function PeoplePage() {
     });
   const statusWith = (id: string) => links.find((c) => c.sender_id === id || c.receiver_id === id)?.status;
 
+  // Chips: the 12 skills most people have (listed order breaks ties), plus any already selected
+  const counts = new Map<string, number>();
+  for (const p of all) for (const s of knownSkills(p.skills)) counts.set(s, (counts.get(s) ?? 0) + 1);
+  const top = [...SKILLS].sort((a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0)).slice(0, chipCount);
+  const chips = [...top, ...selected.filter((s) => !top.includes(s))];
+
   const matches = all
     .filter((p) => p.id !== userId && p.name)
+    // Must have every selected skill
+    .filter((p) => {
+      const has = knownSkills(p.skills);
+      return selected.every((s) => has.includes(s));
+    })
     .map((p) => ({ ...p, ...matchScore(p, me ?? { skills: [], interests: [], open_to_collaborate: true }) }))
     .sort((a, b) => Number(b.open_to_collaborate) - Number(a.open_to_collaborate) || b.score - a.score);
 
@@ -58,8 +77,27 @@ export default async function PeoplePage() {
         </section>
       )}
 
+      <nav aria-label="Filter by skill" className="flex flex-wrap items-center gap-2">
+        {chips.map((s) => {
+          const on = selected.includes(s);
+          return (
+            <Link
+              key={s}
+              href={skillsHref(on ? selected.filter((x) => x !== s) : [...selected, s])}
+              aria-current={on ? "true" : undefined}
+              className={`rounded-full border px-3 py-1 text-sm ${on ? "border-indigo-600 bg-indigo-600 text-white dark:border-indigo-500 dark:bg-indigo-500" : "border-border text-muted hover:border-foreground hover:text-foreground"}`}
+            >
+              {s}
+            </Link>
+          );
+        })}
+        {selected.length > 0 && <Link href="/people" className="ml-1 text-sm text-muted underline hover:text-foreground">Clear filters</Link>}
+      </nav>
+
       <section className="divide-y divide-border border-t border-border">
-        {matches.length === 0 && <p className="py-6 text-sm text-muted">No other students yet.</p>}
+        {matches.length === 0 && (
+          <p className="py-6 text-sm text-muted">{selected.length > 0 ? "Nobody has all of these skills yet." : "No other students yet."}</p>
+        )}
         {matches.map((p) => {
           return (
             <article key={p.id} className="flex gap-4 py-5">

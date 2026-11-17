@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
 import { formatDay, opportunityTypes, today, type OpportunityType } from "@/lib/opportunities";
 import { setOpportunityStatus } from "@/app/actions";
+import { OpportunitySearch } from "./opportunity-search";
 
 export default async function OpportunitiesPage(props: PageProps<"/opportunities">) {
   const { type } = await props.searchParams;
@@ -53,23 +54,26 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
         ))}
       </nav>
 
-      <section className="divide-y divide-border border-t border-border">
-        {(items ?? []).length === 0 && <p className="py-6 text-sm text-muted">No upcoming opportunities yet.</p>}
-        {(items ?? []).map((o) => {
+      <OpportunitySearch
+        rows={(items ?? []).map((o) => {
           const looking = (o.opportunity_participants as unknown as { count: number }[])[0]?.count ?? 0;
-          return (
-            <Link key={o.id} href={`/opportunities/${o.id}`} className="flex items-start justify-between gap-4 py-5 hover:opacity-80">
-              <div>
-                <p className="font-medium">{o.title}</p>
-                <p className="mt-1 text-sm text-muted">
-                  {[opportunityTypes[o.type as OpportunityType], o.organizer, o.location, o.starts_at && `Starts ${formatDay(o.starts_at)}`, o.deadline && `Apply by ${formatDay(o.deadline)}`].filter(Boolean).join(" · ")}
-                </p>
-              </div>
-              <span className="shrink-0 text-sm text-muted">{looking} looking for a team</span>
-            </Link>
-          );
+          return {
+            id: o.id,
+            title: o.title,
+            node: (
+              <Link href={`/opportunities/${o.id}`} className="flex items-start justify-between gap-4 py-5 hover:opacity-80">
+                <div>
+                  <p className="font-medium">{o.title}</p>
+                  <p className="mt-1 text-sm text-muted">
+                    {[opportunityTypes[o.type as OpportunityType], o.organizer, o.location, o.starts_at && `Starts ${formatDay(o.starts_at)}`, o.deadline && `Apply by ${formatDay(o.deadline)}`].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+                <span className="shrink-0 text-sm text-muted">{looking} looking for a team</span>
+              </Link>
+            ),
+          };
         })}
-      </section>
+      />
     </div>
   );
 }

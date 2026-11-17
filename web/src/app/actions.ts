@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient, requireMember } from "@/lib/supabase/server";
+import { createClient, requireMember, requireUser } from "@/lib/supabase/server";
 import { parseList } from "@/lib/match";
 import { linkWorks } from "@/lib/opportunities";
 import { toLink } from "@/lib/portfolio";
@@ -28,6 +28,22 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/opportunities");
+}
+
+export type SearchResults = { people: { id: string; name: string }[]; teams: { id: string; title: string }[] };
+
+// Nav search: people by name and teams by title, up to 5 of each. Guests can search too.
+export async function searchGlobal(query: string): Promise<SearchResults> {
+  const { supabase } = await requireUser();
+  const q = query.trim().slice(0, 50);
+  if (q.length < 2) return { people: [], teams: [] };
+  // % and _ are wildcards in ilike; match them literally
+  const pattern = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+  const [people, teams] = await Promise.all([
+    supabase.from("profiles").select("id, name").ilike("name", pattern).order("name").limit(5),
+    supabase.from("teams").select("id, title").ilike("title", pattern).order("created_at", { ascending: false }).limit(5),
+  ]);
+  return { people: people.data ?? [], teams: teams.data ?? [] };
 }
 
 // Notifications are written by database triggers (supabase/notifications.sql); here they're only read

@@ -5,6 +5,7 @@ import { signOut } from "@/app/actions";
 import { Avatar } from "./avatar";
 import { SignInButton } from "./sign-in";
 import { Notifications, type Notification } from "./notifications";
+import { GlobalSearch } from "./global-search";
 
 const links = [
   { href: "/opportunities", label: "Opportunities" },
@@ -22,6 +23,7 @@ function Nav({ counts = {}, account }: { counts?: Record<string, number>; accoun
           {counts[l.href] > 0 && <span className="ml-1 font-medium text-foreground tabular-nums">{counts[l.href]}</span>}
         </Link>
       ))}
+      <GlobalSearch />
       {account}
     </nav>
   );
