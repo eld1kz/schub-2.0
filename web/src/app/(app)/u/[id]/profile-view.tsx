@@ -2,6 +2,9 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatPeriod, mediaUrl, webLink, type Experience, type Project } from "@/lib/portfolio";
+import { groupSkills } from "@/lib/skills";
+import { About } from "./about";
+import { GitHubIcon, LinkedInIcon, WebsiteIcon } from "./link-icons";
 
 export type ProfileData = {
   name: string;
@@ -19,6 +22,8 @@ export type ProfileData = {
   website: string;
 };
 
+export type Connection = { id: string; name: string; avatar_url: string };
+
 type Props = {
   profile: ProfileData;
   isSelf: boolean;
@@ -29,7 +34,10 @@ type Props = {
   teams: { id: string; title: string; role: string }[];
   events: { id: string; title: string }[];
   ideas: { id: string; title: string; description: string; skills_needed: string[]; stage: string }[];
+  connections: Connection[];
 };
+
+const shownConnections = 6;
 
 function Chips({ items, small = false }: { items: string[]; small?: boolean }) {
   return (
@@ -47,6 +55,32 @@ function SectionHeading({ title, add }: { title: string; add?: { href: string; l
       <h2 className="font-semibold">{title}</h2>
       {add && <Link href={add.href} className="text-sm underline">{add.label}</Link>}
     </div>
+  );
+}
+
+// Round photo, or initials when there's none. `className` sets the size.
+function Avatar({ url, name, className, sizes, priority = false }: { url: string; name: string; className: string; sizes: string; priority?: boolean }) {
+  const photo = mediaUrl(url);
+  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
+  return (
+    <div className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full border border-border font-semibold ${className}`}>
+      {photo ? <Image src={photo} alt="" fill sizes={sizes} className="object-cover" priority={priority} /> : initials}
+    </div>
+  );
+}
+
+function ConnectionList({ people }: { people: Connection[] }) {
+  return (
+    <ul className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+      {people.map((c) => (
+        <li key={c.id}>
+          <Link href={`/u/${c.id}`} className="flex flex-col items-center gap-1 text-center hover:opacity-80">
+            <Avatar url={c.avatar_url} name={c.name} className="h-10 w-10 text-sm" sizes="40px" />
+            <span className="w-full truncate text-xs">{c.name || "Unnamed"}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -83,41 +117,47 @@ function ProjectCard({ project: p, isSelf }: { project: Project; isSelf: boolean
   );
 }
 
-export function ProfileView({ profile: p, isSelf, action, contact, projects, experiences, teams, events, ideas }: Props) {
-  const photo = mediaUrl(p.avatar_url);
-  const initials = p.name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
+export function ProfileView({ profile: p, isSelf, action, contact, projects, experiences, teams, events, ideas, connections }: Props) {
   const links = [
-    { label: "GitHub", href: webLink(p.github) },
-    { label: "LinkedIn", href: webLink(p.linkedin) },
-    { label: "Website", href: webLink(p.website) },
+    { label: "GitHub", href: webLink(p.github), icon: <GitHubIcon /> },
+    { label: "LinkedIn", href: webLink(p.linkedin), icon: <LinkedInIcon /> },
+    { label: "Website", href: webLink(p.website), icon: <WebsiteIcon /> },
   ].filter((l) => l.href);
   const education = [p.university, p.graduation_year ? `Class of ${p.graduation_year}` : ""].filter(Boolean).join(" · ");
+  const skillGroups = groupSkills(p.skills);
 
   return (
-    <div className="space-y-12">
-      <section className="flex flex-col gap-5 sm:flex-row sm:items-start">
-        <div className="relative grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full border border-border text-2xl font-semibold">
-          {photo ? <Image src={photo} alt="" fill sizes="96px" className="object-cover" priority /> : initials}
-        </div>
+    <div className="divide-y divide-border [&>section]:py-6 [&>section:first-child]:pt-0">
+      <section className="flex gap-4">
+        <Avatar url={p.avatar_url} name={p.name} className="h-20 w-20 text-2xl" sizes="80px" priority />
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-3">
             <h1 className="text-2xl font-semibold tracking-tight">{p.name || "Unnamed"}</h1>
             {action}
           </div>
-          {p.headline && <p className="mt-1">{p.headline}</p>}
+          {p.headline && <p className="mt-0.5 text-muted">{p.headline}</p>}
           {education && <p className="mt-1 text-sm text-muted">{education}</p>}
-          {!p.open_to_collaborate && <p className="mt-1 text-sm text-muted">Not looking for collaborators</p>}
-          {links.length > 0 && (
-            <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              {links.map((l) => <a key={l.label} href={l.href ?? ""} target="_blank" rel="noreferrer" className="underline">{l.label}</a>)}
-            </p>
+          {(p.open_to_collaborate || links.length > 0) && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+              {p.open_to_collaborate && (
+                <span className="inline-flex items-center gap-1.5 text-sm text-green-700 dark:text-green-400">
+                  <span aria-hidden className="h-2 w-2 rounded-full bg-green-500" />
+                  Open to collaborate
+                </span>
+              )}
+              {links.map((l) => (
+                <a key={l.label} href={l.href ?? ""} target="_blank" rel="noreferrer" aria-label={l.label} title={l.label} className="text-muted hover:text-foreground">
+                  {l.icon}
+                </a>
+              ))}
+            </div>
           )}
         </div>
       </section>
 
       {contact && (
-        <section className="rounded-md border border-border p-4 text-sm">
-          <h2 className="mb-2 font-medium">Contact</h2>
+        <section className="text-sm">
+          <h2 className="mb-2 font-semibold">Contact</h2>
           {!contact.telegram && !contact.email && <p className="text-muted">No contact details added yet.</p>}
           <dl className="space-y-1">
             {contact.telegram && (
@@ -133,7 +173,29 @@ export function ProfileView({ profile: p, isSelf, action, contact, projects, exp
       {p.bio && (
         <section>
           <SectionHeading title="About" />
-          <p className="whitespace-pre-wrap">{p.bio}</p>
+          <About text={p.bio} />
+        </section>
+      )}
+
+      {(skillGroups.length > 0 || p.interests.length > 0 || p.looking_for.length > 0) && (
+        <section className="space-y-4">
+          {skillGroups.length > 0 && (
+            <div>
+              <SectionHeading title="Skills" />
+              <div className="space-y-3">
+                {skillGroups.map((g) => (
+                  <div key={g.name}>
+                    <h3 className="mb-1.5 text-xs font-medium tracking-wide text-muted uppercase">{g.name}</h3>
+                    <ul className="flex flex-wrap gap-2">
+                      {g.skills.map((s) => <li key={s} className="skill">{s}</li>)}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {p.interests.length > 0 && <div><h2 className="mb-2 text-sm text-muted">Interested in</h2><Chips items={p.interests} /></div>}
+          {p.looking_for.length > 0 && <div><h2 className="mb-2 text-sm text-muted">Wants to team up with</h2><Chips items={p.looking_for} /></div>}
         </section>
       )}
 
@@ -171,14 +233,6 @@ export function ProfileView({ profile: p, isSelf, action, contact, projects, exp
         </section>
       )}
 
-      {(p.skills.length > 0 || p.interests.length > 0 || p.looking_for.length > 0) && (
-        <section className="space-y-5">
-          {p.skills.length > 0 && <div><SectionHeading title="Skills" /><Chips items={p.skills} /></div>}
-          {p.interests.length > 0 && <div><h2 className="mb-2 text-sm text-muted">Interested in</h2><Chips items={p.interests} /></div>}
-          {p.looking_for.length > 0 && <div><h2 className="mb-2 text-sm text-muted">Wants to team up with</h2><Chips items={p.looking_for} /></div>}
-        </section>
-      )}
-
       {(teams.length > 0 || events.length > 0) && (
         <section>
           <SectionHeading title="On Schub" />
@@ -211,6 +265,21 @@ export function ProfileView({ profile: p, isSelf, action, contact, projects, exp
               </article>
             ))}
           </div>
+        </section>
+      )}
+
+      {connections.length > 0 && (
+        <section>
+          <SectionHeading title={`Connections · ${connections.length}`} />
+          <ConnectionList people={connections.slice(0, shownConnections)} />
+          {connections.length > shownConnections && (
+            <details className="group mt-3">
+              <summary className="cursor-pointer list-none text-sm text-muted underline hover:text-foreground group-open:hidden">
+                See all {connections.length} connections
+              </summary>
+              <ConnectionList people={connections.slice(shownConnections)} />
+            </details>
+          )}
         </section>
       )}
     </div>

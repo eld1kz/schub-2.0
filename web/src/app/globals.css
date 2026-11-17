@@ -39,6 +39,10 @@ body {
   .btn-outline {
     @apply rounded-md border border-border px-3 py-2 text-sm font-medium whitespace-nowrap;
   }
+  /* Profile skills: the most prominent chips on the page */
+  .skill {
+    @apply rounded-full bg-indigo-50 px-3 py-1 text-base font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300;
+  }
   .label {
     @apply mb-1 block text-sm text-muted;
   }

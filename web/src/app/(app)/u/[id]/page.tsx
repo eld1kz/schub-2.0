@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/supabase/server";
 import { today } from "@/lib/opportunities";
 import { experienceColumns, projectColumns, type Experience, type Project } from "@/lib/portfolio";
 import { ConnectButton } from "../../connect-button";
-import { ProfileView, type ProfileData } from "./profile-view";
+import { ProfileView, type Connection, type ProfileData } from "./profile-view";
 
 type Opportunity = { id: string; title: string; starts_at: string | null; deadline: string | null } | null;
 
@@ -12,7 +12,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
   const { id } = await props.params;
   const { supabase, userId } = await requireUser();
   const isSelf = id === userId;
-  const [profile, ideas, connection, contacts, projects, experiences, owned, joined, looking] = await Promise.all([
+  const [profile, ideas, connection, contacts, projects, experiences, owned, joined, looking, connections] = await Promise.all([
     supabase
       .from("profiles")
       .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, open_to_collaborate, avatar_url, github, linkedin, website")
@@ -27,6 +27,8 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
     supabase.from("teams").select("id, title").eq("owner_id", id).order("created_at", { ascending: false }),
     supabase.from("team_applications").select("role, team:teams(id, title)").eq("user_id", id).eq("status", "accepted"),
     supabase.from("opportunity_participants").select("opportunity:opportunities(id, title, starts_at, deadline)").eq("user_id", id),
+    // Accepted connections of this profile (supabase/connections-list.sql)
+    supabase.rpc("connections_of", { profile_id: id }),
   ]);
   const p = profile.data as ProfileData | null;
   if (!p) notFound();
@@ -56,6 +58,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
       teams={teams}
       events={events}
       ideas={ideas.data ?? []}
+      connections={(connections.data ?? []) as Connection[]}
     />
   );
 }

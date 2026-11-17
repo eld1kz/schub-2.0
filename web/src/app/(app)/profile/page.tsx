@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
 import { updateProfile } from "@/app/actions";
+import { knownSkills } from "@/lib/skills";
+import { SkillPicker } from "./skill-picker";
 
 export default async function ProfilePage(props: PageProps<"/profile">) {
   const { error } = await props.searchParams;
@@ -36,7 +38,7 @@ export default async function ProfilePage(props: PageProps<"/profile">) {
 
       <section className="space-y-4">
         <h2 className="text-sm font-medium">Skills</h2>
-        <div><label className="label" htmlFor="skills">Skills, comma separated</label><input id="skills" name="skills" defaultValue={p.skills.join(", ")} placeholder="swift, design, marketing" className="input" /></div>
+        <div><label className="label" htmlFor="skills">Skills</label><SkillPicker id="skills" defaultValue={knownSkills(p.skills)} /></div>
         <div><label className="label" htmlFor="interests">Interests, comma separated</label><input id="interests" name="interests" defaultValue={p.interests.join(", ")} placeholder="fintech, education" className="input" /></div>
         <div><label className="label" htmlFor="looking_for">Who you want to team up with, comma separated</label><input id="looking_for" name="looking_for" defaultValue={p.looking_for.join(", ")} placeholder="designer, backend developer" className="input" /></div>
       </section>

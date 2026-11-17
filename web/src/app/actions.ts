@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/supabase/server";
 import { parseList } from "@/lib/match";
 import { linkWorks } from "@/lib/opportunities";
 import { toLink } from "@/lib/portfolio";
+import { knownSkills } from "@/lib/skills";
 
 export async function createPost(formData: FormData) {
   const { supabase, userId } = await requireUser();
@@ -58,7 +59,8 @@ export async function updateProfile(formData: FormData) {
       university: text("university"),
       graduation_year: Number(formData.get("graduation_year")) || 0,
       bio: text("bio"),
-      skills: parseList(formData.get("skills")),
+      // Only skills from the fixed list are kept
+      skills: knownSkills(formData.getAll("skills")),
       interests: parseList(formData.get("interests")),
       looking_for: parseList(formData.get("looking_for")),
       github: toLink(text("github"), "https://github.com/"),
