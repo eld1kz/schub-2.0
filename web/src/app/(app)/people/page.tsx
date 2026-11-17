@@ -5,7 +5,7 @@ import { respond } from "@/app/actions";
 import { ConnectButton } from "../connect-button";
 
 export default async function PeoplePage() {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId, isGuest } = await requireUser();
   const [profiles, connections] = await Promise.all([
     supabase.from("profiles").select("id, name, university, bio, skills, interests, open_to_collaborate"),
     supabase.from("connections").select("id, sender_id, receiver_id, status, sender:profiles!sender_id(name), receiver:profiles!receiver_id(name)"),
@@ -74,7 +74,7 @@ export default async function PeoplePage() {
               </div>
               <div className="flex flex-col items-end gap-2">
                 <span className="text-sm tabular-nums">{p.score}%</span>
-                <ConnectButton profileId={p.id} status={statusWith(p.id)} />
+                <ConnectButton profileId={p.id} status={statusWith(p.id)} isGuest={isGuest} />
               </div>
             </article>
           );

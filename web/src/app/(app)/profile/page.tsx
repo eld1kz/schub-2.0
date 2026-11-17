@@ -3,10 +3,12 @@ import { requireUser } from "@/lib/supabase/server";
 import { updateProfile } from "@/app/actions";
 import { knownSkills } from "@/lib/skills";
 import { SkillPicker } from "./skill-picker";
+import { SignInPrompt } from "../sign-in";
 
 export default async function ProfilePage(props: PageProps<"/profile">) {
   const { error } = await props.searchParams;
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId, isGuest } = await requireUser();
+  if (isGuest) return <SignInPrompt text="Sign in to create your profile. It stays with your Google account on every device." />;
   const [{ data: p }, { data: contacts }] = await Promise.all([
     supabase
       .from("profiles")

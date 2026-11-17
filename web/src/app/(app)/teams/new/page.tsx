@@ -1,10 +1,12 @@
 import { requireUser } from "@/lib/supabase/server";
 import { createTeam } from "@/app/actions";
 import { today } from "@/lib/opportunities";
+import { SignInPrompt } from "../../sign-in";
 
 export default async function NewTeamPage(props: PageProps<"/teams/new">) {
   const { error, opportunity } = await props.searchParams;
-  const { supabase } = await requireUser();
+  const { supabase, isGuest } = await requireUser();
+  if (isGuest) return <SignInPrompt text="Sign in to post a team." />;
   const day = today();
   const { data: opportunities } = await supabase
     .from("opportunities")

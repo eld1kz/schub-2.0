@@ -1,15 +1,37 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/lib/supabase/server";
+import { createClient, requireMember } from "@/lib/supabase/server";
 import { parseList } from "@/lib/match";
 import { linkWorks } from "@/lib/opportunities";
 import { toLink } from "@/lib/portfolio";
 import { knownSkills } from "@/lib/skills";
 
+// Starts Google sign-in; /auth/callback brings people back to the page the button was on
+export async function signIn() {
+  const supabase = await createClient();
+  const h = await headers();
+  const origin = h.get("origin") ?? "";
+  const from = URL.parse(h.get("referer") ?? "");
+  const next = from && from.origin === origin ? from.pathname + from.search : "/";
+  const { data } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
+  });
+  redirect(data.url ?? next);
+}
+
+// The proxy gives the next request a fresh guest account
+export async function signOut() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/opportunities");
+}
+
 export async function createPost(formData: FormData) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   const content = String(formData.get("content")).trim();
   if (!content) return;
   await supabase.from("posts").insert({ author_id: userId, content });
@@ -17,7 +39,7 @@ export async function createPost(formData: FormData) {
 }
 
 export async function createIdea(formData: FormData) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   const title = String(formData.get("title")).trim();
   if (!title) return;
   await supabase.from("ideas").insert({
@@ -30,7 +52,7 @@ export async function createIdea(formData: FormData) {
   revalidatePath("/feed");
 }
 
-type Supabase = Awaited<ReturnType<typeof requireUser>>["supabase"];
+type Supabase = Awaited<ReturnType<typeof requireMember>>["supabase"];
 
 // Stores an uploaded image in the user's own folder of the public "media" bucket.
 // Returns its address, null when no file was chosen, or an error to show.
@@ -46,7 +68,7 @@ async function uploadImage(supabase: Supabase, userId: string, file: FormDataEnt
 }
 
 export async function updateProfile(formData: FormData) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   const text = (key: string) => String(formData.get(key) ?? "").trim();
   const photo = await uploadImage(supabase, userId, formData.get("photo"));
   if (photo.error) redirect(`/profile?error=${encodeURIComponent(photo.error)}`);
@@ -81,7 +103,7 @@ export async function updateProfile(formData: FormData) {
 
 // `id` is null for a new project
 export async function saveProject(id: string | null, formData: FormData) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   const text = (key: string) => String(formData.get(key) ?? "").trim();
   const fail = (message: string): never => redirect(`/profile/projects/${id ?? "new"}?error=${encodeURIComponent(message)}`);
 
@@ -109,7 +131,7 @@ export async function saveProject(id: string | null, formData: FormData) {
 }
 
 export async function deleteProject(id: string) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   await supabase.from("projects").delete().eq("id", id).eq("user_id", userId);
   revalidatePath("/", "layout");
   redirect(`/u/${userId}`);
@@ -117,7 +139,7 @@ export async function deleteProject(id: string) {
 
 // `id` is null for a new entry. Months arrive as "2026-03" and are stored as the first day of that month.
 export async function saveExperience(id: string | null, formData: FormData) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   const text = (key: string) => String(formData.get(key) ?? "").trim();
   const day = (key: string) => (/^\d{4}-\d{2}$/.test(text(key)) ? `${text(key)}-01` : null);
   const fail = (message: string): never => redirect(`/profile/experience/${id ?? "new"}?error=${encodeURIComponent(message)}`);
@@ -140,14 +162,14 @@ export async function saveExperience(id: string | null, formData: FormData) {
 }
 
 export async function deleteExperience(id: string) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   await supabase.from("experiences").delete().eq("id", id).eq("user_id", userId);
   revalidatePath("/", "layout");
   redirect(`/u/${userId}`);
 }
 
 export async function connect(receiverId: string) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   // If they already asked you, connecting back accepts their request instead of creating a second one
   const { data: theirs } = await supabase.from("connections").select("id").eq("sender_id", receiverId).eq("receiver_id", userId).maybeSingle();
   if (theirs) await supabase.from("connections").update({ status: "accepted" }).eq("id", theirs.id).eq("status", "pending");
@@ -156,13 +178,13 @@ export async function connect(receiverId: string) {
 }
 
 export async function respond(connectionId: string, status: "accepted" | "declined") {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireMember();
   await supabase.from("connections").update({ status }).eq("id", connectionId);
   revalidatePath("/", "layout");
 }
 
 export async function addOpportunity(formData: FormData) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   const text = (key: string) => String(formData.get(key) ?? "").trim();
   const fail = (message: string): never => redirect(`/opportunities/new?error=${encodeURIComponent(message)}`);
 
@@ -194,26 +216,26 @@ export async function addOpportunity(formData: FormData) {
 }
 
 export async function setOpportunityStatus(id: string, status: "live" | "removed") {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireMember();
   await supabase.from("opportunities").update({ status }).eq("id", id);
   revalidatePath("/opportunities");
 }
 
 export async function deleteOpportunity(id: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireMember();
   await supabase.from("opportunities").delete().eq("id", id);
   revalidatePath("/opportunities");
   redirect("/opportunities");
 }
 
 export async function reportOpportunity(id: string, formData: FormData) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   await supabase.from("opportunity_reports").insert({ opportunity_id: id, user_id: userId, reason: String(formData.get("reason")) });
   revalidatePath(`/opportunities/${id}`);
 }
 
 export async function lookForTeam(opportunityId: string, formData: FormData) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   await supabase.from("opportunity_participants").upsert({
     opportunity_id: opportunityId,
     user_id: userId,
@@ -223,13 +245,13 @@ export async function lookForTeam(opportunityId: string, formData: FormData) {
 }
 
 export async function stopLooking(opportunityId: string) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   await supabase.from("opportunity_participants").delete().eq("opportunity_id", opportunityId).eq("user_id", userId);
   revalidatePath(`/opportunities/${opportunityId}`);
 }
 
 export async function createTeam(formData: FormData) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   const text = (key: string) => String(formData.get(key) ?? "").trim();
   const fail = (message: string): never => redirect(`/teams/new?error=${encodeURIComponent(message)}`);
 
@@ -256,14 +278,14 @@ export async function createTeam(formData: FormData) {
 }
 
 export async function deleteTeam(id: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireMember();
   await supabase.from("teams").delete().eq("id", id);
   revalidatePath("/", "layout");
   redirect("/teams");
 }
 
 export async function applyToTeam(teamId: string, formData: FormData) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   await supabase.from("team_applications").insert({
     team_id: teamId,
     user_id: userId,
@@ -274,13 +296,13 @@ export async function applyToTeam(teamId: string, formData: FormData) {
 }
 
 export async function withdrawApplication(teamId: string) {
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId } = await requireMember();
   await supabase.from("team_applications").delete().eq("team_id", teamId).eq("user_id", userId);
   revalidatePath("/", "layout");
 }
 
 export async function respondToApplication(teamId: string, applicationId: string, status: "accepted" | "declined") {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireMember();
   await supabase.from("team_applications").update({ status }).eq("id", applicationId).eq("team_id", teamId);
   revalidatePath("/", "layout");
 }

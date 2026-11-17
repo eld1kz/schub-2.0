@@ -2,11 +2,13 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
 import { deleteExperience, saveExperience } from "@/app/actions";
 import { experienceColumns, type Experience } from "@/lib/portfolio";
+import { SignInPrompt } from "../../../sign-in";
 
 // /profile/experience/new adds an entry; /profile/experience/<id> edits one of your own
 export default async function ExperienceFormPage(props: PageProps<"/profile/experience/[id]">) {
   const [{ id }, { error }] = await Promise.all([props.params, props.searchParams]);
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId, isGuest } = await requireUser();
+  if (isGuest) return <SignInPrompt text="Sign in to add experience to your profile." />;
   const isNew = id === "new";
   const { data } = isNew ? { data: null } : await supabase.from("experiences").select(experienceColumns).eq("id", id).eq("user_id", userId).maybeSingle();
   const e = data as Experience | null;

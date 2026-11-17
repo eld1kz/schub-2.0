@@ -6,13 +6,14 @@ import { formatDay, opportunityTypes, type OpportunityType } from "@/lib/opportu
 import { deleteOpportunity, lookForTeam, reportOpportunity, stopLooking } from "@/app/actions";
 import { teamSummaryColumns, type TeamSummary } from "@/lib/teams";
 import { ConnectButton } from "../../connect-button";
+import { SignInButton } from "../../sign-in";
 import { TeamList } from "../../team-list";
 
 type Person = { id: string; name: string; university: string; skills: string[]; interests: string[]; open_to_collaborate: boolean };
 
 export default async function OpportunityPage(props: PageProps<"/opportunities/[id]">) {
   const { id } = await props.params;
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId, isGuest } = await requireUser();
   const [opportunity, participants, me, connections, myReport, admin, teams] = await Promise.all([
     supabase.from("opportunities").select("*").eq("id", id).maybeSingle(),
     supabase
@@ -59,7 +60,12 @@ export default async function OpportunityPage(props: PageProps<"/opportunities/[
       </section>
 
       <section className="rounded-md border border-border p-4">
-        {mine ? (
+        {isGuest ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm">Looking for a team for this?</p>
+            <SignInButton label="Sign in to join" />
+          </div>
+        ) : mine ? (
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium">You&apos;re looking for a team</p>
@@ -92,7 +98,7 @@ export default async function OpportunityPage(props: PageProps<"/opportunities/[
               </div>
               <div className="flex flex-col items-end gap-2">
                 <span className="text-sm tabular-nums">{p.score}%</span>
-                <ConnectButton profileId={p.user_id} status={statusWith(p.user_id)} />
+                <ConnectButton profileId={p.user_id} status={statusWith(p.user_id)} isGuest={isGuest} />
               </div>
             </article>
           ))}
@@ -107,7 +113,7 @@ export default async function OpportunityPage(props: PageProps<"/opportunities/[
         <TeamList teams={(teams.data ?? []) as unknown as TeamSummary[]} userId={userId} empty="No teams yet. Already have one? Post it and list the roles you need." />
       </section>
 
-      {o.submitted_by !== userId && (
+      {o.submitted_by !== userId && !isGuest && (
         <section className="text-sm text-muted">
           {myReport.data ? (
             <p>You reported this as {myReport.data.reason}.</p>

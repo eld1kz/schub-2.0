@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
 import { openRoles } from "@/lib/teams";
 import { applyToTeam, deleteTeam, respondToApplication, withdrawApplication } from "@/app/actions";
+import { SignInButton } from "../../sign-in";
 
 type Application = {
   id: string;
@@ -15,7 +16,7 @@ type Application = {
 
 export default async function TeamPage(props: PageProps<"/teams/[id]">) {
   const { id } = await props.params;
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId, isGuest } = await requireUser();
   const [team, applicationRows] = await Promise.all([
     supabase.from("teams").select("id, title, description, roles, owner_id, owner:profiles(name), opportunity:opportunities(id, title)").eq("id", id).maybeSingle(),
     // Row level security returns accepted members, your own application, and everything if you own the team
@@ -91,7 +92,14 @@ export default async function TeamPage(props: PageProps<"/teams/[id]">) {
         </section>
       )}
 
-      {!isOwner && (
+      {isGuest && open.length > 0 && (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-4">
+          <p className="text-sm">Want one of these roles?</p>
+          <SignInButton label="Sign in to apply" />
+        </section>
+      )}
+
+      {!isOwner && !isGuest && (
         <section className="rounded-md border border-border p-4">
           {mine?.status === "accepted" && (
             <p className="text-sm">

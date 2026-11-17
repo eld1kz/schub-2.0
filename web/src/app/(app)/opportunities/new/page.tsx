@@ -1,8 +1,12 @@
 import { addOpportunity } from "@/app/actions";
 import { opportunityTypes } from "@/lib/opportunities";
+import { requireUser } from "@/lib/supabase/server";
+import { SignInPrompt } from "../../sign-in";
 
 export default async function NewOpportunityPage(props: PageProps<"/opportunities/new">) {
   const { error } = await props.searchParams;
+  const { isGuest } = await requireUser();
+  if (isGuest) return <SignInPrompt text="Sign in to add an opportunity." />;
 
   return (
     <form action={addOpportunity} className="max-w-md space-y-4">

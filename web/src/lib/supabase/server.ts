@@ -28,5 +28,13 @@ export async function requireUser() {
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims.sub;
   if (!userId) throw new Error("Not signed in");
-  return { supabase, userId };
+  // Guests are anonymous accounts the proxy creates so visitors can browse
+  return { supabase, userId, isGuest: data?.claims.is_anonymous === true };
+}
+
+// For writes: guests have to sign in with Google first
+export async function requireMember() {
+  const user = await requireUser();
+  if (user.isGuest) throw new Error("Sign in to do that");
+  return user;
 }

@@ -10,7 +10,7 @@ type Opportunity = { id: string; title: string; starts_at: string | null; deadli
 
 export default async function UserPage(props: PageProps<"/u/[id]">) {
   const { id } = await props.params;
-  const { supabase, userId } = await requireUser();
+  const { supabase, userId, isGuest } = await requireUser();
   const isSelf = id === userId;
   const [profile, ideas, connection, contacts, projects, experiences, owned, joined, looking, connections] = await Promise.all([
     supabase
@@ -51,7 +51,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
     <ProfileView
       profile={p}
       isSelf={isSelf}
-      action={isSelf ? <Link href="/profile" className="btn-outline">Edit profile</Link> : <ConnectButton profileId={id} status={connection.data?.status} />}
+      action={isSelf ? <Link href="/profile" className="btn-outline">Edit profile</Link> : <ConnectButton profileId={id} status={connection.data?.status} isGuest={isGuest} />}
       contact={(contacts.data as { telegram: string; email: string }[] | null)?.[0]}
       projects={(projects.data ?? []) as unknown as Project[]}
       experiences={(experiences.data ?? []) as unknown as Experience[]}

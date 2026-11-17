@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatPeriod, mediaUrl, webLink, type Experience, type Project } from "@/lib/portfolio";
 import { groupSkills } from "@/lib/skills";
+import { Avatar } from "../../avatar";
 import { About } from "./about";
 import { GitHubIcon, LinkedInIcon, WebsiteIcon } from "./link-icons";
 
@@ -54,17 +55,6 @@ function SectionHeading({ title, add }: { title: string; add?: { href: string; l
     <div className="mb-3 flex items-baseline justify-between gap-4">
       <h2 className="font-semibold">{title}</h2>
       {add && <Link href={add.href} className="text-sm underline">{add.label}</Link>}
-    </div>
-  );
-}
-
-// Round photo, or initials when there's none. `className` sets the size.
-function Avatar({ url, name, className, sizes, priority = false }: { url: string; name: string; className: string; sizes: string; priority?: boolean }) {
-  const photo = mediaUrl(url);
-  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
-  return (
-    <div className={`relative grid shrink-0 place-items-center overflow-hidden rounded-full border border-border font-semibold ${className}`}>
-      {photo ? <Image src={photo} alt="" fill sizes={sizes} className="object-cover" priority={priority} /> : initials}
     </div>
   );
 }
