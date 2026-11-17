@@ -4,6 +4,7 @@ import { updateProfile } from "@/app/actions";
 import { knownSkills } from "@/lib/skills";
 import { SkillPicker } from "./skill-picker";
 import { ProfileCompletion } from "./completion";
+import { GOALS } from "@/lib/goals";
 import { SignInPrompt } from "../sign-in";
 
 export default async function ProfilePage(props: PageProps<"/profile">) {
@@ -13,7 +14,7 @@ export default async function ProfilePage(props: PageProps<"/profile">) {
   const [{ data: p }, { data: contacts }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, open_to_collaborate, github, linkedin, website, avatar_url")
+      .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, goals, open_to_collaborate, github, linkedin, website, avatar_url")
       .eq("id", userId)
       .single(),
     supabase.rpc("contact_for", { profile_id: userId }),
@@ -47,6 +48,14 @@ export default async function ProfilePage(props: PageProps<"/profile">) {
         <div><label className="label" htmlFor="skills">Skills</label><SkillPicker id="skills" defaultValue={knownSkills(p.skills)} /></div>
         <div><label className="label" htmlFor="interests">Interests, comma separated</label><input id="interests" name="interests" defaultValue={p.interests.join(", ")} placeholder="fintech, education" className="input" /></div>
         <div><label className="label" htmlFor="looking_for">Who you want to team up with, comma separated</label><input id="looking_for" name="looking_for" defaultValue={p.looking_for.join(", ")} placeholder="designer, backend developer" className="input" /></div>
+        <fieldset>
+          <legend className="label">What you&apos;re looking for</legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {GOALS.map((g) => (
+              <label key={g} className="flex items-center gap-2 text-sm"><input type="checkbox" name="goals" value={g} defaultChecked={p.goals.includes(g)} /> {g}</label>
+            ))}
+          </div>
+        </fieldset>
       </section>
 
       <section className="space-y-4">

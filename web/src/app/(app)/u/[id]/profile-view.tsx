@@ -16,6 +16,7 @@ export type ProfileData = {
   skills: string[];
   interests: string[];
   looking_for: string[];
+  goals: string[];
   open_to_collaborate: boolean;
   avatar_url: string;
   github: string;
@@ -167,7 +168,7 @@ export function ProfileView({ profile: p, isSelf, action, contact, projects, exp
         </section>
       )}
 
-      {(skillGroups.length > 0 || p.interests.length > 0 || p.looking_for.length > 0) && (
+      {(skillGroups.length > 0 || p.goals.length > 0 || p.interests.length > 0 || p.looking_for.length > 0) && (
         <section className="space-y-4">
           {skillGroups.length > 0 && (
             <div>
@@ -184,6 +185,7 @@ export function ProfileView({ profile: p, isSelf, action, contact, projects, exp
               </div>
             </div>
           )}
+          {p.goals.length > 0 && <div><h2 className="mb-2 text-sm text-muted">Looking for</h2><Chips items={p.goals} /></div>}
           {p.interests.length > 0 && <div><h2 className="mb-2 text-sm text-muted">Interested in</h2><Chips items={p.interests} /></div>}
           {p.looking_for.length > 0 && <div><h2 className="mb-2 text-sm text-muted">Wants to team up with</h2><Chips items={p.looking_for} /></div>}
         </section>

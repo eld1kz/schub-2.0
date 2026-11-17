@@ -8,6 +8,7 @@ import { parseList } from "@/lib/match";
 import { linkWorks } from "@/lib/opportunities";
 import { toLink } from "@/lib/portfolio";
 import { knownSkills } from "@/lib/skills";
+import { knownGoals } from "@/lib/goals";
 
 // Starts Google sign-in; /auth/callback brings people back to the page the button was on
 export async function signIn() {
@@ -113,6 +114,7 @@ export async function updateProfile(formData: FormData) {
       bio: text("bio"),
       // Only skills from the fixed list are kept
       skills: knownSkills(formData.getAll("skills")),
+      goals: knownGoals(formData.getAll("goals")),
       interests: parseList(formData.get("interests")),
       looking_for: parseList(formData.get("looking_for")),
       github: toLink(text("github"), "https://github.com/"),
@@ -129,6 +131,28 @@ export async function updateProfile(formData: FormData) {
   if (error) redirect(`/profile?error=${encodeURIComponent("Couldn't save your profile. Check the fields and try again.")}`);
   revalidatePath("/", "layout");
   redirect(`/u/${userId}`);
+}
+
+// The three onboarding steps, saved together
+export async function completeOnboarding(formData: FormData) {
+  const { supabase, userId } = await requireMember();
+  const university = String(formData.get("university") ?? "").trim();
+  const skills = knownSkills(formData.getAll("skills"));
+  if (!university || skills.length === 0) redirect(`/onboarding?error=${encodeURIComponent("Add your university and at least one skill.")}`);
+  const year = Number(formData.get("graduation_year"));
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      university,
+      skills,
+      goals: knownGoals(formData.getAll("goals")),
+      ...(year >= 2025 && year <= 2030 ? { graduation_year: year } : {}),
+    })
+    .eq("id", userId);
+  if (error) redirect(`/onboarding?error=${encodeURIComponent("Couldn't save. Try again.")}`);
+  revalidatePath("/", "layout");
+  redirect("/opportunities");
 }
 
 // `id` is null for a new project

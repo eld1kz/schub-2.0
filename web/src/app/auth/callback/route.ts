@@ -7,7 +7,12 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { data } = await supabase.auth.exchangeCodeForSession(code);
+    // A profile with no university, skills or bio is new: onboarding first
+    if (data.user) {
+      const { data: p } = await supabase.from("profiles").select("university, skills, bio").eq("id", data.user.id).maybeSingle();
+      if (p && !p.university && p.skills.length === 0 && !p.bio) return NextResponse.redirect(new URL("/onboarding", origin));
+    }
   }
   // Back to where they started, but only on this site
   const next = new URL(searchParams.get("next") ?? "/", origin);
