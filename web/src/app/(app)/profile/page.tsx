@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/supabase/server";
 import { updateProfile } from "@/app/actions";
 import { knownSkills } from "@/lib/skills";
 import { SkillPicker } from "./skill-picker";
+import { ProfileCompletion } from "./completion";
 import { SignInPrompt } from "../sign-in";
 
 export default async function ProfilePage(props: PageProps<"/profile">) {
@@ -12,7 +13,7 @@ export default async function ProfilePage(props: PageProps<"/profile">) {
   const [{ data: p }, { data: contacts }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, open_to_collaborate, github, linkedin, website")
+      .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, open_to_collaborate, github, linkedin, website, avatar_url")
       .eq("id", userId)
       .single(),
     supabase.rpc("contact_for", { profile_id: userId }),
@@ -22,9 +23,12 @@ export default async function ProfilePage(props: PageProps<"/profile">) {
 
   return (
     <form action={updateProfile} className="max-w-md space-y-10">
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-lg font-semibold">Edit profile</h1>
-        <Link href={`/u/${userId}`} className="text-sm text-muted underline hover:text-foreground">View profile</Link>
+      <div className="space-y-4">
+        <div className="flex items-baseline justify-between">
+          <h1 className="text-lg font-semibold">Edit profile</h1>
+          <Link href={`/u/${userId}`} className="text-sm text-muted underline hover:text-foreground">View profile</Link>
+        </div>
+        <ProfileCompletion profile={p} />
       </div>
 
       <section className="space-y-4">
