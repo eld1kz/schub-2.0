@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/supabase/server";
 import { parseList } from "@/lib/match";
 import { linkWorks } from "@/lib/opportunities";
+import { toLink } from "@/lib/portfolio";
 
 export async function createPost(formData: FormData) {
   const { supabase, userId } = await requireUser();
@@ -28,25 +29,119 @@ export async function createIdea(formData: FormData) {
   revalidatePath("/feed");
 }
 
+type Supabase = Awaited<ReturnType<typeof requireUser>>["supabase"];
+
+// Stores an uploaded image in the user's own folder of the public "media" bucket.
+// Returns its address, null when no file was chosen, or an error to show.
+async function uploadImage(supabase: Supabase, userId: string, file: FormDataEntryValue | null) {
+  if (!(file instanceof File) || file.size === 0) return { url: null };
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 4 * 1024 * 1024) {
+    return { error: "The image should be a JPG, PNG or WebP under 4 MB." };
+  }
+  const path = `${userId}/${crypto.randomUUID()}.${file.type.split("/")[1]}`;
+  const { error } = await supabase.storage.from("media").upload(path, file, { contentType: file.type });
+  if (error) return { error: "Couldn't upload the image. Try again." };
+  return { url: supabase.storage.from("media").getPublicUrl(path).data.publicUrl };
+}
+
 export async function updateProfile(formData: FormData) {
   const { supabase, userId } = await requireUser();
-  await supabase
+  const text = (key: string) => String(formData.get(key) ?? "").trim();
+  const photo = await uploadImage(supabase, userId, formData.get("photo"));
+  if (photo.error) redirect(`/profile?error=${encodeURIComponent(photo.error)}`);
+
+  const { error } = await supabase
     .from("profiles")
     .update({
-      name: String(formData.get("name")).trim(),
-      university: String(formData.get("university")).trim(),
+      name: text("name"),
+      headline: text("headline"),
+      university: text("university"),
       graduation_year: Number(formData.get("graduation_year")) || 0,
-      bio: String(formData.get("bio")).trim(),
+      bio: text("bio"),
       skills: parseList(formData.get("skills")),
       interests: parseList(formData.get("interests")),
+      looking_for: parseList(formData.get("looking_for")),
+      github: toLink(text("github"), "https://github.com/"),
+      linkedin: toLink(text("linkedin"), "https://www.linkedin.com/in/"),
+      website: toLink(text("website")),
       open_to_collaborate: formData.get("open_to_collaborate") === "on",
       // Stored as a bare username: "@name" and "https://t.me/name" both become "name"
-      telegram: String(formData.get("telegram") ?? "").trim().replace(/^(https?:\/\/)?(t\.me\/)?@?/i, ""),
-      email: String(formData.get("email") ?? "").trim(),
+      telegram: text("telegram").replace(/^(https?:\/\/)?(t\.me\/)?@?/i, ""),
+      email: text("email"),
+      // Only replace the photo when a new one was chosen
+      ...(photo.url ? { avatar_url: photo.url } : {}),
     })
     .eq("id", userId);
+  if (error) redirect(`/profile?error=${encodeURIComponent("Couldn't save your profile. Check the fields and try again.")}`);
   revalidatePath("/", "layout");
-  redirect("/opportunities");
+  redirect(`/u/${userId}`);
+}
+
+// `id` is null for a new project
+export async function saveProject(id: string | null, formData: FormData) {
+  const { supabase, userId } = await requireUser();
+  const text = (key: string) => String(formData.get(key) ?? "").trim();
+  const fail = (message: string): never => redirect(`/profile/projects/${id ?? "new"}?error=${encodeURIComponent(message)}`);
+
+  const image = await uploadImage(supabase, userId, formData.get("image"));
+  if (image.error) fail(image.error);
+  const fields = {
+    title: text("title"),
+    tagline: text("tagline"),
+    description: text("description"),
+    role: text("role"),
+    built_at: text("built_at"),
+    result: text("result"),
+    year: Number(formData.get("year")) || null,
+    url: toLink(text("url")),
+    repo_url: toLink(text("repo_url")),
+    skills: parseList(formData.get("skills")),
+    ...(image.url ? { image_url: image.url } : {}),
+  };
+  const { error } = id
+    ? await supabase.from("projects").update(fields).eq("id", id).eq("user_id", userId)
+    : await supabase.from("projects").insert({ ...fields, user_id: userId });
+  if (error) fail("Couldn't save the project. Check the fields and try again.");
+  revalidatePath("/", "layout");
+  redirect(`/u/${userId}`);
+}
+
+export async function deleteProject(id: string) {
+  const { supabase, userId } = await requireUser();
+  await supabase.from("projects").delete().eq("id", id).eq("user_id", userId);
+  revalidatePath("/", "layout");
+  redirect(`/u/${userId}`);
+}
+
+// `id` is null for a new entry. Months arrive as "2026-03" and are stored as the first day of that month.
+export async function saveExperience(id: string | null, formData: FormData) {
+  const { supabase, userId } = await requireUser();
+  const text = (key: string) => String(formData.get(key) ?? "").trim();
+  const day = (key: string) => (/^\d{4}-\d{2}$/.test(text(key)) ? `${text(key)}-01` : null);
+  const fail = (message: string): never => redirect(`/profile/experience/${id ?? "new"}?error=${encodeURIComponent(message)}`);
+
+  const start = day("start");
+  if (!start) fail("Add the month it started.");
+  const fields = {
+    role: text("role"),
+    company: text("company"),
+    start_date: start,
+    end_date: formData.get("current") === "on" ? null : day("end"),
+    description: text("description"),
+  };
+  const { error } = id
+    ? await supabase.from("experiences").update(fields).eq("id", id).eq("user_id", userId)
+    : await supabase.from("experiences").insert({ ...fields, user_id: userId });
+  if (error) fail(error.code === "23514" ? "The end should be after the start." : "Couldn't save it. Check the fields and try again.");
+  revalidatePath("/", "layout");
+  redirect(`/u/${userId}`);
+}
+
+export async function deleteExperience(id: string) {
+  const { supabase, userId } = await requireUser();
+  await supabase.from("experiences").delete().eq("id", id).eq("user_id", userId);
+  revalidatePath("/", "layout");
+  redirect(`/u/${userId}`);
 }
 
 export async function connect(receiverId: string) {
