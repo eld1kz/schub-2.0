@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { allSkills } from "@/lib/skills";
+import { SKILLS } from "@/lib/skills";
 
 // Searchable multi-select over the fixed skill list. Each chosen skill is submitted as its own "skills" value.
 export function SkillPicker({ id, defaultValue }: { id: string; defaultValue: string[] }) {
   const [selected, setSelected] = useState(defaultValue);
   const [query, setQuery] = useState("");
-  const options = allSkills.filter((s) => !selected.includes(s) && s.toLowerCase().includes(query.trim().toLowerCase()));
+  const options = SKILLS.filter((s) => !selected.includes(s) && s.toLowerCase().includes(query.trim().toLowerCase()));
   const add = (skill: string) => {
     setSelected([...selected, skill]);
     setQuery("");

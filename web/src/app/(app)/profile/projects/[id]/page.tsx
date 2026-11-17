@@ -2,7 +2,9 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
 import { deleteProject, saveProject } from "@/app/actions";
 import { projectColumns, type Project } from "@/lib/portfolio";
+import { knownSkills } from "@/lib/skills";
 import { SignInPrompt } from "../../../sign-in";
+import { SkillPicker } from "../../skill-picker";
 
 // /profile/projects/new adds a project; /profile/projects/<id> edits one of your own
 export default async function ProjectFormPage(props: PageProps<"/profile/projects/[id]">) {
@@ -33,7 +35,7 @@ export default async function ProjectFormPage(props: PageProps<"/profile/project
           <div className="flex-1"><label className="label" htmlFor="result">Result (optional)</label><input id="result" name="result" defaultValue={p?.result} maxLength={60} placeholder="2nd place" className="input" /></div>
         </div>
         <div><label className="label" htmlFor="description">What it does and what you did</label><textarea id="description" name="description" rows={4} defaultValue={p?.description} maxLength={600} className="input" /></div>
-        <div><label className="label" htmlFor="skills">Skills used, comma separated</label><input id="skills" name="skills" defaultValue={p?.skills.join(", ")} placeholder="react, figma" className="input" /></div>
+        <div><label className="label" htmlFor="skills">Skills used</label><SkillPicker id="skills" defaultValue={knownSkills(p?.skills ?? [])} /></div>
         <div><label className="label" htmlFor="url">Link to it</label><input id="url" name="url" defaultValue={p?.url} placeholder="https://" className="input" /></div>
         <div><label className="label" htmlFor="repo_url">Link to the code</label><input id="repo_url" name="repo_url" defaultValue={p?.repo_url} placeholder="https://github.com/…" className="input" /></div>
         {typeof error === "string" && <p className="text-sm text-red-600">{error}</p>}

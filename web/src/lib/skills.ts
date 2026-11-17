@@ -1,14 +1,17 @@
 // The fixed list people pick their skills from, grouped the way profiles show them.
 export const skillGroups = {
-  Frontend: ["JavaScript", "TypeScript", "React", "Next.js", "Swift", "Kotlin", "Flutter"],
-  Backend: ["Node.js", "Python", "Go", "Rust", "SQL", "PostgreSQL", "MongoDB", "Redis", "AWS", "Docker"],
+  Frontend: ["JavaScript", "TypeScript", "React", "Next.js", "Vue", "Swift", "Kotlin", "Flutter"],
+  Backend: ["Node.js", "Python", "FastAPI", "Django", "Go", "Rust", "Java", "C++", "SQL", "PostgreSQL", "MongoDB", "Redis", "AWS", "GCP", "Docker"],
   Design: ["Figma", "UI/UX Design"],
-  Other: ["Machine Learning", "Data Science", "Blockchain", "Solidity", "Product Management", "Marketing", "Business Development"],
+  Other: [
+    "Machine Learning", "Data Science", "Computer Vision", "NLP", "Blockchain", "Solidity",
+    "Product Management", "Marketing", "Business Development", "Finance",
+  ],
 };
 
-export const allSkills = Object.values(skillGroups).flat();
+export const SKILLS = Object.values(skillGroups).flat();
 
-const byLowercase = new Map(allSkills.map((s) => [s.toLowerCase(), s]));
+const byLowercase = new Map(SKILLS.map((s) => [s.toLowerCase(), s]));
 
 // Keeps only skills from the list, in their listed spelling: "react" becomes "React", "cooking" is dropped
 export function knownSkills(values: unknown[]) {

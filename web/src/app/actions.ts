@@ -119,7 +119,7 @@ export async function saveProject(id: string | null, formData: FormData) {
     year: Number(formData.get("year")) || null,
     url: toLink(text("url")),
     repo_url: toLink(text("repo_url")),
-    skills: parseList(formData.get("skills")),
+    skills: knownSkills(formData.getAll("skills")),
     ...(image.url ? { image_url: image.url } : {}),
   };
   const { error } = id
