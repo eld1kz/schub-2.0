@@ -30,6 +30,20 @@ export async function signOut() {
   redirect("/opportunities");
 }
 
+// Notifications are written by database triggers (supabase/notifications.sql); here they're only read
+export async function openNotification(id: string) {
+  const { supabase, userId } = await requireMember();
+  const { data } = await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", userId).select("link").maybeSingle();
+  revalidatePath("/", "layout");
+  redirect(data?.link ?? "/");
+}
+
+export async function markAllRead() {
+  const { supabase, userId } = await requireMember();
+  await supabase.from("notifications").update({ read: true }).eq("user_id", userId).eq("read", false);
+  revalidatePath("/", "layout");
+}
+
 export async function createPost(formData: FormData) {
   const { supabase, userId } = await requireMember();
   const content = String(formData.get("content")).trim();

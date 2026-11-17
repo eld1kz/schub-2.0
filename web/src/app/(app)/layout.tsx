@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
 import { Avatar } from "./avatar";
 import { SignInButton } from "./sign-in";
+import { Notifications, type Notification } from "./notifications";
 
 const links = [
   { href: "/opportunities", label: "Opportunities" },
@@ -30,15 +31,18 @@ function Nav({ counts = {}, account }: { counts?: Record<string, number>; accoun
 async function NavWithCounts() {
   const { supabase, userId, isGuest } = await requireUser();
   if (isGuest) return <Nav account={<SignInButton label="Sign in" />} />;
-  const [requests, applications, me] = await Promise.all([
+  const [requests, applications, me, notifications, unread] = await Promise.all([
     supabase.from("connections").select("id", { count: "exact", head: true }).eq("receiver_id", userId).eq("status", "pending"),
     // Pending applications you can see that aren't yours are the ones to your own teams
     supabase.from("team_applications").select("id", { count: "exact", head: true }).eq("status", "pending").neq("user_id", userId),
     supabase.from("profiles").select("name, avatar_url").eq("id", userId).maybeSingle(),
+    supabase.from("notifications").select("id, message, read, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
+    supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("read", false),
   ]);
   const name = me.data?.name ?? "";
   const account = (
     <span className="flex items-center gap-3">
+      <Notifications items={(notifications.data ?? []) as Notification[]} unread={(unread.count ?? 0) > 0} />
       <Link href={`/u/${userId}`} className="flex items-center gap-2 hover:opacity-80">
         <Avatar url={me.data?.avatar_url ?? ""} name={name} className="h-7 w-7 text-xs" sizes="28px" />
         <span className="hidden max-w-32 truncate sm:inline">{name || "You"}</span>
