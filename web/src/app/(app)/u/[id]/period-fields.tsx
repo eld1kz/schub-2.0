@@ -12,8 +12,8 @@ const yearsAhead = 5;
 
 const years = (from: number) => Array.from({ length: from - firstYear + 1 }, (_, i) => String(from - i));
 
-const monthOptions = months.map((m, i) => ({ value: String(i + 1).padStart(2, "0"), label: m }));
-const yearOptions = (from: number) => years(from).map((y) => ({ value: y, label: y }));
+export const monthOptions = months.map((m, i) => ({ value: String(i + 1).padStart(2, "0"), label: m }));
+export const yearOptions = (from: number) => years(from).map((y) => ({ value: y, label: y }));
 
 // "2025-03" into its month and year, or empty for a new entry
 const split = (value?: string) => ({ year: value?.slice(0, 4) ?? "", month: value?.slice(5, 7) ?? "" });

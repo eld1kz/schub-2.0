@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { openRoles, type TeamSummary } from "@/lib/teams";
+import { AwardMark } from "./award-mark";
 
 const columns = "lg:grid lg:grid-cols-[minmax(0,1fr)_300px_240px_120px] lg:gap-8";
 
 // Teams as rows of a ruled table from lg up: the team, the roles it needs, what it's for, and an action.
 // Below lg each team stacks, and the title is the way in.
-export function TeamList({ teams, userId, empty }: { teams: TeamSummary[]; userId: string; empty: string }) {
+// `awarded`: people with an award, who get a small medal after their name
+export function TeamList({ teams, userId, awarded, empty }: { teams: TeamSummary[]; userId: string; awarded: Set<string>; empty: string }) {
   if (teams.length === 0) return <p className="py-8 text-sm text-ink2">{empty}</p>;
   return (
     <div>
@@ -31,7 +33,8 @@ export function TeamList({ teams, userId, empty }: { teams: TeamSummary[]; userI
               </h3>
               {t.description && <p className="line-clamp-2 text-sm leading-normal lg:text-[15px]">{t.description}</p>}
               <p className="text-[13px] text-ink2 lg:mt-1.5">
-                {mine ? "Your team" : t.owner?.name || "Unnamed"} · {size}
+                {mine ? "Your team" : t.owner?.name || "Unnamed"}
+                {!mine && awarded.has(t.owner_id) && <> <AwardMark /></>} · {size}
                 {toReview > 0 && <span className="font-semibold text-accent"> · {toReview} to review</span>}
               </p>
             </div>

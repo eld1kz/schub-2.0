@@ -11,7 +11,7 @@ import { PeriodFields } from "./period-fields";
 const input = "input h-11 sm:h-10";
 const typeOptions = EXPERIENCE_TYPES.map((t) => ({ value: t, label: t }));
 
-function Field({ id, label, required = false, children }: { id: string; label: string; required?: boolean; children: ReactNode }) {
+export function Field({ id, label, required = false, children }: { id: string; label: string; required?: boolean; children: ReactNode }) {
   return (
     <div>
       <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
@@ -24,7 +24,7 @@ function Field({ id, label, required = false, children }: { id: string; label: s
 }
 
 // Enter in a one-line field moves to the next field instead of submitting. The skill search handles its own Enter.
-function nextOnEnter(e: KeyboardEvent<HTMLDivElement>) {
+export function nextOnEnter(e: KeyboardEvent<HTMLDivElement>) {
   if (e.key !== "Enter" || e.defaultPrevented || !(e.target instanceof HTMLInputElement)) return;
   e.preventDefault();
   const fields = [...e.currentTarget.querySelectorAll<HTMLElement>("input:not([type=hidden]), select, textarea")].filter((f) => f.getClientRects().length > 0);

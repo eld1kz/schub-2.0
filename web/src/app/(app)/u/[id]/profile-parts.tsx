@@ -4,7 +4,9 @@ import type { ReactNode } from "react";
 // with a fixed label column so the structure comes from alignment.
 
 // A main-column section. From sm up the title sits in a 152px column; the owner gets a third column for the pencil.
-export function Section({ title, quiet = false, count, add, edit, owner = false, children }: {
+export function Section({ id, title, quiet = false, count, add, edit, owner = false, children }: {
+  // For links to the section, like "#awards"
+  id?: string;
   title: string;
   // Empty sections on your own profile: the title steps back
   quiet?: boolean;
@@ -16,7 +18,7 @@ export function Section({ title, quiet = false, count, add, edit, owner = false,
   children: ReactNode;
 }) {
   return (
-    <section className={`relative border-t border-line2 py-6 sm:grid sm:gap-8 sm:py-8 ${owner ? "sm:grid-cols-[152px_minmax(0,1fr)_34px]" : "sm:grid-cols-[152px_minmax(0,1fr)]"}`}>
+    <section id={id} className={`relative border-t border-line2 py-6 sm:grid sm:gap-8 sm:py-8 ${owner ? "sm:grid-cols-[152px_minmax(0,1fr)_34px]" : "sm:grid-cols-[152px_minmax(0,1fr)]"}`}>
       <div className="mb-4 flex items-baseline justify-between gap-4 sm:mb-0 sm:flex-col sm:justify-start sm:gap-2.5">
         <h2 className={`text-[15px] font-semibold ${quiet ? "text-ink2" : ""}`}>
           {title}

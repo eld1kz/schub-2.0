@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
 import { respond, withdrawRequest } from "@/app/actions";
+import { awardedIds } from "@/lib/awards";
 import { PersonRow } from "../person-row";
 
 type Person = { name: string; headline: string; avatar_url: string } | null;
@@ -21,11 +22,14 @@ function Heading({ title, count }: { title: string; count: number }) {
 // Pending requests: the ones waiting on you, and the ones you sent. Accepting moves the person to Connections.
 export default async function RequestsPage() {
   const { supabase, userId } = await requireUser();
-  const { data } = await supabase
-    .from("connections")
-    .select("id, sender_id, receiver_id, created_at, sender:profiles!sender_id(name, headline, avatar_url), receiver:profiles!receiver_id(name, headline, avatar_url)")
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
+  const [{ data }, awarded] = await Promise.all([
+    supabase
+      .from("connections")
+      .select("id, sender_id, receiver_id, created_at, sender:profiles!sender_id(name, headline, avatar_url), receiver:profiles!receiver_id(name, headline, avatar_url)")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false }),
+    awardedIds(supabase),
+  ]);
   const pending = (data ?? []) as unknown as Request[];
   const received = pending.filter((c) => c.receiver_id === userId);
   const sentByMe = pending.filter((c) => c.sender_id === userId);
@@ -53,6 +57,7 @@ export default async function RequestsPage() {
               name={c.sender?.name ?? ""}
               headline={c.sender?.headline ?? ""}
               avatarUrl={c.sender?.avatar_url ?? ""}
+              awarded={awarded.has(c.sender_id)}
               actions={
                 <>
                   <form action={respond.bind(null, c.id, "accepted")}><button className="btn h-9 px-4">Accept</button></form>
@@ -78,6 +83,7 @@ export default async function RequestsPage() {
               name={c.receiver?.name ?? ""}
               headline={c.receiver?.headline ?? ""}
               avatarUrl={c.receiver?.avatar_url ?? ""}
+              awarded={awarded.has(c.receiver_id)}
               actions={<form action={withdrawRequest.bind(null, c.id)}><button className="h-9 text-sm text-ink2 hover:text-foreground">Withdraw</button></form>}
             >
               <p className="text-[13px] text-muted">Sent {sent(c.created_at)} · waiting for a reply</p>

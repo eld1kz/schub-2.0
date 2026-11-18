@@ -1,13 +1,16 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Avatar } from "../avatar";
+import { AwardMark } from "../award-mark";
 
 // One person in a People tab: avatar, name and headline, details under them, and actions on the right
-export function PersonRow({ id, name, headline, avatarUrl, children, actions }: {
+export function PersonRow({ id, name, headline, avatarUrl, awarded = false, children, actions }: {
   id: string;
   name: string;
   headline: string;
   avatarUrl: string;
+  // They have an award: a small medal after the name
+  awarded?: boolean;
   children?: ReactNode;
   actions?: ReactNode;
 }) {
@@ -17,7 +20,10 @@ export function PersonRow({ id, name, headline, avatarUrl, children, actions }: 
         <Avatar url={avatarUrl} name={name} className="h-11 w-11 text-sm" sizes="44px" />
       </Link>
       <div className="flex min-w-0 flex-col gap-1">
-        <Link href={`/u/${id}`} className="w-fit text-base font-semibold hover:text-accent">{name || "Unnamed"}</Link>
+        <span className="flex items-center gap-1.5">
+          <Link href={`/u/${id}`} className="w-fit text-base font-semibold hover:text-accent">{name || "Unnamed"}</Link>
+          {awarded && <AwardMark />}
+        </span>
         {headline && <p className="text-sm leading-snug text-ink2">{headline}</p>}
         {children}
       </div>

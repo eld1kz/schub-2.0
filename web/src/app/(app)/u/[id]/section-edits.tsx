@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
-import { deleteExperience, deleteProject, saveAbout, saveContact, saveExperience, saveHero, saveInterests, saveLinks, saveProject, saveSkills } from "@/app/actions";
+import { deleteAward, deleteExperience, deleteProject, saveAbout, saveAward, saveContact, saveExperience, saveHero, saveInterests, saveLinks, saveProject, saveSkills } from "@/app/actions";
+import { placementLabel, type Award } from "@/lib/awards";
 import { GOALS } from "@/lib/goals";
 import { knownSkills } from "@/lib/skills";
 import type { Experience, Project } from "@/lib/portfolio";
 import { Avatar } from "../../avatar";
 import { SkillPicker } from "../../profile/skill-picker";
+import { AwardFields, type AwardOptions } from "./award-fields";
 import { EditDialog } from "./edit-dialog";
 import { PhotoField } from "./photo-field";
 import { ExperienceFields } from "./experience-fields";
@@ -171,6 +173,23 @@ export function ExperienceEdit({ experience: e, trigger }: { experience?: Experi
       requireValid
     >
       <ExperienceFields experience={e} />
+    </EditDialog>
+  );
+}
+
+// No `award` adds a new one
+export function AwardEdit({ award: a, options, trigger }: { award?: Award; options: AwardOptions; trigger: Trigger }) {
+  return (
+    <EditDialog
+      title={a ? "Edit award" : "Add award"}
+      trigger={trigger}
+      label={a ? `Edit ${placementLabel(a.placement)}, ${a.event_name}` : "Add award"}
+      save={saveAward.bind(null, a?.id ?? null)}
+      remove={a && deleteAward.bind(null, a.id)}
+      tall
+      requireValid
+    >
+      <AwardFields award={a} {...options} />
     </EditDialog>
   );
 }

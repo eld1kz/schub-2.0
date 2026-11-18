@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/supabase/server";
 import { today } from "@/lib/opportunities";
 import { matchScore } from "@/lib/match";
 import { experienceColumns, projectColumns, sortExperiences, type Experience, type Project } from "@/lib/portfolio";
+import { awardColumns, type Award } from "@/lib/awards";
 import { ConnectButton } from "../../connect-button";
 import { ProfileView, type Connection, type ProfileData, type Suggestion } from "./profile-view";
 
@@ -23,7 +24,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
   const canEdit = isSelf && !isGuest;
   // "?as=visitor": the owner sees the page without edit controls, empty sections or contact details
   const preview = canEdit && as === "visitor";
-  const [profile, ideas, myConnections, contacts, projects, experiences, owned, joined, looking, connections, people] = await Promise.all([
+  const [profile, ideas, myConnections, contacts, projects, experiences, owned, joined, looking, connections, people, ownAwards, tags, opportunities] = await Promise.all([
     supabase
       .from("profiles")
       .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, goals, open_to_collaborate, avatar_url, github, linkedin, website")
@@ -42,9 +43,19 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
     // Accepted connections of this profile (supabase/connections-list.sql)
     supabase.rpc("connections_of", { profile_id: id }),
     supabase.from("profiles").select("id, name, headline, avatar_url, skills, interests, open_to_collaborate"),
+    supabase.from("awards").select(awardColumns).eq("user_id", id),
+    // Awards this profile was tagged in: confirmed ones for everyone, and on your own profile the pending ones too
+    supabase.from("award_teammates").select(`status, award:awards(${awardColumns})`).eq("user_id", id).in("status", ["confirmed", "pending"]),
+    // Events to pick from in the award form
+    canEdit && !preview ? supabase.from("opportunities").select("id, title").order("starts_at", { ascending: false, nullsFirst: false }) : { data: [] },
   ]);
   const p = profile.data as ProfileData | null;
   if (!p) notFound();
+
+  const tagRows = (tags.data ?? []) as unknown as { status: string; award: Award | null }[];
+  const tagged = (status: string) => tagRows.flatMap((t) => (t.status === status && t.award ? [t.award] : []));
+  const awards = [...((ownAwards.data ?? []) as unknown as Award[]), ...tagged("confirmed")].sort((a, b) => b.awarded_on.localeCompare(a.awarded_on));
+  const projectList = (projects.data ?? []) as unknown as Project[];
 
   const teams = [
     ...(owned.data ?? []).map((t) => ({ id: t.id as string, title: t.title as string, role: "Started it" })),
@@ -81,7 +92,11 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
       owner={canEdit ? { preview, requests: links.filter((c) => c.receiver_id === userId && c.status === "pending").length } : undefined}
       action={!isSelf && <ConnectButton profileId={id} status={statusWith(id)} isGuest={isGuest} className="btn" />}
       contact={preview ? undefined : (contacts.data as { telegram: string; email: string }[] | null)?.[0]}
-      projects={(projects.data ?? []) as unknown as Project[]}
+      projects={projectList}
+      awards={awards}
+      // Only on your own page, and not while previewing it as a visitor
+      pendingAwards={canEdit && !preview ? tagged("pending") : []}
+      awardOptions={{ opportunities: opportunities.data ?? [], projects: projectList.map((x) => ({ id: x.id, title: x.title })) }}
       experiences={sortExperiences((experiences.data ?? []) as unknown as Experience[])}
       teams={teams}
       events={events}

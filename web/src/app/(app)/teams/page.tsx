@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
 import { openRoles, teamSummaryColumns, type TeamSummary } from "@/lib/teams";
+import { awardedIds } from "@/lib/awards";
 import { TeamList } from "../team-list";
 import { TeamFilters } from "./team-filters";
 
@@ -11,7 +12,10 @@ export default async function TeamsPage(props: PageProps<"/teams">) {
   const role = typeof params.role === "string" ? params.role : "";
   const status = params.status === "open" || params.status === "full" ? params.status : "";
   const { supabase, userId } = await requireUser();
-  const { data } = await supabase.from("teams").select(teamSummaryColumns).order("created_at", { ascending: false });
+  const [{ data }, awarded] = await Promise.all([
+    supabase.from("teams").select(teamSummaryColumns).order("created_at", { ascending: false }),
+    awardedIds(supabase),
+  ]);
   const all = (data ?? []) as unknown as TeamSummary[];
 
   // Role choices are the open roles teams actually list, one per spelling regardless of case
@@ -48,7 +52,7 @@ export default async function TeamsPage(props: PageProps<"/teams">) {
         <Link href="/teams/new" className="pb-1.5 text-[15px] font-semibold text-accent sm:hidden">+ Post</Link>
       </div>
       <TeamFilters roles={options} role={selectedRole} status={status} />
-      <TeamList teams={teams} userId={userId} empty={filtered ? "No teams match these filters." : "No teams yet. Post yours and list the roles you need."} />
+      <TeamList teams={teams} userId={userId} awarded={awarded} empty={filtered ? "No teams match these filters." : "No teams yet. Post yours and list the roles you need."} />
     </div>
   );
 }

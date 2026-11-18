@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
+import { awardedIds } from "@/lib/awards";
 import { ConnectionList, type ConnectionItem } from "./connection-list";
 
 type Person = { name: string; headline: string; avatar_url: string } | null;
@@ -10,10 +11,13 @@ export const instant = false;
 // Everyone you're connected with, A to Z, with their contact details since you're connected
 export default async function ConnectionsPage() {
   const { supabase, userId } = await requireUser();
-  const { data } = await supabase
-    .from("connections")
-    .select("sender_id, receiver_id, sender:profiles!sender_id(name, headline, avatar_url), receiver:profiles!receiver_id(name, headline, avatar_url)")
-    .eq("status", "accepted");
+  const [{ data }, awarded] = await Promise.all([
+    supabase
+      .from("connections")
+      .select("sender_id, receiver_id, sender:profiles!sender_id(name, headline, avatar_url), receiver:profiles!receiver_id(name, headline, avatar_url)")
+      .eq("status", "accepted"),
+    awardedIds(supabase),
+  ]);
   const others = ((data ?? []) as unknown as Connection[]).map((c) => {
     const sentByMe = c.sender_id === userId;
     const person = sentByMe ? c.receiver : c.sender;
@@ -25,7 +29,7 @@ export default async function ConnectionsPage() {
   const people: ConnectionItem[] = others
     .map((p, i) => {
       const contact = (contacts[i].data as { telegram: string; email: string }[] | null)?.[0];
-      return { ...p, telegram: contact?.telegram ?? "", email: contact?.email ?? "" };
+      return { ...p, telegram: contact?.telegram ?? "", email: contact?.email ?? "", awarded: awarded.has(p.id) };
     })
     .sort((a, b) => (a.name || "Unnamed").localeCompare(b.name || "Unnamed"));
 

@@ -5,11 +5,15 @@ import { knownSkills } from "@/lib/skills";
 import { SOON_DAYS, dateRange, daysLabel, daysUntil, formatDay, opportunityTypes, placeLabel, type OpportunityType } from "@/lib/opportunities";
 import { deleteOpportunity, reportOpportunity } from "@/app/actions";
 import type { TeamSummary } from "@/lib/teams";
+import type { Award } from "@/lib/awards";
+import { formatMonth } from "@/lib/portfolio";
+import { Avatar } from "../../avatar";
 import { ConnectButton } from "../../connect-button";
 import { SignInButton } from "../../sign-in";
 import { TeamList } from "../../team-list";
 import { PersonRow } from "../../people/person-row";
 import { ToastProvider } from "../../u/[id]/toast";
+import { Placement, TrustLabels, awardPeople } from "../../u/[id]/awards";
 import { LookingPanel } from "./looking-panel";
 
 export type Opportunity = {
@@ -42,6 +46,10 @@ type Props = {
   myReport: string | null;
   canDelete: boolean;
   teams: TeamSummary[];
+  // Awards linked to this event, best first; null until the event is over
+  placed: Award[] | null;
+  // People with any award, for the marker next to their name
+  awarded: Set<string>;
   userId: string;
   isGuest: boolean;
   today: string;
@@ -59,8 +67,40 @@ function SectionHeader({ title, count, action }: { title: string; count?: number
   );
 }
 
+// One placing team: the placement in the label column, then the people, prize, project and month
+function PlacedAward({ award: a }: { award: Award }) {
+  const details = [a.prize_name, formatMonth(a.awarded_on)].filter(Boolean).join(" · ");
+  return (
+    <article className="flex flex-col gap-2 border-b border-border py-5 first:pt-0 sm:grid sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-6">
+      <Placement placement={a.placement} className="sm:pt-1" />
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <ul className="flex flex-wrap gap-x-5 gap-y-2">
+          {awardPeople(a).map((p) => (
+            <li key={p.id}>
+              <Link href={`/u/${p.id}`} className="flex items-center gap-2 text-[15px] font-medium hover:text-accent">
+                <Avatar url={p.avatar_url} name={p.name} className="h-6 w-6 text-[10px]" sizes="24px" />
+                {p.name || "Unnamed"}
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <p className="text-sm text-ink2">
+          {details}
+          {a.project && (
+            <>
+              {" · "}
+              <Link href={`/u/${a.user_id}#project-${a.project.id}`} className="font-medium text-accent hover:underline">{a.project.title}</Link>
+            </>
+          )}
+        </p>
+        <TrustLabels award={a} />
+      </div>
+    </article>
+  );
+}
+
 // People come here to find teammates, so that comes first; the official page has the details
-export function OpportunityView({ o, participants, me, statusWith, myReport, canDelete, teams, userId, isGuest, today }: Props) {
+export function OpportunityView({ o, participants, me, statusWith, myReport, canDelete, teams, placed, awarded, userId, isGuest, today }: Props) {
   const mine = participants.find((p) => p.user_id === userId);
   const others = participants
     .filter((p) => p.user_id !== userId)
@@ -112,13 +152,26 @@ export function OpportunityView({ o, participants, me, statusWith, myReport, can
         )}
       </section>
 
+      {placed && (
+        <section className="mt-12">
+          <SectionHeader title="Schub teams that placed" count={placed.length} />
+          {placed.length === 0 ? (
+            <p className="py-8 text-sm text-ink2">No results added yet. Placed here? Add it to the Awards section of your profile.</p>
+          ) : (
+            <div className="flex flex-col pt-5">
+              {placed.map((a) => <PlacedAward key={a.id} award={a} />)}
+            </div>
+          )}
+        </section>
+      )}
+
       <section className="mt-12">
         <SectionHeader
           title="Teams recruiting"
           count={teams.length}
           action={<Link href={`/teams/new?opportunity=${o.id}`} className="btn-outline h-9 shrink-0">Post a team for this</Link>}
         />
-        <TeamList teams={teams} userId={userId} empty="No teams yet. Already have one? Post it and list the roles you need." />
+        <TeamList teams={teams} userId={userId} awarded={awarded} empty="No teams yet. Already have one? Post it and list the roles you need." />
       </section>
 
       <section className="mt-12">
@@ -134,6 +187,7 @@ export function OpportunityView({ o, participants, me, statusWith, myReport, can
                 name={p.person.name}
                 headline={p.person.headline}
                 avatarUrl={p.person.avatar_url}
+                awarded={awarded.has(p.user_id)}
                 actions={
                   <>
                     <span className="text-[13px] text-muted tabular-nums">{p.score}% match</span>

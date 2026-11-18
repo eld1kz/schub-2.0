@@ -7,6 +7,7 @@ import { createClient, requireMember, requireUser } from "@/lib/supabase/server"
 import { parseList } from "@/lib/match";
 import { linkWorks, opportunityTypes } from "@/lib/opportunities";
 import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, toLink } from "@/lib/portfolio";
+import { AWARD_DESCRIPTION_MAX, AWARD_TEAMMATES_MAX, PLACEMENTS } from "@/lib/awards";
 import { knownSkills } from "@/lib/skills";
 import { knownGoals } from "@/lib/goals";
 
@@ -33,13 +34,15 @@ export async function signOut() {
 
 export type SearchResults = { people: { id: string; name: string }[]; teams: { id: string; title: string }[] };
 
+// % and _ are wildcards in ilike; match them literally
+const containing = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+
 // Nav search: people by name and teams by title, up to 5 of each. Guests can search too.
 export async function searchGlobal(query: string): Promise<SearchResults> {
   const { supabase } = await requireUser();
   const q = query.trim().slice(0, 50);
   if (q.length < 2) return { people: [], teams: [] };
-  // % and _ are wildcards in ilike; match them literally
-  const pattern = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+  const pattern = containing(q);
   const [people, teams] = await Promise.all([
     supabase.from("profiles").select("id, name").ilike("name", pattern).order("name").limit(5),
     supabase.from("teams").select("id, title").ilike("title", pattern).order("created_at", { ascending: false }).limit(5),
@@ -260,6 +263,97 @@ export async function deleteExperience(id: string): Promise<SaveResult> {
   if (error) return { error: "Couldn't delete it. Try again." };
   revalidatePath("/", "layout");
   return {};
+}
+
+export type PersonResult = { id: string; name: string; avatar_url: string; headline: string };
+
+// Teammate search in the award form: people by name, up to 6, never you
+export async function searchPeople(query: string): Promise<PersonResult[]> {
+  const { supabase, userId } = await requireMember();
+  const q = query.trim().slice(0, 50);
+  if (q.length < 2) return [];
+  const { data } = await supabase.from("profiles").select("id, name, avatar_url, headline").ilike("name", containing(q)).neq("id", userId).order("name").limit(6);
+  return data ?? [];
+}
+
+// `id` is null for a new award. The month arrives as "2026-03" and is stored as its 1st day.
+// Each "teammates" value is a person to tag: new ones are tagged (a trigger notifies them), ones left out are
+// untagged. People who declined stay declined, so they can't be tagged again (supabase/awards.sql).
+export async function saveAward(id: string | null, formData: FormData): Promise<SaveResult> {
+  const { supabase, userId } = await requireMember();
+  const text = (key: string) => field(formData, key);
+  const opportunityId = text("opportunity_id");
+  const month = text("awarded_on");
+  const teammates = [...new Set(formData.getAll("teammates").map(String))].filter((t) => t && t !== userId);
+
+  if (!PLACEMENTS.includes(text("placement"))) return { error: "Choose a placement.", field: "placement" };
+  if (!/^\d{4}-\d{2}$/.test(month)) return { error: "Pick the month and year.", field: "awarded_on" };
+  if (month > new Date().toISOString().slice(0, 7)) return { error: "Pick a month that has already passed.", field: "awarded_on" };
+  if (text("description").length > AWARD_DESCRIPTION_MAX) return { error: `Keep it to ${AWARD_DESCRIPTION_MAX} characters or fewer.`, field: "description" };
+  if (teammates.length > AWARD_TEAMMATES_MAX) return { error: `Tag up to ${AWARD_TEAMMATES_MAX} teammates.`, field: "teammates" };
+
+  // A Schub opportunity lends its title, and a team you were on for it (started or accepted to) is linked
+  let eventName = text("event_name");
+  let teamId: string | null = null;
+  if (opportunityId) {
+    const [opportunity, owned, joined] = await Promise.all([
+      supabase.from("opportunities").select("title").eq("id", opportunityId).maybeSingle(),
+      supabase.from("teams").select("id").eq("opportunity_id", opportunityId).eq("owner_id", userId).limit(1),
+      supabase.from("team_applications").select("team_id, team:teams!inner(opportunity_id)").eq("user_id", userId).eq("status", "accepted").eq("team.opportunity_id", opportunityId).limit(1),
+    ]);
+    if (!opportunity.data) return { error: "That opportunity isn't listed any more. Type the event name instead.", field: "event" };
+    eventName = opportunity.data.title;
+    teamId = owned.data?.[0]?.id ?? joined.data?.[0]?.team_id ?? null;
+  }
+  if (!eventName) return { error: "Choose the event or type its name.", field: "event" };
+
+  const fields = {
+    placement: text("placement"),
+    prize_name: text("prize_name").slice(0, 100),
+    opportunity_id: opportunityId || null,
+    event_name: eventName.slice(0, 200),
+    awarded_on: `${month}-01`,
+    project_id: text("project_id") || null,
+    team_id: teamId,
+    proof_url: toLink(text("proof_url")),
+    description: text("description"),
+  };
+  const { data: award, error } = id
+    ? await supabase.from("awards").update(fields).eq("id", id).eq("user_id", userId).select("id").single()
+    : await supabase.from("awards").insert({ ...fields, user_id: userId }).select("id").single();
+  if (error || !award) return { error: "Couldn't save the award. Check the fields and try again." };
+
+  const { data: tagged } = await supabase.from("award_teammates").select("user_id, status").eq("award_id", award.id);
+  const existing = tagged ?? [];
+  const untag = existing.filter((t) => t.status !== "declined" && !teammates.includes(t.user_id)).map((t) => t.user_id);
+  const tag = teammates.filter((t) => !existing.some((e) => e.user_id === t));
+  const [untagged, added] = await Promise.all([
+    untag.length > 0 ? supabase.from("award_teammates").delete().eq("award_id", award.id).in("user_id", untag) : { error: null },
+    tag.length > 0 ? supabase.from("award_teammates").insert(tag.map((user_id) => ({ award_id: award.id, user_id }))) : { error: null },
+  ]);
+  if (untagged.error || added.error) {
+    // A new award comes out again, so saving once more doesn't add it twice
+    if (!id) await supabase.from("awards").delete().eq("id", award.id);
+    return { error: "Couldn't tag the teammates. Try again.", field: "teammates" };
+  }
+  revalidatePath("/", "layout");
+  return {};
+}
+
+export async function deleteAward(id: string): Promise<SaveResult> {
+  const { supabase, userId } = await requireMember();
+  const { error } = await supabase.from("awards").delete().eq("id", id).eq("user_id", userId);
+  if (error) return { error: "Couldn't delete the award. Try again." };
+  revalidatePath("/", "layout");
+  return {};
+}
+
+// A tagged teammate confirms or declines. Removing yourself from a confirmed award later is declining it.
+export async function answerAwardTag(awardId: string, status: "confirmed" | "declined") {
+  const { supabase, userId } = await requireMember();
+  if (status !== "confirmed" && status !== "declined") return;
+  await supabase.from("award_teammates").update({ status }).eq("award_id", awardId).eq("user_id", userId);
+  revalidatePath("/", "layout");
 }
 
 export async function connect(receiverId: string) {

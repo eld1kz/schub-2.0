@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
 import { matchReason, matchScore } from "@/lib/match";
 import { knownSkills, SKILLS } from "@/lib/skills";
+import { awardedIds } from "@/lib/awards";
 import { ConnectButton } from "../connect-button";
 import { PersonRow } from "./person-row";
 
@@ -17,9 +18,10 @@ export default async function PeoplePage(props: PageProps<"/people">) {
   const { skills: skillsParam } = await props.searchParams;
   const selected = knownSkills(typeof skillsParam === "string" ? skillsParam.split(",") : []);
   const { supabase, userId, isGuest } = await requireUser();
-  const [profiles, connections] = await Promise.all([
+  const [profiles, connections, awarded] = await Promise.all([
     supabase.from("profiles").select("id, name, headline, university, avatar_url, skills, interests, open_to_collaborate"),
     supabase.from("connections").select("sender_id, receiver_id, status"),
+    awardedIds(supabase),
   ]);
 
   const all = profiles.data ?? [];
@@ -87,6 +89,7 @@ export default async function PeoplePage(props: PageProps<"/people">) {
                 name={p.name}
                 headline={p.headline}
                 avatarUrl={p.avatar_url}
+                awarded={awarded.has(p.id)}
                 actions={
                   <>
                     <span className="text-[13px] text-muted tabular-nums">{p.score}% match</span>

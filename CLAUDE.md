@@ -54,7 +54,7 @@ web/supabase/               SQL migrations, run by hand in the Supabase SQL Edit
 Migrations live in `web/supabase/` and are run by hand, in this order:
 `schema` → `opportunities` → `contact` → `teams` → `profile` → `portfolio` →
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
-`people-requests` → `opportunity-details`. `seed_opportunities.sql` and
+`people-requests` → `opportunity-details` → `awards`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -72,6 +72,12 @@ Tables:
 - `opportunity_reports` — 3 reports hide an opportunity; `admins` can restore or remove
 - `teams` — owner, optional opportunity, title, description, roles[]
 - `team_applications` — one per person per team, for one role; the owner accepts or declines
+- `awards` — placement, prize_name, event_name (always set; the opportunity's title when linked),
+  optional opportunity_id / project_id (own project) / team_id (a team you were on, set by the server
+  for the same opportunity), awarded_on (1st of the month), proof_url, description
+- `award_teammates` — award_id, user_id, status (pending / confirmed / declined). Only the owner tags;
+  only the tagged person answers; declined rows stay so they can't be tagged again. Only confirmed rows
+  are public.
 - `notifications` — written only by triggers; the app just reads and marks them read
 - `ideas`, `posts` — used by the on-hold feed
 

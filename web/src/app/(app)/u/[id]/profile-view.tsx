@@ -2,10 +2,13 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatPeriod, mediaUrl, webLink, type Experience, type Project } from "@/lib/portfolio";
+import { byRank, type Award } from "@/lib/awards";
 import { groupSkills } from "@/lib/skills";
 import { Avatar } from "../../avatar";
 import { ProfileCompletion } from "../../profile/completion";
 import { About } from "./about";
+import type { AwardOptions } from "./award-fields";
+import { AwardsSection, HeroAward, PendingTags, Placement } from "./awards";
 import { CopyLinkButton } from "./copy-link";
 import { ChipTable, EmptyPrompt, KeyValue, OrgMark, Section, SideBlock } from "./profile-parts";
 import { AboutEdit, ContactEdit, ExperienceEdit, HeroEdit, InterestsEdit, LinksEdit, ProjectEdit, SkillsEdit } from "./section-edits";
@@ -41,6 +44,11 @@ type Props = {
   action: ReactNode;
   contact?: { telegram: string; email: string };
   projects: Project[];
+  // Their own awards and the ones they confirmed as a teammate, newest first
+  awards: Award[];
+  // Tags waiting on you, on your own page
+  pendingAwards: Award[];
+  awardOptions: AwardOptions;
   experiences: Experience[];
   teams: { id: string; title: string; role: string }[];
   events: { id: string; title: string }[];
@@ -65,17 +73,24 @@ function OwnerBanner({ id, preview }: { id: string; preview: boolean }) {
   );
 }
 
-function ProjectItem({ project: p, edit }: { project: Project; edit?: ReactNode }) {
+// `award` is the best award linked to this project; it takes the place of the typed-in result
+function ProjectItem({ project: p, award, edit }: { project: Project; award?: Award; edit?: ReactNode }) {
   const image = mediaUrl(p.image_url);
   const live = webLink(p.url);
   const code = webLink(p.repo_url);
   const where = [p.role, p.built_at && `Built at ${p.built_at}`, p.year].filter(Boolean).join(" · ");
   return (
-    <article className="flex flex-col gap-2 border-b border-border pb-6 sm:pb-7 [&+&]:pt-6 sm:[&+&]:pt-7">
+    <article id={`project-${p.id}`} className="flex flex-col gap-2 border-b border-border pb-6 sm:pb-7 [&+&]:pt-6 sm:[&+&]:pt-7">
       <div className="flex items-baseline justify-between gap-4">
         <h3 className="text-[17px] font-semibold tracking-[-0.01em] sm:text-[19px]">{p.title}</h3>
         <div className="flex shrink-0 items-center gap-2">
-          {p.result && <span className="text-right text-[13px] font-semibold text-accent sm:text-sm">{p.result}</span>}
+          {award ? (
+            <a href={`#award-${award.id}`} title={award.opportunity?.title ?? award.event_name} className="hover:opacity-80">
+              <Placement placement={award.placement} />
+            </a>
+          ) : (
+            p.result && <span className="text-right text-[13px] font-semibold text-accent sm:text-sm">{p.result}</span>
+          )}
           {edit && <span className="-my-2">{edit}</span>}
         </div>
       </div>
@@ -118,7 +133,7 @@ function ConnectionStack({ people }: { people: Connection[] }) {
   );
 }
 
-export function ProfileView({ id, profile: p, canEdit, owner, action, contact, projects, experiences, teams, events, ideas, connections, suggestions }: Props) {
+export function ProfileView({ id, profile: p, canEdit, owner, action, contact, projects, awards, pendingAwards, awardOptions, experiences, teams, events, ideas, connections, suggestions }: Props) {
   const links = [
     { label: "GitHub", href: webLink(p.github) },
     { label: "LinkedIn", href: webLink(p.linkedin) },
@@ -134,10 +149,14 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
   const hasContact = Boolean(contact?.telegram || contact?.email);
   // Experiences arrive with current roles first
   const currentRole = experiences.find((e) => !e.end_date);
+  const ranked = [...awards].sort(byRank);
+  // A project shows the best of its owner's awards that link to it
+  const projectAward = (projectId: string) => ranked.find((a) => a.user_id === id && a.project_id === projectId);
 
   return (
     <ToastProvider>
       {owner && <OwnerBanner id={id} preview={owner.preview} />}
+      {pendingAwards.length > 0 && <PendingTags awards={pendingAwards} />}
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_296px] lg:items-start lg:gap-20">
         <div>
           <header className="relative grid grid-cols-[72px_minmax(0,1fr)] items-center gap-x-4 gap-y-3.5 pb-8 sm:grid-cols-[120px_minmax(0,1fr)] sm:grid-rows-[auto_1fr] sm:items-start sm:gap-x-8 sm:gap-y-2.5 sm:pb-10">
@@ -147,6 +166,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
             </h1>
             <div className="col-span-2 flex flex-col gap-2.5 sm:col-span-1 sm:col-start-2">
               {p.headline && <p className="text-[17px] leading-[1.4] text-pretty text-ink2 sm:text-xl">{p.headline}</p>}
+              {ranked[0] && <HeroAward award={ranked[0]} />}
               {(currentRole || education) && (
                 <p className="flex flex-wrap gap-x-[18px] gap-y-1.5 text-sm text-ink2 sm:mt-1 sm:text-[15px]">
                   {currentRole && <span className="font-semibold text-foreground">{currentRole.role} at {currentRole.company}</span>}
@@ -232,6 +252,8 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
             </Section>
           )}
 
+          <AwardsSection awards={awards} profileId={id} canEdit={canEdit} options={awardOptions} />
+
           {(skillGroups.length > 0 || canEdit) && (
             <Section title="Skills" quiet={skillGroups.length === 0} owner={canEdit} edit={canEdit && skillGroups.length > 0 && <SkillsEdit skills={p.skills} trigger="edit" />}>
               {skillGroups.length > 0 ? (
@@ -267,7 +289,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
               {projects.length > 0 ? (
                 <div className="flex flex-col">
                   {projects.map((project) => (
-                    <ProjectItem key={project.id} project={project} edit={canEdit && <ProjectEdit project={project} trigger="edit" />} />
+                    <ProjectItem key={project.id} project={project} award={projectAward(project.id)} edit={canEdit && <ProjectEdit project={project} trigger="edit" />} />
                   ))}
                 </div>
               ) : (

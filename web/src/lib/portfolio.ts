@@ -56,7 +56,8 @@ export function toLink(value: string, handleBase?: string) {
   return url && url.hostname.includes(".") ? url.href : "";
 }
 
-const month = (day: string) => new Date(day).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+// "Mar 2025"
+export const formatMonth = (day: string) => new Date(day).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
 
 // "Mar 2025 – Present · 1 yr 9 mos". The length counts the first and last month, like LinkedIn.
 // `now` is today for entries without an end.
@@ -67,7 +68,7 @@ export function formatPeriod(start: string, end: string | null, now = new Date()
   const years = Math.floor(months / 12);
   const rest = months % 12;
   const length = [years > 0 && `${years} ${years === 1 ? "yr" : "yrs"}`, rest > 0 && `${rest} ${rest === 1 ? "mo" : "mos"}`].filter(Boolean).join(" ");
-  return `${month(start)} – ${end ? month(end) : "Present"}${length ? ` · ${length}` : ""}`;
+  return `${formatMonth(start)} – ${end ? formatMonth(end) : "Present"}${length ? ` · ${length}` : ""}`;
 }
 
 // Current roles first, then the newest start first
