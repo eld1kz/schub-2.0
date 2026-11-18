@@ -14,8 +14,17 @@ export default async function OnboardingPage(props: PageProps<"/onboarding">) {
   const { data: p } = await supabase.from("profiles").select("university, graduation_year, skills, goals").eq("id", userId).maybeSingle();
 
   return (
-    <main className="flex min-h-screen items-start justify-center px-4 py-10 sm:items-center">
-      <div className="w-full max-w-md rounded-lg border border-border p-6">
+    <>
+      <header className="border-b border-border">
+        <div className="mx-auto flex h-[60px] max-w-[1440px] items-center px-4 sm:px-12">
+          <span className="flex items-center gap-2 text-xl font-bold tracking-[-0.03em]">
+            <span aria-hidden className="h-3 w-3 rounded-[2px] bg-accent" />
+            schub
+          </span>
+        </div>
+      </header>
+      {/* Room at the bottom on phones for the pinned buttons */}
+      <main className="mx-auto w-full max-w-[560px] px-4 pt-10 pb-32 sm:pt-16 sm:pb-16">
         <OnboardingFlow
           university={p?.university ?? ""}
           graduationYear={p?.graduation_year ?? 0}
@@ -23,7 +32,7 @@ export default async function OnboardingPage(props: PageProps<"/onboarding">) {
           goals={knownGoals(p?.goals ?? [])}
           error={typeof error === "string" ? error : undefined}
         />
-      </div>
-    </main>
+      </main>
+    </>
   );
 }

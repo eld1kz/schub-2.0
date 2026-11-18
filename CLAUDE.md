@@ -110,8 +110,8 @@ neutral everything else.
   ChipTable). Owner editing: `u/[id]/edit-dialog.tsx` (modal from sm up, bottom sheet on
   phones) and `u/[id]/section-edits.tsx` (one form per section, grouped with a label column).
 - Redesign status: `/u/[id]`, `/teams` (list, `[id]`, `new`), `/people` (three tabs) and
-  `/opportunities` (list, `[id]`, `new`) are done. `/onboarding` and the on-hold `/feed` only
-  have the tokens and fonts, not the layout.
+  `/opportunities` (list, `[id]`, `new`) and `/onboarding` are done. Only the on-hold `/feed`
+  still has the old layout (with the new tokens and fonts).
 
 ## Coding rules
 
