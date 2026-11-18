@@ -142,6 +142,8 @@ export function ProfileView({ id, profile: p, canEdit, action, contact, projects
   const skillGroups = groupSkills(p.skills);
   const hasInterests = p.goals.length > 0 || p.interests.length > 0 || p.looking_for.length > 0;
   const hasContact = Boolean(contact?.telegram || contact?.email);
+  // Experiences arrive with current roles first
+  const currentRole = experiences.find((e) => !e.end_date);
 
   return (
     <ToastProvider>
@@ -165,6 +167,7 @@ export function ProfileView({ id, profile: p, canEdit, action, contact, projects
                 <div className="min-w-0">
                   <h1 className="text-2xl font-bold tracking-tight">{p.name || "Unnamed"}</h1>
                   {p.headline && <p className={`truncate text-base ${muted}`}>{p.headline}</p>}
+                  {currentRole && <p className="mt-1 truncate text-sm">{currentRole.role} at {currentRole.company}</p>}
                   {education && <p className="mt-1 text-sm text-zinc-400 dark:text-zinc-500">{education}</p>}
                   {p.open_to_collaborate && (
                     <p className="mt-2 flex items-center gap-1.5 text-sm text-green-700 dark:text-green-400">

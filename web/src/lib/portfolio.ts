@@ -48,6 +48,19 @@ export function toLink(value: string, handleBase?: string) {
 
 const month = (day: string) => new Date(day).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
 
-export function formatPeriod(start: string, end: string | null) {
-  return `${month(start)} to ${end ? month(end) : "now"}`;
+// "Mar 2025 – Present · 1 yr 9 mos". The length counts the first and last month, like LinkedIn.
+// `now` is today for entries without an end.
+export function formatPeriod(start: string, end: string | null, now = new Date()) {
+  const from = new Date(start);
+  const to = end ? new Date(end) : now;
+  const months = Math.max(0, (to.getUTCFullYear() - from.getUTCFullYear()) * 12 + to.getUTCMonth() - from.getUTCMonth() + 1);
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  const length = [years > 0 && `${years} ${years === 1 ? "yr" : "yrs"}`, rest > 0 && `${rest} ${rest === 1 ? "mo" : "mos"}`].filter(Boolean).join(" ");
+  return `${month(start)} – ${end ? month(end) : "Present"}${length ? ` · ${length}` : ""}`;
+}
+
+// Current roles first, then the newest start first
+export function sortExperiences<T extends { start_date: string; end_date: string | null }>(entries: T[]) {
+  return [...entries].sort((a, b) => Number(a.end_date !== null) - Number(b.end_date !== null) || b.start_date.localeCompare(a.start_date));
 }

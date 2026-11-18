@@ -7,6 +7,7 @@ import { Avatar } from "../../avatar";
 import { SkillPicker } from "../../profile/skill-picker";
 import { EditDialog } from "./edit-dialog";
 import { PhotoField } from "./photo-field";
+import { PeriodFields } from "./period-fields";
 import { GitHubIcon, LinkedInIcon, WebsiteIcon } from "./link-icons";
 import type { ProfileData } from "./profile-view";
 
@@ -145,11 +146,7 @@ export function ExperienceEdit({ experience: e, trigger }: { experience?: Experi
       <p className="text-sm text-muted">Internships, jobs, student clubs, research, volunteering.</p>
       <Field label="Role"><input name="role" defaultValue={e?.role} required maxLength={80} placeholder="Frontend intern" className={input} /></Field>
       <Field label="Where"><input name="company" defaultValue={e?.company} required maxLength={80} placeholder="Kaspi.kz" className={input} /></Field>
-      <div className="flex gap-3">
-        <Field label="Started" className="min-w-0 flex-1"><input name="start" type="month" defaultValue={e?.start_date.slice(0, 7)} required className={input} /></Field>
-        <Field label="Ended" className="min-w-0 flex-1"><input name="end" type="month" defaultValue={e?.end_date?.slice(0, 7)} className={input} /></Field>
-      </div>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="current" defaultChecked={e ? !e.end_date : false} /> I&apos;m still doing this</label>
+      <PeriodFields start={e?.start_date.slice(0, 7)} end={e?.end_date?.slice(0, 7)} current={e ? !e.end_date : false} inputClass={input} />
       <Field label="What you did"><textarea name="description" rows={4} defaultValue={e?.description} maxLength={600} className={input} /></Field>
     </EditDialog>
   );

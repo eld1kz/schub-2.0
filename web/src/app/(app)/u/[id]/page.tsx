@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
 import { today } from "@/lib/opportunities";
 import { matchScore } from "@/lib/match";
-import { experienceColumns, projectColumns, type Experience, type Project } from "@/lib/portfolio";
+import { experienceColumns, projectColumns, sortExperiences, type Experience, type Project } from "@/lib/portfolio";
 import { ConnectButton } from "../../connect-button";
 import { ProfileView, type Connection, type ProfileData, type Suggestion } from "./profile-view";
 
@@ -76,7 +76,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
       action={!isSelf && <ConnectButton profileId={id} status={statusWith(id)} isGuest={isGuest} />}
       contact={(contacts.data as { telegram: string; email: string }[] | null)?.[0]}
       projects={(projects.data ?? []) as unknown as Project[]}
-      experiences={(experiences.data ?? []) as unknown as Experience[]}
+      experiences={sortExperiences((experiences.data ?? []) as unknown as Experience[])}
       teams={teams}
       events={events}
       ideas={ideas.data ?? []}
