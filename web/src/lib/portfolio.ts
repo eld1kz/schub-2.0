@@ -17,13 +17,23 @@ export type Experience = {
   id: string;
   role: string;
   company: string;
+  type: string;
+  location: string;
+  remote: boolean;
   start_date: string;
   end_date: string | null;
   description: string;
+  skills: string[];
 };
 
+// The allowed values of experiences.type (supabase/experience-details.sql); empty means not set
+export const EXPERIENCE_TYPES = ["Internship", "Part-time", "Full-time", "Research", "Club / Society", "Freelance", "Volunteer", "Hackathon team"];
+
+// The form allows less than the column (600), which older entries may already use
+export const EXPERIENCE_DESCRIPTION_MAX = 400;
+
 export const projectColumns = "id, title, tagline, description, role, built_at, result, year, url, repo_url, image_url, skills";
-export const experienceColumns = "id, role, company, start_date, end_date, description";
+export const experienceColumns = "id, role, company, type, location, remote, start_date, end_date, description, skills";
 
 // Uploaded images live in the public "media" bucket. Anything else stored in an image
 // column is ignored, so a profile can't point the page at an arbitrary address.

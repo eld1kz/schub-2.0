@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient, requireMember, requireUser } from "@/lib/supabase/server";
 import { parseList } from "@/lib/match";
 import { linkWorks } from "@/lib/opportunities";
-import { toLink } from "@/lib/portfolio";
+import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, toLink } from "@/lib/portfolio";
 import { knownSkills } from "@/lib/skills";
 import { knownGoals } from "@/lib/goals";
 
@@ -100,7 +100,8 @@ async function uploadImage(supabase: Supabase, userId: string, file: FormDataEnt
 
 // Profile sections are edited one at a time from the profile page. Each action saves only its own
 // fields and returns an error to show in the form, or nothing when it worked.
-export type SaveResult = { error?: string };
+// `field` names the form field the error belongs to, so the form can show it there.
+export type SaveResult = { error?: string; field?: string };
 
 const saveFailed = "Couldn't save. Check the fields and try again.";
 const field = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
@@ -227,18 +228,28 @@ export async function saveExperience(id: string | null, formData: FormData): Pro
   const day = (key: string) => (/^\d{4}-\d{2}$/.test(text(key)) ? `${text(key)}-01` : null);
 
   const start = day("start");
-  if (!start) return { error: "Add the month it started." };
+  const current = formData.get("current") === "on";
+  const end = current ? null : day("end");
+  if (!text("role")) return { error: "Add a title.", field: "role" };
+  if (!text("company")) return { error: "Add the organization.", field: "company" };
+  if (!start) return { error: "Pick the month and year it started.", field: "start" };
+  if (!current && !end) return { error: "Pick the month and year it ended.", field: "end" };
+  if (text("description").length > EXPERIENCE_DESCRIPTION_MAX) return { error: `Keep it to ${EXPERIENCE_DESCRIPTION_MAX} characters or fewer.`, field: "description" };
   const fields = {
     role: text("role"),
     company: text("company"),
+    type: EXPERIENCE_TYPES.includes(text("type")) ? text("type") : "",
+    location: text("location").slice(0, 80),
+    remote: formData.get("remote") === "on",
     start_date: start,
-    end_date: formData.get("current") === "on" ? null : day("end"),
+    end_date: end,
     description: text("description"),
+    skills: knownSkills(formData.getAll("skills")).slice(0, 20),
   };
   const { error } = id
     ? await supabase.from("experiences").update(fields).eq("id", id).eq("user_id", userId)
     : await supabase.from("experiences").insert({ ...fields, user_id: userId });
-  if (error) return { error: error.code === "23514" ? "The end should be after the start." : "Couldn't save it. Check the fields and try again." };
+  if (error) return error.code === "23514" ? { error: "The end can't be before the start.", field: "end" } : { error: "Couldn't save it. Check the fields and try again." };
   revalidatePath("/", "layout");
   return {};
 }

@@ -7,7 +7,7 @@ import { Avatar } from "../../avatar";
 import { SkillPicker } from "../../profile/skill-picker";
 import { EditDialog } from "./edit-dialog";
 import { PhotoField } from "./photo-field";
-import { PeriodFields } from "./period-fields";
+import { ExperienceFields } from "./experience-fields";
 import { GitHubIcon, LinkedInIcon, WebsiteIcon } from "./link-icons";
 import type { ProfileData } from "./profile-view";
 
@@ -165,20 +165,12 @@ export function ExperienceEdit({ experience: e, trigger }: { experience?: Experi
       title={e ? "Edit experience" : "Add experience"}
       trigger={trigger}
       label={e ? `Edit ${e.role}` : "Add experience"}
-      note="Current roles are shown first"
       save={saveExperience.bind(null, e?.id ?? null)}
       remove={e && deleteExperience.bind(null, e.id)}
+      tall
+      requireValid
     >
-      <Group label="Role">
-        <Field label="Title"><input name="role" defaultValue={e?.role} required maxLength={80} placeholder="Frontend intern" className="input" /></Field>
-        <Field label="Organization"><input name="company" defaultValue={e?.company} required maxLength={80} placeholder="Kaspi.kz" className="input" /></Field>
-      </Group>
-      <Group label="Dates">
-        <PeriodFields start={e?.start_date.slice(0, 7)} end={e?.end_date?.slice(0, 7)} current={e ? !e.end_date : false} />
-      </Group>
-      <Group label="Details">
-        <Field label="What you did"><textarea name="description" rows={3} defaultValue={e?.description} maxLength={600} placeholder="Internships, jobs, student clubs, research, volunteering" className="input leading-normal" /></Field>
-      </Group>
+      <ExperienceFields experience={e} />
     </EditDialog>
   );
 }

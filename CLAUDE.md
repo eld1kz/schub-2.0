@@ -53,7 +53,7 @@ web/supabase/               SQL migrations, run by hand in the Supabase SQL Edit
 ## Database
 Migrations live in `web/supabase/` and are run by hand, in this order:
 `schema` → `opportunities` → `contact` → `teams` → `profile` → `portfolio` →
-`connections-list` → `auth` → `notifications` → `goals`. `seed_opportunities.sql` and
+`connections-list` → `auth` → `notifications` → `goals` → `experience-details`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -61,7 +61,8 @@ Tables:
 - `profiles` — name, headline, university, graduation_year, bio, skills[], interests[],
   looking_for[], goals[], open_to_collaborate, avatar_url, github, linkedin, website,
   telegram, email
-- `experiences`, `projects` — the profile's portfolio
+- `experiences` — role, company, type, location, remote, start/end (1st of the month), description, skills[]
+- `projects` — the profile's portfolio
 - `connections` — sender_id, receiver_id, status (pending / accepted / declined)
 - `opportunities` — title, type, organizer, location, url, starts_at, deadline, status
   (live / hidden / removed), submitted_by

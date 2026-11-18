@@ -210,9 +210,16 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                           </div>
                           {canEdit && <span className="-my-1.5"><ExperienceEdit experience={e} trigger="edit" /></span>}
                         </div>
-                        <p className="text-sm text-ink2 sm:text-[15px]">{e.company}</p>
-                        <p className="text-[13px] text-muted tabular-nums sm:text-sm">{formatPeriod(e.start_date, e.end_date)}</p>
+                        <p className="text-sm text-ink2 sm:text-[15px]">{[e.company, e.type].filter(Boolean).join(" · ")}</p>
+                        <p className="text-[13px] text-muted tabular-nums sm:text-sm">
+                          {[formatPeriod(e.start_date, e.end_date), e.location, e.remote && "Remote"].filter(Boolean).join(" · ")}
+                        </p>
                         {e.description && <p className="mt-2 max-w-[600px] text-sm leading-normal whitespace-pre-wrap sm:text-[15px]">{e.description}</p>}
+                        {e.skills.length > 0 && (
+                          <ul className="mt-2 flex flex-wrap gap-1.5">
+                            {e.skills.map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
+                          </ul>
+                        )}
                       </div>
                     </article>
                   ))}

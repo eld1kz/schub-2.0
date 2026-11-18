@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type Ref } from "react";
 import { formatPeriod } from "@/lib/portfolio";
+import { FieldError } from "./edit-dialog";
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const firstYear = 1990;
@@ -10,26 +11,32 @@ const yearsAhead = 5;
 
 const years = (from: number) => Array.from({ length: from - firstYear + 1 }, (_, i) => String(from - i));
 
-// A Month or Year dropdown in the input style, with its own chevron. Empty shows the placeholder in a muted color.
-function Select({ label, placeholder, value, onChange, options, selectRef }: {
-  label: string;
+// A dropdown in the input style, with its own chevron. Empty shows the placeholder in a muted color;
+// on an optional one, picking the placeholder clears it.
+export function Select({ label, placeholder, value, onChange, options, selectRef, name, id, required = true }: {
+  label?: string;
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   selectRef?: Ref<HTMLSelectElement>;
+  name?: string;
+  id?: string;
+  required?: boolean;
 }) {
   return (
     <span className="relative block min-w-0">
       <select
         ref={selectRef}
+        id={id}
+        name={name}
         aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        required
-        className={`input cursor-pointer appearance-none pr-9 ${value ? "" : "text-muted"}`}
+        required={required}
+        className={`input h-11 cursor-pointer appearance-none py-0 pr-9 sm:h-10 ${value ? "" : "text-muted"}`}
       >
-        <option value="" disabled>{placeholder}</option>
+        <option value="" disabled={required}>{placeholder}</option>
         {options.map((o) => <option key={o.value} value={o.value} className="text-foreground">{o.label}</option>)}
       </select>
       <svg viewBox="0 0 16 16" aria-hidden className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 fill-none stroke-muted" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
@@ -66,34 +73,36 @@ export function PeriodFields({ start, end, current }: { start?: string; end?: st
     endMonth.current?.setCustomValidity(endsTooEarly ? "The end can't be before the start." : "");
   }, [endsTooEarly]);
 
+  const legend = "mb-1.5 block text-sm font-medium";
+  const required = <span aria-hidden className="ml-0.5 text-accent">*</span>;
+
   return (
     <>
-      <input type="hidden" name="start" value={startValue} />
+      <label className="flex h-11 w-fit cursor-pointer items-center gap-2.5 text-[15px] sm:h-auto">
+        <input type="checkbox" name="current" checked={isCurrent} onChange={(e) => setCurrent(e.target.checked)} className="h-[18px] w-[18px] accent-[var(--accent)]" />
+        I currently work here
+      </label>
       <fieldset>
-        <legend className="label">Start</legend>
+        <legend className={legend}>Start date{required}</legend>
+        <input type="hidden" name="start" value={startValue} />
         <div className="grid grid-cols-2 gap-3">
           <Select label="Start month" placeholder="Month" value={from.month} onChange={(month) => setFrom({ ...from, month })} options={monthOptions} />
           <Select label="Start year" placeholder="Year" value={from.year} onChange={(year) => setFrom({ ...from, year })} options={yearOptions(thisYear)} />
         </div>
+        <FieldError field="start" />
       </fieldset>
       {!isCurrent && (
         <fieldset>
-          <legend className="label">End</legend>
+          <legend className={legend}>End date{required}</legend>
           <input type="hidden" name="end" value={endValue} />
           <div className="grid grid-cols-2 gap-3">
             <Select label="End month" placeholder="Month" value={to.month} onChange={(month) => setTo({ ...to, month })} options={monthOptions} selectRef={endMonth} />
             <Select label="End year" placeholder="Year" value={to.year} onChange={(year) => setTo({ ...to, year })} options={yearOptions(thisYear + yearsAhead)} />
           </div>
-          {endsTooEarly && <p className="mt-1.5 text-[13px] text-red-600 dark:text-red-400">The end can&apos;t be before the start.</p>}
+          <FieldError field="end" message={endsTooEarly ? "The end can't be before the start." : ""} />
         </fieldset>
       )}
-      <div className="flex items-center justify-between gap-4">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="current" checked={isCurrent} onChange={(e) => setCurrent(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
-          I currently work here
-        </label>
-        {length && <span className="font-mono text-[13px] font-medium text-ink2">{length}</span>}
-      </div>
+      {length && <p className="-mt-2 text-[13px] text-muted tabular-nums">{length}</p>}
     </>
   );
 }
