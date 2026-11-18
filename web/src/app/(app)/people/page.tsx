@@ -1,10 +1,9 @@
-import { requireUser } from "@/lib/supabase/server";
-import { matchScore } from "@/lib/match";
-import { knownSkills, SKILLS } from "@/lib/skills";
 import Link from "next/link";
-import { respond } from "@/app/actions";
+import { requireUser } from "@/lib/supabase/server";
+import { matchReason, matchScore } from "@/lib/match";
+import { knownSkills, SKILLS } from "@/lib/skills";
 import { ConnectButton } from "../connect-button";
-import { cardBox } from "../card";
+import { PersonRow } from "./person-row";
 
 const chipCount = 12;
 
@@ -13,27 +12,20 @@ const skillsHref = (skills: string[]) => (skills.length ? `/people?skills=${skil
 
 export const instant = false;
 
+// Discover: people you have no connection or pending request with, best match first
 export default async function PeoplePage(props: PageProps<"/people">) {
   const { skills: skillsParam } = await props.searchParams;
   const selected = knownSkills(typeof skillsParam === "string" ? skillsParam.split(",") : []);
   const { supabase, userId, isGuest } = await requireUser();
   const [profiles, connections] = await Promise.all([
-    supabase.from("profiles").select("id, name, university, bio, skills, interests, open_to_collaborate"),
-    supabase.from("connections").select("id, sender_id, receiver_id, status, sender:profiles!sender_id(name), receiver:profiles!receiver_id(name)"),
+    supabase.from("profiles").select("id, name, headline, university, avatar_url, skills, interests, open_to_collaborate"),
+    supabase.from("connections").select("sender_id, receiver_id, status"),
   ]);
 
   const all = profiles.data ?? [];
-  const me = all.find((p) => p.id === userId);
+  const me = all.find((p) => p.id === userId) ?? { skills: [], interests: [], open_to_collaborate: true };
   const links = connections.data ?? [];
-  const incoming = links.filter((c) => c.receiver_id === userId && c.status === "pending");
-  const connected = links
-    .filter((c) => c.status === "accepted")
-    .map((c) => {
-      const sent = c.sender_id === userId;
-      const other = (sent ? c.receiver : c.sender) as unknown as { name: string } | null;
-      return { id: sent ? c.receiver_id : c.sender_id, name: other?.name || "Unnamed" };
-    });
-  const statusWith = (id: string) => links.find((c) => c.sender_id === id || c.receiver_id === id)?.status;
+  const statusWith = (id: string) => links.find((c) => c.sender_id === id || c.receiver_id === id)?.status as string | undefined;
 
   // Chips: the 12 skills most people have (listed order breaks ties), plus any already selected
   const counts = new Map<string, number>();
@@ -43,44 +35,22 @@ export default async function PeoplePage(props: PageProps<"/people">) {
 
   const matches = all
     .filter((p) => p.id !== userId && p.name)
+    // Connected and pending people live in the other tabs
+    .filter((p) => {
+      const status = statusWith(p.id);
+      return status !== "accepted" && status !== "pending";
+    })
     // Must have every selected skill
     .filter((p) => {
       const has = knownSkills(p.skills);
       return selected.every((s) => has.includes(s));
     })
-    .map((p) => ({ ...p, ...matchScore(p, me ?? { skills: [], interests: [], open_to_collaborate: true }) }))
+    .map((p) => ({ ...p, score: matchScore(p, me).score, reason: matchReason(p, me) }))
     .sort((a, b) => Number(b.open_to_collaborate) - Number(a.open_to_collaborate) || b.score - a.score);
 
   return (
-    <div className="space-y-10">
-      {incoming.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-medium">Requests</h2>
-          {incoming.map((c) => (
-            <div key={c.id} className="flex items-center justify-between py-2">
-              <Link href={`/u/${c.sender_id}`} className="hover:underline">{(c.sender as unknown as { name: string } | null)?.name || "Unnamed"}</Link>
-              <div className="flex gap-2">
-                <form action={respond.bind(null, c.id, "accepted")}><button className="btn">Accept</button></form>
-                <form action={respond.bind(null, c.id, "declined")}><button className="btn-outline">Decline</button></form>
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {connected.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-medium">Your connections</h2>
-          {connected.map((c) => (
-            <div key={c.id} className="flex items-center justify-between py-2 text-sm">
-              <Link href={`/u/${c.id}`} className="hover:underline">{c.name}</Link>
-              <Link href={`/u/${c.id}`} className="text-muted hover:text-foreground">Contact details</Link>
-            </div>
-          ))}
-        </section>
-      )}
-
-      <nav aria-label="Filter by skill" className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-6">
+      <nav aria-label="Filter by skill" className="flex flex-wrap items-center gap-1.5">
         {chips.map((s) => {
           const on = selected.includes(s);
           return (
@@ -88,39 +58,59 @@ export default async function PeoplePage(props: PageProps<"/people">) {
               key={s}
               href={skillsHref(on ? selected.filter((x) => x !== s) : [...selected, s])}
               aria-current={on ? "true" : undefined}
-              className={`rounded-full border px-3 py-1 text-sm ${on ? "border-indigo-600 bg-indigo-600 text-white dark:border-indigo-500 dark:bg-indigo-500" : "border-border text-muted hover:border-foreground hover:text-foreground"}`}
+              className={`rounded px-2.5 py-1 text-sm ${on ? "bg-foreground font-medium text-background" : "border border-line2 text-ink2 hover:border-muted hover:text-foreground"}`}
             >
               {s}
             </Link>
           );
         })}
-        {selected.length > 0 && <Link href="/people" className="ml-1 text-sm text-muted underline hover:text-foreground">Clear filters</Link>}
+        {selected.length > 0 && <Link href="/people" className="ml-2 text-sm font-medium text-accent hover:underline">Clear filters</Link>}
       </nav>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        {matches.length === 0 && (
-          <p className="py-6 text-sm text-muted lg:col-span-2">{selected.length > 0 ? "Nobody has all of these skills yet." : "No other students yet."}</p>
-        )}
-        {matches.map((p) => {
-          return (
-            <article key={p.id} className={`${cardBox} flex gap-4 p-5`}>
-              <div className="flex-1">
-                <p className="text-sm">
-                  <Link href={`/u/${p.id}`} className="font-medium hover:underline">{p.name}</Link>
-                  <span className="text-muted"> · {p.university || "—"}</span>
-                </p>
-                {p.bio && <p className="mt-1 text-sm">{p.bio}</p>}
-                {p.complementary.length > 0 && <p className="mt-2 text-sm text-muted">Brings: {p.complementary.join(", ")}</p>}
-                {!p.open_to_collaborate && <p className="mt-1 text-xs text-muted">Not looking for collaborators</p>}
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <span className="text-sm tabular-nums">{p.score}%</span>
-                <ConnectButton profileId={p.id} status={statusWith(p.id)} isGuest={isGuest} />
-              </div>
-            </article>
-          );
-        })}
-      </section>
+      {matches.length === 0 ? (
+        <div className="flex flex-col items-start gap-2 border-t border-border py-8">
+          <p className="text-[15px] font-medium">{selected.length > 0 ? "No one matches these filters" : "No one new to discover right now"}</p>
+          {selected.length > 0 ? (
+            <Link href="/people" className="text-sm font-semibold text-accent hover:underline">Clear filters</Link>
+          ) : (
+            <p className="text-sm text-ink2">You&apos;ve connected with or asked everyone here so far.</p>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col">
+          {matches.map((p) => {
+            const skills = knownSkills(p.skills).slice(0, 3);
+            return (
+              <PersonRow
+                key={p.id}
+                id={p.id}
+                name={p.name}
+                headline={p.headline}
+                avatarUrl={p.avatar_url}
+                actions={
+                  <>
+                    <span className="text-[13px] text-muted tabular-nums">{p.score}% match</span>
+                    <ConnectButton profileId={p.id} status={statusWith(p.id)} isGuest={isGuest} className="btn-outline h-9" />
+                  </>
+                }
+              >
+                {p.university && <p className="text-[13px] text-muted">{p.university}</p>}
+                {(skills.length > 0 || p.reason) && (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    {skills.length > 0 && (
+                      <ul className="flex flex-wrap gap-1.5">
+                        {skills.map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
+                      </ul>
+                    )}
+                    {p.reason && <p className="text-[13px] font-medium text-accent">{p.reason}</p>}
+                  </div>
+                )}
+                {!p.open_to_collaborate && <p className="text-[13px] text-muted">Not looking for collaborators</p>}
+              </PersonRow>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

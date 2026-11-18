@@ -35,8 +35,8 @@ web/src/
       layout.tsx            top bar (tabs, search, bell, avatar), phone tab bar, nav counts
       nav-tabs.tsx          active-tab tabs (desktop) and bottom tab bar (phones)
       opportunities/        list, [id] detail, new
-      teams/                list with filters, [id] detail with applications, new
-      people/               everyone ranked by match, connection requests
+      teams/                list with filters; [id] (page.tsx loads, team-view.tsx renders); new
+      people/               tabs: Discover (/people), Requests (/people/requests), Connections (/people/connections)
       u/[id]/               profile: view + in-place editing for the owner (?as=visitor previews)
       profile/              redirects to /u/<you>; holds skill-picker and completion score
       feed/                 posts and ideas; on hold, not linked from the nav
@@ -53,7 +53,8 @@ web/supabase/               SQL migrations, run by hand in the Supabase SQL Edit
 ## Database
 Migrations live in `web/supabase/` and are run by hand, in this order:
 `schema` → `opportunities` → `contact` → `teams` → `profile` → `portfolio` →
-`connections-list` → `auth` → `notifications` → `goals` → `experience-details`. `seed_opportunities.sql` and
+`connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
+`people-requests`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -82,7 +83,8 @@ Privacy details that are easy to break:
 - Contact details are read only through `contact_for`, which returns a row for yourself
   or an accepted connection and nothing otherwise.
 - The `connections` table is private to the two people in each row; profile pages use
-  `connections_of` for someone's accepted connections.
+  `connections_of` for someone's accepted connections. Receivers accept or decline (update);
+  senders can withdraw while pending (delete, `people-requests.sql`).
 
 ## Auth
 - New visitors get an anonymous Supabase guest account (created in `proxy.ts`) so they
@@ -106,8 +108,8 @@ neutral everything else.
 - Profile building blocks: `u/[id]/profile-parts.tsx` (Section, SideBlock, EmptyPrompt,
   ChipTable). Owner editing: `u/[id]/edit-dialog.tsx` (modal from sm up, bottom sheet on
   phones) and `u/[id]/section-edits.tsx` (one form per section, grouped with a label column).
-- Redesign status: `/u/[id]` is done. `/teams`, `/opportunities` and `/people` still
-  use the older card style (`card.tsx`) and are next, one commit each.
+- Redesign status: `/u/[id]`, `/teams` (list, `[id]`, `new`) and `/people` (three tabs) are
+  done. `/opportunities` still uses the older card style (`card.tsx`) and is next.
 
 ## Coding rules
 

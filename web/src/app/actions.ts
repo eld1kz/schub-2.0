@@ -277,6 +277,13 @@ export async function respond(connectionId: string, status: "accepted" | "declin
   revalidatePath("/", "layout");
 }
 
+// The sender takes back a request the other person hasn't answered yet (policy in supabase/people-requests.sql)
+export async function withdrawRequest(connectionId: string) {
+  const { supabase, userId } = await requireMember();
+  await supabase.from("connections").delete().eq("id", connectionId).eq("sender_id", userId).eq("status", "pending");
+  revalidatePath("/", "layout");
+}
+
 export async function addOpportunity(formData: FormData) {
   const { supabase, userId } = await requireMember();
   const text = (key: string) => String(formData.get(key) ?? "").trim();

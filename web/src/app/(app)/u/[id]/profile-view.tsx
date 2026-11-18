@@ -378,7 +378,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                 </details>
               )}
               {owner && !owner.preview && owner.requests > 0 && (
-                <Link href="/people" className={`text-sm font-medium ${outLink}`}>
+                <Link href="/people/requests" className={`text-sm font-medium ${outLink}`}>
                   {owner.requests} pending {owner.requests === 1 ? "request" : "requests"}
                 </Link>
               )}

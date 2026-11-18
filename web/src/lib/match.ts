@@ -21,6 +21,19 @@ export function matchScore(them: MatchableProfile, me: MatchableProfile) {
   return { score, complementary };
 }
 
+// One short line on why someone is worth meeting: skills they have that you don't, else shared interests,
+// else shared skills. Empty when there's nothing to say, or you haven't added skills yet.
+export function matchReason(them: MatchableProfile, me: MatchableProfile) {
+  if (me.skills.length === 0) return "";
+  const { complementary } = matchScore(them, me);
+  if (complementary.length > 0) return `Has ${complementary.slice(0, 2).join(", ")} — you don't`;
+  const interests = them.interests.filter((i) => me.interests.includes(i));
+  if (interests.length > 0) return `Also into ${interests.slice(0, 2).join(", ")}`;
+  const skills = them.skills.filter((s) => me.skills.includes(s));
+  if (skills.length > 0) return `Also works with ${skills.slice(0, 2).join(", ")}`;
+  return "";
+}
+
 export function parseList(value: FormDataEntryValue | null) {
   return String(value ?? "")
     .split(",")
