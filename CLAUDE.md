@@ -1,50 +1,112 @@
-cat > ~/Projects/schub-2.0/web/CLAUDE.md << 'HEREDOC'
-# CLAUDE.md — Schub Web
+# CLAUDE.md — Schub
 
 ## What this is
-Schub is a social network for student builders to find teammates for hackathons, competitions, and projects. Students browse opportunities, signal interest, get matched with compatible teammates, and connect.
+Schub is a social network for student builders: find teammates for hackathons,
+competitions and projects. Students browse opportunities, say they're looking for a
+team, post teams with open roles and apply to them, get matched with people whose
+skills complement theirs, and connect.
 
-## Stack
-- Next.js 16, TypeScript, Tailwind CSS
-- Supabase (database + guest/real auth)
-- All DB writes go through Next.js server actions in `src/app/actions.ts`
-- Never write to the DB directly from client components
-- Runs locally at http://localhost:3100, deploy target: Vercel
+The repo has two apps on the same Supabase project:
+- `web/` — the Next.js app. **This is where active work happens.**
+- Repo root (`Views/`, `ViewModels/`, `Services/`, `Models/`, `Components/`) — the
+  original SwiftUI iOS app. Not being developed right now; the iOS rules at the
+  bottom of `~/CLAUDE.md` apply only when working there.
 
-## Project structure
-src/
-app/
-(app)/
-opportunities/ ← home page, opportunity detail, add new
-people/ ← browse all students ranked by match
-u/[id]/ ← individual profile page
-feed/ ← on hold
-profile/ ← edit your own profile
-connect-button.tsx ← shared connect/pending/connected button
-layout.tsx ← nav, guest session init
-actions.ts ← ALL server actions live here
-layout.tsx
-page.tsx ← redirects to /opportunities
-lib/
-match.ts ← matching algorithm
-opportunities.ts
-supabase/server.ts
+## Web stack
+- Next.js 16 (App Router, Cache Components), React 19, TypeScript, Tailwind CSS 4
+- Supabase: Postgres + RLS, Auth, Storage (public `media` bucket for images)
+- Runs locally at http://localhost:3100 (`npx next dev -p 3100` in `web/`); deploy target is Vercel
+- This Next version differs from older docs: read `web/node_modules/next/dist/docs/`
+  before using an API you're unsure of (see `web/AGENTS.md`)
+- No test suite. Check changes with `npx tsc --noEmit`, `npx eslint src` and `npx next build` in `web/`
 
+## Web structure
+```
+web/src/
+  proxy.ts                  refreshes the session; creates a guest account for new visitors
+  app/
+    actions.ts              ALL server actions (every DB write goes through here)
+    layout.tsx              root layout, fonts
+    globals.css             design tokens (light + dark), .btn .btn-outline .input .skill .label
+    page.tsx                redirects to /opportunities
+    onboarding/             first-time flow after Google sign-in
+    auth/callback/          OAuth callback
+    (app)/
+      layout.tsx            top bar (tabs, search, bell, avatar), phone tab bar, nav counts
+      nav-tabs.tsx          active-tab tabs (desktop) and bottom tab bar (phones)
+      opportunities/        list, [id] detail, new
+      teams/                list with filters, [id] detail with applications, new
+      people/               everyone ranked by match, connection requests
+      u/[id]/               profile: view + in-place editing for the owner (?as=visitor previews)
+      profile/              redirects to /u/<you>; holds skill-picker and completion score
+      feed/                 posts and ideas; on hold, not linked from the nav
+      connect-button.tsx, avatar.tsx, card.tsx, team-list.tsx, global-search.tsx, notifications.tsx
+  lib/
+    match.ts                matching score (same as the iOS DiscoverViewModel)
+    skills.ts               the fixed skill list and its groups
+    portfolio.ts            project/experience types, period formatting, safe link/image helpers
+    opportunities.ts, teams.ts, goals.ts
+    supabase/server.ts      createClient, requireUser, requireMember
+web/supabase/               SQL migrations, run by hand in the Supabase SQL Editor
+```
 
-## Database tables
-- `profiles` — id, name, university, graduation_year, bio, skills[], interests[], open_to_collaborate, telegram, email, avatar_url
-- `opportunities` — id, title, type, deadline, link, description, created_by
-- `connections` — id, sender_id, receiver_id, status (pending/accepted/declined)
-- `looking_for_team` — id, user_id, opportunity_id, note
-- `reports` — id, user_id, opportunity_id
-- `admins` — id, user_id
+## Database
+Migrations live in `web/supabase/` and are run by hand, in this order:
+`schema` → `opportunities` → `contact` → `teams` → `profile` → `portfolio` →
+`connections-list` → `auth` → `notifications` → `goals`. `seed_opportunities.sql` and
+`fix_admin.sql` are one-off helpers. New schema changes get a new file with a header
+saying what it does and what it runs after; show the SQL, the user runs it.
 
-## Current build priority
-1. **Contact after connecting** — show Telegram/email once connection is accepted
-2. **Teams with open roles** — post a project, list roles needed, let people apply
-3. **Real login** — Google OAuth + magic link email
-4. **Deploy to Vercel**
-5. **Real opportunity content**
+Tables:
+- `profiles` — name, headline, university, graduation_year, bio, skills[], interests[],
+  looking_for[], goals[], open_to_collaborate, avatar_url, github, linkedin, website,
+  telegram, email
+- `experiences`, `projects` — the profile's portfolio
+- `connections` — sender_id, receiver_id, status (pending / accepted / declined)
+- `opportunities` — title, type, organizer, location, url, starts_at, deadline, status
+  (live / hidden / removed), submitted_by
+- `opportunity_participants` — people looking for a team for an opportunity
+- `opportunity_reports` — 3 reports hide an opportunity; `admins` can restore or remove
+- `teams` — owner, optional opportunity, title, description, roles[]
+- `team_applications` — one per person per team, for one role; the owner accepts or declines
+- `notifications` — written only by triggers; the app just reads and marks them read
+- `ideas`, `posts` — used by the on-hold feed
+
+RPCs: `contact_for(profile_id)` and `connections_of(profile_id)`.
+
+Privacy details that are easy to break:
+- `telegram` and `email` are not selectable on `profiles`; the column-level grants in
+  `contact.sql` exclude them. A new `profiles` column needs its own
+  `grant select (column) on profiles to authenticated`.
+- Contact details are read only through `contact_for`, which returns a row for yourself
+  or an accepted connection and nothing otherwise.
+- The `connections` table is private to the two people in each row; profile pages use
+  `connections_of` for someone's accepted connections.
+
+## Auth
+- New visitors get an anonymous Supabase guest account (created in `proxy.ts`) so they
+  can browse. Guests can't write: restrictive RLS policies block them, and server
+  actions use `requireMember()`.
+- Members sign in with Google. After the first sign-in, `/onboarding` collects the basics.
+- Never trust client-sent user IDs; read the user from the server session
+  (`requireUser` / `requireMember`).
+- Pages that call `requireUser` export `instant = false` (see the comment in `server.ts`).
+
+## Design
+The UI follows **Direction A ("Document")** from the Claude Design project "Schub
+Directions" (`Schub A - Document.dc.html`): the calm, CV-like direction. No cards;
+structure comes from full-width rules and a fixed label column. One indigo accent,
+neutral everything else.
+- Tokens in `globals.css`, used as Tailwind colors: `background`, `foreground`, `ink2`,
+  `muted`, `border` (light rule), `line2` (section rule), `chip`, `accent`,
+  `accent-soft`, `on-accent`. Dark values come from `prefers-color-scheme`.
+- Fonts: Instrument Sans (`font-sans`) and IBM Plex Mono (`font-mono`, for skill chips
+  and small labels).
+- Profile building blocks: `u/[id]/profile-parts.tsx` (Section, SideBlock, EmptyPrompt,
+  ChipTable). Owner editing: `u/[id]/edit-dialog.tsx` (modal from sm up, bottom sheet on
+  phones) and `u/[id]/section-edits.tsx` (one form per section, grouped with a label column).
+- Redesign status: `/u/[id]` is done. `/teams`, `/opportunities` and `/people` still
+  use the older card style (`card.tsx`) and are next, one commit each.
 
 ## Coding rules
 
@@ -78,55 +140,6 @@ supabase/server.ts
 - Mobile-first layouts
 - Tailwind only — no inline styles
 
-### 7. Auth
-- Currently: Supabase anonymous auth (guest accounts per browser)
-- Next: Google OAuth + magic link
-- Never trust client-sent user IDs — always read from the server session
-
-## Feature notes
-
-### Contact after connecting
-Show `telegram` and `email` from profiles on `/u/[id]` only when the connection
-status between the viewer and the profile owner is `accepted`.
-Also add telegram/email fields to the profile edit form.
-
-### Teams with open roles
-A team post lists open roles (CTO, Designer, etc.).
-Schub's core differentiator. People apply; author accepts or declines.
-
-### Matching algorithm (lib/match.ts)
-Scores highest for complementary skills, then shared interests, then shared skills.
-Keep this logic centralized here.
-HEREDOC
-
-Run that in your terminal. Once done, here’s the Claude Code prompt to build Feature 1: Contact after connecting:
-
-Paste this into Claude Code (in your web project folder):
-
-Feature: Contact after connecting
-
-Goal: after two users are connected (connection status = 'accepted'), each can 
-see the other's telegram username and email on their profile page (/u/[id]).
-
-What "done" looks like:
-- /u/[id] shows a "Contact" section with telegram + email when the viewer and 
-  the profile owner have an accepted connection
-- The section is completely hidden for everyone else (pending, not connected, 
-  self-viewing)
-- Profile edit page has telegram and email fields so users can fill them in
-- telegram/email columns exist in the profiles table (add a migration if missing)
-
-Plan before coding:
-1. Check if telegram and email columns exist in the profiles table
-2. If missing, create a SQL migration (just show the SQL, don't run it — I'll 
-   run it in Supabase)
-3. Add telegram + email fields to the profile edit form in src/app/(app)/profile/page.tsx
-4. In src/app/(app)/u/[id]/page.tsx:
-   - Check the connection status between the current user and the profile owner
-   - If status is 'accepted', fetch and display their telegram + email
-   - Show a clean "Contact" card — telegram as a t.me link if present, email as 
-     a mailto link if present
-5. Make sure RLS allows reading telegram/email only when a connection exists
-   (or just read it server-side since we already validate on the server)
-
-Keep it simple. No new tables. No inbox. Just show the info after connecting.
+### 7. Matching
+`lib/match.ts` scores complementary skills highest, then shared interests, then shared
+skills. Keep matching logic there.
