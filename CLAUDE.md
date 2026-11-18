@@ -40,7 +40,7 @@ web/src/
       u/[id]/               profile: view + in-place editing for the owner (?as=visitor previews)
       profile/              redirects to /u/<you>; holds skill-picker and completion score
       feed/                 posts and ideas; on hold, not linked from the nav
-      connect-button.tsx, avatar.tsx, card.tsx, team-list.tsx, global-search.tsx, notifications.tsx
+      connect-button.tsx, avatar.tsx, select.tsx, team-list.tsx, global-search.tsx, notifications.tsx
   lib/
     match.ts                matching score (same as the iOS DiscoverViewModel)
     skills.ts               the fixed skill list and its groups
@@ -108,8 +108,9 @@ neutral everything else.
 - Profile building blocks: `u/[id]/profile-parts.tsx` (Section, SideBlock, EmptyPrompt,
   ChipTable). Owner editing: `u/[id]/edit-dialog.tsx` (modal from sm up, bottom sheet on
   phones) and `u/[id]/section-edits.tsx` (one form per section, grouped with a label column).
-- Redesign status: `/u/[id]`, `/teams` (list, `[id]`, `new`) and `/people` (three tabs) are
-  done. `/opportunities` still uses the older card style (`card.tsx`) and is next.
+- Redesign status: `/u/[id]`, `/teams` (list, `[id]`, `new`), `/people` (three tabs) and the
+  `/opportunities` list are done. `/opportunities/[id]`, `/opportunities/new`, `/onboarding` and
+  the on-hold `/feed` only have the tokens and fonts, not the layout.
 
 ## Coding rules
 
