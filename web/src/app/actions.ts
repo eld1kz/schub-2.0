@@ -215,11 +215,19 @@ export async function saveExperience(id: string | null, formData: FormData) {
   redirect(`/u/${userId}`);
 }
 
-export async function deleteExperience(id: string) {
+// A path on this site, or null. "//evil.com", "/\evil.com" and links to other sites all resolve off-site.
+function sitePath(value: FormDataEntryValue | null) {
+  const base = "https://site.invalid";
+  const url = typeof value === "string" && value.startsWith("/") ? URL.parse(value, base) : null;
+  return url && url.origin === base ? url.pathname + url.search : null;
+}
+
+// Forms can send `from` to come back to their page; without it you land on your profile
+export async function deleteExperience(id: string, formData: FormData) {
   const { supabase, userId } = await requireMember();
   await supabase.from("experiences").delete().eq("id", id).eq("user_id", userId);
   revalidatePath("/", "layout");
-  redirect(`/u/${userId}`);
+  redirect(sitePath(formData.get("from")) ?? `/u/${userId}`);
 }
 
 export async function connect(receiverId: string) {
