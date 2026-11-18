@@ -33,12 +33,19 @@ export default async function TeamsPage(props: PageProps<"/teams">) {
   const selectedRole = roles.find((r) => r.toLowerCase() === role.toLowerCase()) ?? role;
   // A role from the URL that no team lists any more still shows as selected
   const options = role && !roles.includes(selectedRole) ? [...roles, role] : roles;
+  const withOpenRoles = all.filter((t) => openRoles(t).length > 0).length;
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Teams</h1>
-        <Link href="/teams/new" className="btn-outline">Post a team</Link>
+    <div>
+      <div className="flex items-end justify-between gap-6 pb-4 sm:pb-6">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-[28px] font-semibold tracking-[-0.02em] sm:text-4xl sm:tracking-[-0.03em]">Teams</h1>
+          <p className="hidden text-base text-ink2 sm:block">
+            {withOpenRoles} {withOpenRoles === 1 ? "team has" : "teams have"} open roles. Your teams first, then teams that still need people.
+          </p>
+        </div>
+        <Link href="/teams/new" className="btn hidden sm:inline-flex">Post a team</Link>
+        <Link href="/teams/new" className="pb-1.5 text-[15px] font-semibold text-accent sm:hidden">+ Post</Link>
       </div>
       <TeamFilters roles={options} role={selectedRole} status={status} />
       <TeamList teams={teams} userId={userId} empty={filtered ? "No teams match these filters." : "No teams yet. Post yours and list the roles you need."} />

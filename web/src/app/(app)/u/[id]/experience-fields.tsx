@@ -5,7 +5,8 @@ import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, type Experience } from "@
 import { knownSkills } from "@/lib/skills";
 import { SkillPicker } from "../../profile/skill-picker";
 import { FieldError } from "./edit-dialog";
-import { PeriodFields, Select } from "./period-fields";
+import { Select } from "../../select";
+import { PeriodFields } from "./period-fields";
 
 const input = "input h-11 sm:h-10";
 const typeOptions = EXPERIENCE_TYPES.map((t) => ({ value: t, label: t }));

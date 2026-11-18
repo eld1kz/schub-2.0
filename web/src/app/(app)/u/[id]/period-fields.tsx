@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type Ref } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatPeriod } from "@/lib/portfolio";
+import { Select } from "../../select";
 import { FieldError } from "./edit-dialog";
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -10,41 +11,6 @@ const firstYear = 1990;
 const yearsAhead = 5;
 
 const years = (from: number) => Array.from({ length: from - firstYear + 1 }, (_, i) => String(from - i));
-
-// A dropdown in the input style, with its own chevron. Empty shows the placeholder in a muted color;
-// on an optional one, picking the placeholder clears it.
-export function Select({ label, placeholder, value, onChange, options, selectRef, name, id, required = true }: {
-  label?: string;
-  placeholder: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-  selectRef?: Ref<HTMLSelectElement>;
-  name?: string;
-  id?: string;
-  required?: boolean;
-}) {
-  return (
-    <span className="relative block min-w-0">
-      <select
-        ref={selectRef}
-        id={id}
-        name={name}
-        aria-label={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
-        className={`input h-11 cursor-pointer appearance-none py-0 pr-9 sm:h-10 ${value ? "" : "text-muted"}`}
-      >
-        <option value="" disabled={required}>{placeholder}</option>
-        {options.map((o) => <option key={o.value} value={o.value} className="text-foreground">{o.label}</option>)}
-      </select>
-      <svg viewBox="0 0 16 16" aria-hidden className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 fill-none stroke-muted" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-        <path d="m4 6 4 4 4-4" />
-      </svg>
-    </span>
-  );
-}
 
 const monthOptions = months.map((m, i) => ({ value: String(i + 1).padStart(2, "0"), label: m }));
 const yearOptions = (from: number) => years(from).map((y) => ({ value: y, label: y }));
