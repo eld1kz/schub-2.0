@@ -77,7 +77,8 @@ Tables:
   for the same opportunity), awarded_on (1st of the month), proof_url, description
 - `award_teammates` — award_id, user_id, status (pending / confirmed / declined). Only the owner tags;
   only the tagged person answers; declined rows stay so they can't be tagged again. Only confirmed rows
-  are public.
+  are public. Changing an award's placement, prize, event or date sets confirmed teammates back to
+  pending and notifies them (trigger in `awards.sql`).
 - `notifications` — written only by triggers; the app just reads and marks them read
 - `ideas`, `posts` — used by the on-hold feed
 

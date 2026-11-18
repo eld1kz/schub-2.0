@@ -8,7 +8,7 @@ create table awards (
   id             uuid        primary key default gen_random_uuid(),
   user_id        uuid        not null default auth.uid() references profiles(id) on delete cascade,
   placement      text        not null check (placement in (
-    'Winner', '1st', '2nd', '3rd', 'Finalist', 'Track winner', 'Special prize', 'Honorable mention'
+    'Winner', '1st', '2nd', '3rd', 'Track winner', 'Special prize', 'Finalist', 'Honorable mention'
   )),
   prize_name     text        not null default '' check (length(prize_name) <= 100),
   -- A Schub opportunity, when the event is listed. event_name always holds the event's name
@@ -127,15 +127,21 @@ end;
 $$;
 
 -- Notifications --------------------------------------------------------------------
--- Being tagged: "Hana tagged you in 1st place, Imagine Cup 2027". It opens your own profile,
--- where the tag waits at the top with Confirm and Decline.
+-- Both open the teammate's own profile, where the tag waits at the top with Confirm and Decline.
 
 alter table notifications drop constraint notifications_type_check;
 alter table notifications add constraint notifications_type_check check (type in (
   'team_application', 'application_accepted', 'application_declined', 'connection_request', 'connection_accepted',
-  'award_tag'
+  'award_tag', 'award_changed'
 ));
 
+-- "1st" reads "1st place"; the rest read as they are (same as placementLabel in src/lib/awards.ts)
+create function placement_label(placement text)
+returns text language sql immutable as $$
+  select case when placement in ('1st', '2nd', '3rd') then placement || ' place' else placement end;
+$$;
+
+-- Being tagged: "Hana tagged you in 1st place, Imagine Cup 2027"
 create function notify_award_tag()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare
@@ -144,9 +150,7 @@ begin
   select * into award from awards where id = new.award_id;
   insert into notifications (user_id, type, message, link)
   values (new.user_id, 'award_tag',
-          format('%s tagged you in %s, %s', display_name(award.user_id),
-                 case when award.placement in ('1st', '2nd', '3rd') then award.placement || ' place' else award.placement end,
-                 award.event_name),
+          format('%s tagged you in %s, %s', display_name(award.user_id), placement_label(award.placement), award.event_name),
           '/u/' || new.user_id);
   return new;
 end;
@@ -155,3 +159,53 @@ $$;
 create trigger award_teammates_notify
   after insert on award_teammates
   for each row execute procedure notify_award_tag();
+
+-- Changing what was confirmed ------------------------------------------------------
+-- When the placement, prize, event or date changes, everyone who confirmed goes back to pending
+-- and hears about it: "Hana changed 'Finalist, Imagine Cup 2027' to 'Winner'. Confirm again?"
+-- Declined tags stay declined. Description, proof link and project don't reset anything.
+-- The event counts as changed when its name changes or it's linked to a different opportunity;
+-- losing the link (the opportunity was deleted, or switched to the same name typed in) doesn't.
+
+create function reset_award_confirmations()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  event_changed boolean := new.event_name is distinct from old.event_name
+    or (new.opportunity_id is not null and new.opportunity_id is distinct from old.opportunity_id);
+  changes text;
+begin
+  if new.placement is not distinct from old.placement
+     and new.prize_name is not distinct from old.prize_name
+     and new.awarded_on is not distinct from old.awarded_on
+     and not event_changed then
+    return new;
+  end if;
+
+  -- Only what changed; a removed prize name falls back to the new placement and event
+  changes := concat_ws(', ',
+    case when new.placement is distinct from old.placement then placement_label(new.placement) end,
+    case when new.prize_name is distinct from old.prize_name then nullif(new.prize_name, '') end,
+    case when event_changed then new.event_name end,
+    case when new.awarded_on is distinct from old.awarded_on then to_char(new.awarded_on, 'Mon YYYY') end);
+  if changes = '' then
+    changes := placement_label(new.placement) || ', ' || new.event_name;
+  end if;
+
+  with reset as (
+    update award_teammates set status = 'pending'
+    where award_id = new.id and status = 'confirmed'
+    returning user_id
+  )
+  insert into notifications (user_id, type, message, link)
+  select user_id, 'award_changed',
+         format('%s changed ''%s, %s'' to ''%s''. Confirm again?',
+                display_name(new.user_id), placement_label(old.placement), old.event_name, changes),
+         '/u/' || user_id
+  from reset;
+  return new;
+end;
+$$;
+
+create trigger awards_reset_confirmations
+  after update of placement, prize_name, opportunity_id, event_name, awarded_on on awards
+  for each row execute procedure reset_award_confirmations();

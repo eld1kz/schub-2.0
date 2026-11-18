@@ -1,7 +1,7 @@
 import type { createClient } from "@/lib/supabase/server";
 
 // The allowed values of awards.placement (supabase/awards.sql), best first. This order ranks awards.
-export const PLACEMENTS = ["Winner", "1st", "2nd", "3rd", "Finalist", "Track winner", "Special prize", "Honorable mention"];
+export const PLACEMENTS = ["Winner", "1st", "2nd", "3rd", "Track winner", "Special prize", "Finalist", "Honorable mention"];
 
 export const AWARD_DESCRIPTION_MAX = 300;
 export const AWARD_TEAMMATES_MAX = 10;
