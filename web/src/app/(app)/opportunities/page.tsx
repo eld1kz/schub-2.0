@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
-import { formatDay, opportunityTypes, today, type OpportunityType } from "@/lib/opportunities";
+import { SOON_DAYS, daysLabel, daysUntil, nextDate, opportunityTypes, placeLabel, today, type OpportunityType } from "@/lib/opportunities";
 import { setOpportunityStatus } from "@/app/actions";
 import { OpportunitySearch } from "./opportunity-search";
 
@@ -9,20 +9,8 @@ export const instant = false;
 const types = Object.keys(opportunityTypes) as OpportunityType[];
 const tabLabel = (t: OpportunityType) => (t === "other" ? "Other" : `${opportunityTypes[t]}s`);
 const columns = "lg:grid lg:grid-cols-[120px_minmax(0,1fr)_200px_190px_200px] lg:items-center lg:gap-6";
-const soon = 7;
 
-type Row = { id: string; title: string; type: OpportunityType; organizer: string; location: string; starts_at: string | null; deadline: string | null; opportunity_participants: unknown };
-
-// The next date that matters: the deadline while it's ahead, otherwise the start
-function nextDate(o: Row, day: string) {
-  if (o.deadline && o.deadline >= day) return { label: `Apply by ${formatDay(o.deadline)}`, date: o.deadline };
-  if (o.starts_at) return { label: `Starts ${formatDay(o.starts_at)}`, date: o.starts_at };
-  return { label: "No date set", date: null };
-}
-
-// Whole days from today to a plain YYYY-MM-DD day
-const daysUntil = (date: string, day: string) => Math.round((Date.parse(date) - Date.parse(day)) / 86_400_000);
-const daysLabel = (n: number) => (n === 0 ? "Today" : n === 1 ? "1 day left" : n <= soon ? `${n} days left` : `${n} days`);
+type Row = { id: string; title: string; type: OpportunityType; organizer: string; location: string; online: boolean; starts_at: string | null; deadline: string | null; ends_at: string | null; opportunity_participants: unknown };
 
 export default async function OpportunitiesPage(props: PageProps<"/opportunities">) {
   const { type: typeParam } = await props.searchParams;
@@ -33,7 +21,8 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
   // Every upcoming one; the type tabs filter here, so each tab can show its count
   const query = supabase
     .from("opportunities")
-    .select("id, title, type, organizer, location, starts_at, deadline, opportunity_participants(count)")
+    // `*` so online and ends_at (supabase/opportunity-details.sql) come along without naming them
+    .select("*, opportunity_participants(count)")
     .eq("status", "live")
     .or(`deadline.gte.${day},starts_at.gte.${day},and(deadline.is.null,starts_at.is.null)`);
 
@@ -109,7 +98,7 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
         rows={shown.map((o) => {
           const looking = (o.opportunity_participants as { count: number }[])[0]?.count ?? 0;
           const days = o.next.date ? daysUntil(o.next.date, day) : null;
-          const urgent = days !== null && days <= soon;
+          const urgent = days !== null && days <= SOON_DAYS;
           const left = days !== null && <span className={`text-[13px] ${urgent ? "font-semibold text-accent" : "text-muted"}`}>{daysLabel(days)}</span>;
           return {
             id: o.id,
@@ -124,11 +113,11 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
                   <span className="text-base leading-snug font-semibold group-hover:text-accent">{o.title}</span>
                   {/* Phones: organizer, place and date on one line under the title */}
                   <span className="text-[13px] text-ink2 lg:text-sm">
-                    <span className="lg:hidden">{[o.organizer, o.location, o.next.label].filter(Boolean).join(" · ")}</span>
+                    <span className="lg:hidden">{[o.organizer, placeLabel(o), o.next.label].filter(Boolean).join(" · ")}</span>
                     <span className="hidden lg:inline">{o.organizer}</span>
                   </span>
                 </span>
-                <span className="hidden text-sm lg:block">{o.location || <span className="text-muted">Not listed</span>}</span>
+                <span className="hidden text-sm lg:block">{placeLabel(o) || <span className="text-muted">Not listed</span>}</span>
                 <span className="hidden flex-col gap-0.5 lg:flex">
                   <span className="text-sm tabular-nums">{o.next.label}</span>
                   {left}

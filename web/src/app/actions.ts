@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient, requireMember, requireUser } from "@/lib/supabase/server";
 import { parseList } from "@/lib/match";
-import { linkWorks } from "@/lib/opportunities";
+import { linkWorks, opportunityTypes } from "@/lib/opportunities";
 import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, toLink } from "@/lib/portfolio";
 import { knownSkills } from "@/lib/skills";
 import { knownGoals } from "@/lib/goals";
@@ -284,13 +284,22 @@ export async function withdrawRequest(connectionId: string) {
   revalidatePath("/", "layout");
 }
 
-export async function addOpportunity(formData: FormData) {
+// Errors come back with the field they belong to, so the form can show them there. Success opens the new page.
+export async function addOpportunity(formData: FormData): Promise<SaveResult> {
   const { supabase, userId } = await requireMember();
   const text = (key: string) => String(formData.get(key) ?? "").trim();
-  const fail = (message: string): never => redirect(`/opportunities/new?error=${encodeURIComponent(message)}`);
+  const day = (key: string) => (/^\d{4}-\d{2}-\d{2}$/.test(text(key)) ? text(key) : null);
 
+  const deadline = day("deadline");
+  const startsAt = day("starts_at");
+  const endsAt = day("ends_at");
+  if (text("title").length < 3) return { error: "Add a title of at least 3 characters.", field: "title" };
+  if (!(text("type") in opportunityTypes)) return { error: "Choose a type.", field: "type" };
+  if (deadline && startsAt && deadline > startsAt) return { error: "The deadline should be on or before the start.", field: "deadline" };
+  const begins = startsAt ?? deadline;
+  if (endsAt && begins && endsAt < begins) return { error: "The end can't be before the start.", field: "ends_at" };
   const url = text("url");
-  if (!(await linkWorks(url))) fail("That link doesn't open. Check it and try again.");
+  if (!(await linkWorks(url))) return { error: "That link doesn't open. Check it and try again.", field: "url" };
 
   const { data, error } = await supabase
     .from("opportunities")
@@ -299,18 +308,26 @@ export async function addOpportunity(formData: FormData) {
       type: text("type"),
       organizer: text("organizer"),
       location: text("location"),
+      online: formData.get("online") === "on",
       url,
-      starts_at: text("starts_at") || null,
-      deadline: text("deadline") || null,
+      starts_at: startsAt,
+      deadline,
+      ends_at: endsAt,
       description: text("description"),
       submitted_by: userId,
     })
     .select("id")
     .single();
   if (error || !data) {
-    if (error?.code === "23505") fail("This link is already listed.");
-    if (error?.code === "23514") fail("Check the dates: the deadline should be before the start.");
-    return fail(error?.message ?? "Couldn't add it. Try again.");
+    const message = error?.message ?? "";
+    if (error?.code === "23505") return { error: "This link is already listed.", field: "url" };
+    if (message.includes("ends_after_start")) return { error: "The end can't be before the start.", field: "ends_at" };
+    if (message.includes("deadline_before_start")) return { error: "The deadline should be on or before the start.", field: "deadline" };
+    // Raised by check_new_opportunity() in supabase/opportunities.sql
+    if (message.includes("similar opportunity")) return { error: message, field: "title" };
+    if (message.includes("in the past")) return { error: message, field: deadline ? "deadline" : "starts_at" };
+    if (message.includes("a day")) return { error: message };
+    return { error: "Couldn't add it. Try again." };
   }
   revalidatePath("/opportunities");
   redirect(`/opportunities/${data.id}`);
@@ -335,14 +352,17 @@ export async function reportOpportunity(id: string, formData: FormData) {
   revalidatePath(`/opportunities/${id}`);
 }
 
-export async function lookForTeam(opportunityId: string, formData: FormData) {
+// Joins, or updates your note when you've already joined
+export async function lookForTeam(opportunityId: string, formData: FormData): Promise<SaveResult> {
   const { supabase, userId } = await requireMember();
-  await supabase.from("opportunity_participants").upsert({
+  const { error } = await supabase.from("opportunity_participants").upsert({
     opportunity_id: opportunityId,
     user_id: userId,
     note: String(formData.get("note") ?? "").trim(),
   });
+  if (error) return { error: error.code === "23514" ? "Keep the note to 300 characters." : "Couldn't save it. Try again.", field: error.code === "23514" ? "note" : undefined };
   revalidatePath(`/opportunities/${opportunityId}`);
+  return {};
 }
 
 export async function stopLooking(opportunityId: string) {

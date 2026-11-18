@@ -54,7 +54,7 @@ web/supabase/               SQL migrations, run by hand in the Supabase SQL Edit
 Migrations live in `web/supabase/` and are run by hand, in this order:
 `schema` → `opportunities` → `contact` → `teams` → `profile` → `portfolio` →
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
-`people-requests`. `seed_opportunities.sql` and
+`people-requests` → `opportunity-details`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -65,8 +65,9 @@ Tables:
 - `experiences` — role, company, type, location, remote, start/end (1st of the month), description, skills[]
 - `projects` — the profile's portfolio
 - `connections` — sender_id, receiver_id, status (pending / accepted / declined)
-- `opportunities` — title, type, organizer, location, url, starts_at, deadline, status
-  (live / hidden / removed), submitted_by
+- `opportunities` — title, type, organizer, location, online, url, deadline, starts_at, ends_at,
+  status (live / hidden / removed), submitted_by. `check_new_opportunity()` limits 5 a day,
+  rejects past dates and near-duplicate titles.
 - `opportunity_participants` — people looking for a team for an opportunity
 - `opportunity_reports` — 3 reports hide an opportunity; `admins` can restore or remove
 - `teams` — owner, optional opportunity, title, description, roles[]
@@ -108,9 +109,9 @@ neutral everything else.
 - Profile building blocks: `u/[id]/profile-parts.tsx` (Section, SideBlock, EmptyPrompt,
   ChipTable). Owner editing: `u/[id]/edit-dialog.tsx` (modal from sm up, bottom sheet on
   phones) and `u/[id]/section-edits.tsx` (one form per section, grouped with a label column).
-- Redesign status: `/u/[id]`, `/teams` (list, `[id]`, `new`), `/people` (three tabs) and the
-  `/opportunities` list are done. `/opportunities/[id]`, `/opportunities/new`, `/onboarding` and
-  the on-hold `/feed` only have the tokens and fonts, not the layout.
+- Redesign status: `/u/[id]`, `/teams` (list, `[id]`, `new`), `/people` (three tabs) and
+  `/opportunities` (list, `[id]`, `new`) are done. `/onboarding` and the on-hold `/feed` only
+  have the tokens and fonts, not the layout.
 
 ## Coding rules
 
