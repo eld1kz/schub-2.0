@@ -98,39 +98,68 @@ async function uploadImage(supabase: Supabase, userId: string, file: FormDataEnt
   return { url: supabase.storage.from("media").getPublicUrl(path).data.publicUrl };
 }
 
-export async function updateProfile(formData: FormData) {
-  const { supabase, userId } = await requireMember();
-  const text = (key: string) => String(formData.get(key) ?? "").trim();
-  const photo = await uploadImage(supabase, userId, formData.get("photo"));
-  if (photo.error) redirect(`/profile?error=${encodeURIComponent(photo.error)}`);
+// Profile sections are edited one at a time from the profile page. Each action saves only its own
+// fields and returns an error to show in the form, or nothing when it worked.
+export type SaveResult = { error?: string };
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      name: text("name"),
-      headline: text("headline"),
-      university: text("university"),
-      graduation_year: Number(formData.get("graduation_year")) || 0,
-      bio: text("bio"),
-      // Only skills from the fixed list are kept
-      skills: knownSkills(formData.getAll("skills")),
-      goals: knownGoals(formData.getAll("goals")),
-      interests: parseList(formData.get("interests")),
-      looking_for: parseList(formData.get("looking_for")),
-      github: toLink(text("github"), "https://github.com/"),
-      linkedin: toLink(text("linkedin"), "https://www.linkedin.com/in/"),
-      website: toLink(text("website")),
-      open_to_collaborate: formData.get("open_to_collaborate") === "on",
-      // Stored as a bare username: "@name" and "https://t.me/name" both become "name"
-      telegram: text("telegram").replace(/^(https?:\/\/)?(t\.me\/)?@?/i, ""),
-      email: text("email"),
-      // Only replace the photo when a new one was chosen
-      ...(photo.url ? { avatar_url: photo.url } : {}),
-    })
-    .eq("id", userId);
-  if (error) redirect(`/profile?error=${encodeURIComponent("Couldn't save your profile. Check the fields and try again.")}`);
+const saveFailed = "Couldn't save. Check the fields and try again.";
+const field = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
+
+async function updateMyProfile(fields: Record<string, unknown>): Promise<SaveResult> {
+  const { supabase, userId } = await requireMember();
+  const { error } = await supabase.from("profiles").update(fields).eq("id", userId);
+  if (error) return { error: saveFailed };
   revalidatePath("/", "layout");
-  redirect(`/u/${userId}`);
+  return {};
+}
+
+export async function saveHero(formData: FormData): Promise<SaveResult> {
+  const { supabase, userId } = await requireMember();
+  const photo = await uploadImage(supabase, userId, formData.get("photo"));
+  if (photo.error) return { error: photo.error };
+  if (!field(formData, "name")) return { error: "Add your name." };
+  return updateMyProfile({
+    name: field(formData, "name"),
+    headline: field(formData, "headline"),
+    university: field(formData, "university"),
+    graduation_year: Number(formData.get("graduation_year")) || 0,
+    open_to_collaborate: formData.get("open_to_collaborate") === "on",
+    // Only replace the photo when a new one was chosen
+    ...(photo.url ? { avatar_url: photo.url } : {}),
+  });
+}
+
+export async function saveAbout(formData: FormData): Promise<SaveResult> {
+  return updateMyProfile({ bio: field(formData, "bio") });
+}
+
+export async function saveSkills(formData: FormData): Promise<SaveResult> {
+  // Only skills from the fixed list are kept
+  return updateMyProfile({ skills: knownSkills(formData.getAll("skills")) });
+}
+
+export async function saveInterests(formData: FormData): Promise<SaveResult> {
+  return updateMyProfile({
+    goals: knownGoals(formData.getAll("goals")),
+    interests: parseList(formData.get("interests")),
+    looking_for: parseList(formData.get("looking_for")),
+  });
+}
+
+export async function saveLinks(formData: FormData): Promise<SaveResult> {
+  return updateMyProfile({
+    github: toLink(field(formData, "github"), "https://github.com/"),
+    linkedin: toLink(field(formData, "linkedin"), "https://www.linkedin.com/in/"),
+    website: toLink(field(formData, "website")),
+  });
+}
+
+export async function saveContact(formData: FormData): Promise<SaveResult> {
+  return updateMyProfile({
+    // Stored as a bare username: "@name" and "https://t.me/name" both become "name"
+    telegram: field(formData, "telegram").replace(/^(https?:\/\/)?(t\.me\/)?@?/i, ""),
+    email: field(formData, "email"),
+  });
 }
 
 // The three onboarding steps, saved together
@@ -156,13 +185,12 @@ export async function completeOnboarding(formData: FormData) {
 }
 
 // `id` is null for a new project
-export async function saveProject(id: string | null, formData: FormData) {
+export async function saveProject(id: string | null, formData: FormData): Promise<SaveResult> {
   const { supabase, userId } = await requireMember();
-  const text = (key: string) => String(formData.get(key) ?? "").trim();
-  const fail = (message: string): never => redirect(`/profile/projects/${id ?? "new"}?error=${encodeURIComponent(message)}`);
+  const text = (key: string) => field(formData, key);
 
   const image = await uploadImage(supabase, userId, formData.get("image"));
-  if (image.error) fail(image.error);
+  if (image.error) return { error: image.error };
   const fields = {
     title: text("title"),
     tagline: text("tagline"),
@@ -179,27 +207,27 @@ export async function saveProject(id: string | null, formData: FormData) {
   const { error } = id
     ? await supabase.from("projects").update(fields).eq("id", id).eq("user_id", userId)
     : await supabase.from("projects").insert({ ...fields, user_id: userId });
-  if (error) fail("Couldn't save the project. Check the fields and try again.");
+  if (error) return { error: "Couldn't save the project. Check the fields and try again." };
   revalidatePath("/", "layout");
-  redirect(`/u/${userId}`);
+  return {};
 }
 
-export async function deleteProject(id: string) {
+export async function deleteProject(id: string): Promise<SaveResult> {
   const { supabase, userId } = await requireMember();
-  await supabase.from("projects").delete().eq("id", id).eq("user_id", userId);
+  const { error } = await supabase.from("projects").delete().eq("id", id).eq("user_id", userId);
+  if (error) return { error: "Couldn't delete the project. Try again." };
   revalidatePath("/", "layout");
-  redirect(`/u/${userId}`);
+  return {};
 }
 
 // `id` is null for a new entry. Months arrive as "2026-03" and are stored as the first day of that month.
-export async function saveExperience(id: string | null, formData: FormData) {
+export async function saveExperience(id: string | null, formData: FormData): Promise<SaveResult> {
   const { supabase, userId } = await requireMember();
-  const text = (key: string) => String(formData.get(key) ?? "").trim();
+  const text = (key: string) => field(formData, key);
   const day = (key: string) => (/^\d{4}-\d{2}$/.test(text(key)) ? `${text(key)}-01` : null);
-  const fail = (message: string): never => redirect(`/profile/experience/${id ?? "new"}?error=${encodeURIComponent(message)}`);
 
   const start = day("start");
-  if (!start) fail("Add the month it started.");
+  if (!start) return { error: "Add the month it started." };
   const fields = {
     role: text("role"),
     company: text("company"),
@@ -210,24 +238,17 @@ export async function saveExperience(id: string | null, formData: FormData) {
   const { error } = id
     ? await supabase.from("experiences").update(fields).eq("id", id).eq("user_id", userId)
     : await supabase.from("experiences").insert({ ...fields, user_id: userId });
-  if (error) fail(error.code === "23514" ? "The end should be after the start." : "Couldn't save it. Check the fields and try again.");
+  if (error) return { error: error.code === "23514" ? "The end should be after the start." : "Couldn't save it. Check the fields and try again." };
   revalidatePath("/", "layout");
-  redirect(`/u/${userId}`);
+  return {};
 }
 
-// A path on this site, or null. "//evil.com", "/\evil.com" and links to other sites all resolve off-site.
-function sitePath(value: FormDataEntryValue | null) {
-  const base = "https://site.invalid";
-  const url = typeof value === "string" && value.startsWith("/") ? URL.parse(value, base) : null;
-  return url && url.origin === base ? url.pathname + url.search : null;
-}
-
-// Forms can send `from` to come back to their page; without it you land on your profile
-export async function deleteExperience(id: string, formData: FormData) {
+export async function deleteExperience(id: string): Promise<SaveResult> {
   const { supabase, userId } = await requireMember();
-  await supabase.from("experiences").delete().eq("id", id).eq("user_id", userId);
+  const { error } = await supabase.from("experiences").delete().eq("id", id).eq("user_id", userId);
+  if (error) return { error: "Couldn't delete it. Try again." };
   revalidatePath("/", "layout");
-  redirect(sitePath(formData.get("from")) ?? `/u/${userId}`);
+  return {};
 }
 
 export async function connect(receiverId: string) {

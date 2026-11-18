@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
 import { today } from "@/lib/opportunities";
@@ -18,6 +17,8 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
   const { id } = await props.params;
   const { supabase, userId, isGuest } = await requireUser();
   const isSelf = id === userId;
+  // Guests can look at their own page but can't save, so they don't get the edit buttons
+  const canEdit = isSelf && !isGuest;
   const [profile, ideas, myConnections, contacts, projects, experiences, owned, joined, looking, connections, people] = await Promise.all([
     supabase
       .from("profiles")
@@ -27,8 +28,8 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
     supabase.from("ideas").select("id, title, description, skills_needed, stage").eq("author_id", id).order("created_at", { ascending: false }),
     // Only your own connections are visible to you
     supabase.from("connections").select("sender_id, receiver_id, status"),
-    // Returns a row only when the connection is accepted; never shown on your own page
-    isSelf ? { data: null } : supabase.rpc("contact_for", { profile_id: id }),
+    // Returns a row only when the connection is accepted, or for yourself (to edit it)
+    isSelf && !canEdit ? { data: null } : supabase.rpc("contact_for", { profile_id: id }),
     supabase.from("projects").select(projectColumns).eq("user_id", id).order("year", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false }),
     supabase.from("experiences").select(experienceColumns).eq("user_id", id).order("start_date", { ascending: false }),
     supabase.from("teams").select("id, title").eq("owner_id", id).order("created_at", { ascending: false }),
@@ -69,9 +70,10 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
 
   return (
     <ProfileView
+      id={id}
       profile={p}
-      isSelf={isSelf}
-      action={isSelf ? <Link href="/profile" className="btn-outline">Edit profile</Link> : <ConnectButton profileId={id} status={statusWith(id)} isGuest={isGuest} />}
+      canEdit={canEdit}
+      action={!isSelf && <ConnectButton profileId={id} status={statusWith(id)} isGuest={isGuest} />}
       contact={(contacts.data as { telegram: string; email: string }[] | null)?.[0]}
       projects={(projects.data ?? []) as unknown as Project[]}
       experiences={(experiences.data ?? []) as unknown as Experience[]}
