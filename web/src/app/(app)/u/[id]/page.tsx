@@ -10,15 +10,19 @@ type Opportunity = { id: string; title: string; starts_at: string | null; deadli
 type Person = { id: string; name: string; headline: string; avatar_url: string; skills: string[]; interests: string[]; open_to_collaborate: boolean };
 
 const suggestionCount = 4;
+const suggestionButton = "h-[30px] rounded-md border border-accent px-3 text-[13px] font-semibold whitespace-nowrap text-accent hover:bg-accent-soft";
 
 export const instant = false;
 
 export default async function UserPage(props: PageProps<"/u/[id]">) {
   const { id } = await props.params;
+  const { as } = await props.searchParams;
   const { supabase, userId, isGuest } = await requireUser();
   const isSelf = id === userId;
   // Guests can look at their own page but can't save, so they don't get the edit buttons
   const canEdit = isSelf && !isGuest;
+  // "?as=visitor": the owner sees the page without edit controls, empty sections or contact details
+  const preview = canEdit && as === "visitor";
   const [profile, ideas, myConnections, contacts, projects, experiences, owned, joined, looking, connections, people] = await Promise.all([
     supabase
       .from("profiles")
@@ -66,15 +70,17 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
     .map((x) => ({ ...x, score: matchScore(x, me).score }))
     .sort((a, b) => b.score - a.score)
     .slice(0, suggestionCount)
-    .map((x) => ({ id: x.id, name: x.name, headline: x.headline, avatar_url: x.avatar_url, connect: <ConnectButton profileId={x.id} isGuest={isGuest} /> }));
+    .map((x) => ({ id: x.id, name: x.name, headline: x.headline, avatar_url: x.avatar_url, connect: <ConnectButton profileId={x.id} isGuest={isGuest} className={suggestionButton} /> }));
 
   return (
     <ProfileView
       id={id}
       profile={p}
-      canEdit={canEdit}
-      action={!isSelf && <ConnectButton profileId={id} status={statusWith(id)} isGuest={isGuest} />}
-      contact={(contacts.data as { telegram: string; email: string }[] | null)?.[0]}
+      canEdit={canEdit && !preview}
+      // Requests sent to you are the pending ones you received
+      owner={canEdit ? { preview, requests: links.filter((c) => c.receiver_id === userId && c.status === "pending").length } : undefined}
+      action={!isSelf && <ConnectButton profileId={id} status={statusWith(id)} isGuest={isGuest} className="btn" />}
+      contact={preview ? undefined : (contacts.data as { telegram: string; email: string }[] | null)?.[0]}
       projects={(projects.data ?? []) as unknown as Project[]}
       experiences={sortExperiences((experiences.data ?? []) as unknown as Experience[])}
       teams={teams}

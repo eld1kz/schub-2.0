@@ -41,11 +41,17 @@ export function GlobalSearch() {
 
   if (!open) {
     return (
-      <button type="button" aria-label="Search people and teams" onClick={() => setOpen(true)} className="text-muted hover:text-foreground">
-        <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 fill-none stroke-current" strokeWidth={2} strokeLinecap="round">
+      <button
+        type="button"
+        aria-label="Search people and teams"
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-2 text-muted hover:text-foreground sm:h-9 sm:w-[300px] sm:rounded-md sm:border sm:border-line2 sm:px-3 sm:text-sm"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 fill-none stroke-current sm:h-4 sm:w-4" strokeWidth={2} strokeLinecap="round">
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
         </svg>
+        <span className="hidden sm:inline">Search people and teams</span>
       </button>
     );
   }
@@ -57,7 +63,8 @@ export function GlobalSearch() {
   );
 
   return (
-    <div ref={ref} className="relative">
+    // On phones the field covers the top bar while it's open
+    <div ref={ref} className="fixed inset-x-0 top-0 z-30 flex h-[60px] items-center gap-3 bg-background px-4 sm:relative sm:h-auto sm:bg-transparent sm:px-0">
       <input
         autoFocus
         type="text"
@@ -69,10 +76,11 @@ export function GlobalSearch() {
         onKeyDown={(e) => e.key === "Escape" && close()}
         placeholder="Search people and teams"
         aria-label="Search people and teams"
-        className="input w-44 py-1 sm:w-56"
+        className="input h-9 py-0 text-sm sm:w-[300px]"
       />
+      <button type="button" onClick={close} className="text-sm font-medium text-ink2 sm:hidden">Cancel</button>
       {results && (
-        <div className="fixed inset-x-4 top-16 z-10 rounded-md border border-border bg-background py-2 shadow-lg sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-72">
+        <div className="fixed inset-x-4 top-16 z-10 rounded-md border border-border bg-background py-2 shadow-lg sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-[300px]">
           {results.people.length === 0 && results.teams.length === 0 && <p className="px-4 py-2 text-muted">No results</p>}
           {results.people.length > 0 && (
             <>

@@ -35,18 +35,18 @@ export function ProfileCompletion({ profile }: { profile: Fields }) {
   const score = all.reduce((sum, c) => sum + (c.done ? c.points : 0), 0);
   const missing = all.filter((c) => !c.done);
 
-  if (score === 100) return <p className="text-sm text-green-700 dark:text-green-400">Profile complete</p>;
+  if (score === 100) return <p className="text-sm text-ink2">Profile complete</p>;
 
   return (
     <div className="space-y-2">
-      <p className="text-right text-xs text-muted">{score}% complete</p>
+      <p className="text-right text-[13px] text-muted tabular-nums">{score}% complete</p>
       <progress
         value={score}
         max={100}
         aria-label="Profile completion"
-        className="block h-1.5 w-full appearance-none overflow-hidden rounded-full bg-border [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-indigo-500 [&::-webkit-progress-bar]:bg-border [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-indigo-500"
+        className="block h-1.5 w-full appearance-none overflow-hidden rounded-full bg-border [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-accent [&::-webkit-progress-bar]:bg-border [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-accent"
       />
-      <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted">
+      <ul className="list-disc space-y-0.5 pl-4 text-[13px] text-ink2">
         {missing.map((c) => <li key={c.hint}>{c.hint}</li>)}
       </ul>
     </div>

@@ -13,9 +13,17 @@ import type { ProfileData } from "./profile-view";
 
 // The owner's edit modals, one per profile section. Each saves only its own fields.
 
-type Trigger = "edit" | "add" | "button";
+type Trigger = "edit" | "link" | "button";
 
-const input = "w-full rounded-lg border border-zinc-200 bg-transparent px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700";
+// A labelled row of fields: the label sits in its own column from sm up
+function Group({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-3 border-b border-border py-5 last:border-b-0 sm:grid sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-6 sm:space-y-0 sm:py-6">
+      <div className="text-[13px] font-semibold text-ink2 sm:pt-2 sm:text-sm sm:text-foreground">{label}</div>
+      <div className="min-w-0 space-y-3.5">{children}</div>
+    </div>
+  );
+}
 
 function Field({ label, className = "", children }: { label: string; className?: string; children: ReactNode }) {
   return (
@@ -28,12 +36,12 @@ function Field({ label, className = "", children }: { label: string; className?:
 
 function Toggle({ name, label, defaultChecked }: { name: string; label: string; defaultChecked: boolean }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-4 text-sm">
+    <label className="flex cursor-pointer items-center justify-between gap-4 text-[15px]">
       {label}
       <input type="checkbox" name={name} defaultChecked={defaultChecked} className="peer sr-only" />
       <span
         aria-hidden
-        className="relative h-6 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors peer-checked:bg-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500 after:absolute after:top-0.5 after:left-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5 dark:bg-zinc-700"
+        className="relative h-[26px] w-11 shrink-0 rounded-full bg-line2 transition-colors peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 after:absolute after:top-[3px] after:left-[3px] after:h-5 after:w-5 after:rounded-full after:bg-background after:transition-transform peer-checked:after:translate-x-[18px]"
       />
     </label>
   );
@@ -43,8 +51,8 @@ function LinkField({ name, label, icon, defaultValue, placeholder }: { name: str
   return (
     <label className="relative block">
       <span className="sr-only">{label}</span>
-      <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-zinc-500 dark:text-zinc-400">{icon}</span>
-      <input name={name} defaultValue={defaultValue} placeholder={placeholder} className={`${input} pl-10`} />
+      <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted">{icon}</span>
+      <input name={name} defaultValue={defaultValue} placeholder={placeholder} className="input pl-10" />
     </label>
   );
 }
@@ -52,83 +60,100 @@ function LinkField({ name, label, icon, defaultValue, placeholder }: { name: str
 export function HeroEdit({ profile: p }: { profile: ProfileData }) {
   return (
     <EditDialog title="Edit intro" trigger="edit" label="Edit intro" save={saveHero}>
-      <div className="flex gap-4">
-        <PhotoField current={<Avatar url={p.avatar_url} name={p.name} className="h-20 w-20 text-2xl" sizes="80px" />} />
-        <div className="min-w-0 flex-1 space-y-3">
-          <Field label="Name"><input name="name" defaultValue={p.name} required className={`${input} text-base font-semibold`} /></Field>
-          <Field label="Headline"><input name="headline" defaultValue={p.headline} maxLength={100} placeholder="CS student building a campus marketplace" className={input} /></Field>
+      <Group label="Intro">
+        <div className="flex gap-4">
+          <PhotoField current={<Avatar url={p.avatar_url} name={p.name} className="h-20 w-20 text-2xl" sizes="80px" square />} />
+          <div className="min-w-0 flex-1 space-y-3.5">
+            <Field label="Name"><input name="name" defaultValue={p.name} required className="input font-semibold" /></Field>
+            <Field label="Headline"><input name="headline" defaultValue={p.headline} maxLength={100} placeholder="CS student building a campus marketplace" className="input" /></Field>
+          </div>
         </div>
-      </div>
-      <div className="grid grid-cols-4 gap-3">
-        <Field label="University" className="col-span-3"><input name="university" defaultValue={p.university} className={input} /></Field>
-        <Field label="Grad year"><input name="graduation_year" type="number" defaultValue={p.graduation_year || ""} className={input} /></Field>
-      </div>
-      <Toggle name="open_to_collaborate" label="Open to collaborate" defaultChecked={p.open_to_collaborate} />
+      </Group>
+      <Group label="School">
+        <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
+          <Field label="University"><input name="university" defaultValue={p.university} className="input" /></Field>
+          <Field label="Grad year"><input name="graduation_year" type="number" defaultValue={p.graduation_year || ""} className="input" /></Field>
+        </div>
+      </Group>
+      <Group label="Status">
+        <Toggle name="open_to_collaborate" label="Open to collaborate" defaultChecked={p.open_to_collaborate} />
+        <p className="text-[13px] text-ink2">Shown on your profile and in team search</p>
+      </Group>
     </EditDialog>
   );
 }
 
 export function AboutEdit({ bio, trigger }: { bio: string; trigger: Trigger }) {
   return (
-    <EditDialog title="Edit about" trigger={trigger} label="Edit about" save={saveAbout}>
-      <Field label="About you"><textarea name="bio" rows={6} defaultValue={bio} className={`${input} resize-none`} /></Field>
+    <EditDialog title="Edit about" trigger={trigger} label="Edit about" cta="Write about you" save={saveAbout}>
+      <Group label="About">
+        <Field label="About you"><textarea name="bio" rows={6} defaultValue={bio} className="input resize-none leading-normal" /></Field>
+      </Group>
     </EditDialog>
   );
 }
 
 export function SkillsEdit({ skills, trigger }: { skills: string[]; trigger: Trigger }) {
   return (
-    <EditDialog title="Edit skills" trigger={trigger} label="Edit skills" save={saveSkills}>
-      <label htmlFor="skill-search" className="sr-only">Skills</label>
-      <SkillPicker id="skill-search" defaultValue={knownSkills(skills)} />
+    <EditDialog title="Edit skills" trigger={trigger} label="Edit skills" cta="Add skills" save={saveSkills}>
+      <Group label="Skills">
+        <label htmlFor="skill-search" className="sr-only">Skills</label>
+        <SkillPicker id="skill-search" defaultValue={knownSkills(skills)} />
+      </Group>
     </EditDialog>
   );
 }
 
 export function InterestsEdit({ profile: p, trigger }: { profile: ProfileData; trigger: Trigger }) {
   return (
-    <EditDialog title="Edit interests & goals" trigger={trigger} label="Edit interests and goals" save={saveInterests}>
-      <Field label="Interests, comma separated"><input name="interests" defaultValue={p.interests.join(", ")} placeholder="fintech, education" className={input} /></Field>
-      <fieldset>
-        <legend className="label">What you&apos;re looking for</legend>
-        <div className="grid grid-cols-2 gap-2">
-          {GOALS.map((g) => (
-            <label
-              key={g}
-              className="flex cursor-pointer items-center justify-center rounded-full border border-zinc-200 px-3 py-2 text-center text-sm text-muted transition-colors hover:border-zinc-400 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 dark:border-zinc-700 dark:has-[:checked]:bg-indigo-950 dark:has-[:checked]:text-indigo-300"
-            >
-              <input type="checkbox" name="goals" value={g} defaultChecked={p.goals.includes(g)} className="sr-only" />
-              {g}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-      <Field label="Who you want to team up with"><input name="looking_for" defaultValue={p.looking_for.join(", ")} placeholder="designer, backend developer" className={input} /></Field>
+    <EditDialog title="Edit interests & goals" trigger={trigger} label="Edit interests and goals" cta="Add interests" save={saveInterests}>
+      <Group label="Looking for">
+        <fieldset>
+          <legend className="sr-only">What you&apos;re looking for</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {GOALS.map((g) => (
+              <label
+                key={g}
+                className="flex cursor-pointer items-center justify-center rounded-md border border-line2 px-3 py-2 text-center text-sm text-ink2 transition-colors hover:border-muted has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent"
+              >
+                <input type="checkbox" name="goals" value={g} defaultChecked={p.goals.includes(g)} className="sr-only" />
+                {g}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </Group>
+      <Group label="Interests">
+        <Field label="Comma separated"><input name="interests" defaultValue={p.interests.join(", ")} placeholder="fintech, education" className="input" /></Field>
+      </Group>
+      <Group label="Team up with">
+        <Field label="Who you want to work with"><input name="looking_for" defaultValue={p.looking_for.join(", ")} placeholder="designer, backend developer" className="input" /></Field>
+      </Group>
     </EditDialog>
   );
 }
 
 export function LinksEdit({ profile: p, trigger }: { profile: ProfileData; trigger: Trigger }) {
   return (
-    <EditDialog title="Edit links" trigger={trigger} label="Edit links" save={saveLinks}>
-      <p className="text-xs text-muted">Visible to everyone</p>
-      <div className="space-y-2">
+    <EditDialog title="Edit links" trigger={trigger} label="Edit links" cta="Add links" note="Visible to everyone" save={saveLinks}>
+      <Group label="Links">
         <LinkField name="github" label="GitHub" icon={<GitHubIcon />} defaultValue={p.github} placeholder="GitHub username or link" />
         <LinkField name="linkedin" label="LinkedIn" icon={<LinkedInIcon />} defaultValue={p.linkedin} placeholder="LinkedIn username or link" />
         <LinkField name="website" label="Website" icon={<WebsiteIcon />} defaultValue={p.website} placeholder="https://" />
-      </div>
+      </Group>
     </EditDialog>
   );
 }
 
 export function ContactEdit({ contact, trigger }: { contact?: { telegram: string; email: string }; trigger: Trigger }) {
   return (
-    <EditDialog title="Edit contact" trigger={trigger} label="Edit contact" save={saveContact}>
-      <p className="text-xs text-muted">Only visible to your connections</p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Telegram username"><input name="telegram" defaultValue={contact?.telegram} maxLength={32} placeholder="username" className={input} /></Field>
-        <Field label="Contact email"><input name="email" type="email" defaultValue={contact?.email} maxLength={254} className={input} /></Field>
-      </div>
+    <EditDialog title="Edit contact" trigger={trigger} label="Edit contact" cta="Add contact" note="Only visible to your connections" save={saveContact}>
+      <Group label="Contact">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Telegram username"><input name="telegram" defaultValue={contact?.telegram} maxLength={32} placeholder="username" className="input" /></Field>
+          <Field label="Contact email"><input name="email" type="email" defaultValue={contact?.email} maxLength={254} className="input" /></Field>
+        </div>
+      </Group>
     </EditDialog>
   );
 }
@@ -140,14 +165,20 @@ export function ExperienceEdit({ experience: e, trigger }: { experience?: Experi
       title={e ? "Edit experience" : "Add experience"}
       trigger={trigger}
       label={e ? `Edit ${e.role}` : "Add experience"}
+      note="Current roles are shown first"
       save={saveExperience.bind(null, e?.id ?? null)}
       remove={e && deleteExperience.bind(null, e.id)}
     >
-      <p className="text-sm text-muted">Internships, jobs, student clubs, research, volunteering.</p>
-      <Field label="Role"><input name="role" defaultValue={e?.role} required maxLength={80} placeholder="Frontend intern" className={input} /></Field>
-      <Field label="Where"><input name="company" defaultValue={e?.company} required maxLength={80} placeholder="Kaspi.kz" className={input} /></Field>
-      <PeriodFields start={e?.start_date.slice(0, 7)} end={e?.end_date?.slice(0, 7)} current={e ? !e.end_date : false} inputClass={input} />
-      <Field label="What you did"><textarea name="description" rows={4} defaultValue={e?.description} maxLength={600} className={input} /></Field>
+      <Group label="Role">
+        <Field label="Title"><input name="role" defaultValue={e?.role} required maxLength={80} placeholder="Frontend intern" className="input" /></Field>
+        <Field label="Organization"><input name="company" defaultValue={e?.company} required maxLength={80} placeholder="Kaspi.kz" className="input" /></Field>
+      </Group>
+      <Group label="Dates">
+        <PeriodFields start={e?.start_date.slice(0, 7)} end={e?.end_date?.slice(0, 7)} current={e ? !e.end_date : false} />
+      </Group>
+      <Group label="Details">
+        <Field label="What you did"><textarea name="description" rows={3} defaultValue={e?.description} maxLength={600} placeholder="Internships, jobs, student clubs, research, volunteering" className="input leading-normal" /></Field>
+      </Group>
     </EditDialog>
   );
 }
@@ -162,25 +193,32 @@ export function ProjectEdit({ project: p, trigger }: { project?: Project; trigge
       save={saveProject.bind(null, p?.id ?? null)}
       remove={p && deleteProject.bind(null, p.id)}
     >
-      <p className="text-sm text-muted">Something you built or helped build: an app, a design, a pitch, a research paper.</p>
-      <Field label="Name"><input name="title" defaultValue={p?.title} required maxLength={80} className={input} /></Field>
-      <Field label="One line about it"><input name="tagline" defaultValue={p?.tagline} maxLength={140} placeholder="Swap used textbooks with students on your campus" className={input} /></Field>
-      <Field label={p?.image_url ? "Image (choose a file to replace the current one)" : "Image"}><input name="image" type="file" accept="image/jpeg,image/png,image/webp" className={input} /></Field>
-      <div className="flex gap-3">
-        <Field label="Your role" className="flex-1"><input name="role" defaultValue={p?.role} maxLength={60} placeholder="Frontend and design" className={input} /></Field>
-        <Field label="Year" className="w-28"><input name="year" type="number" min={2000} max={2100} defaultValue={p?.year ?? ""} className={input} /></Field>
-      </div>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <Field label="Built at (optional)" className="flex-1"><input name="built_at" defaultValue={p?.built_at} maxLength={100} placeholder="HackNU 2026" className={input} /></Field>
-        <Field label="Result (optional)" className="flex-1"><input name="result" defaultValue={p?.result} maxLength={60} placeholder="2nd place" className={input} /></Field>
-      </div>
-      <Field label="What it does and what you did"><textarea name="description" rows={4} defaultValue={p?.description} maxLength={600} className={input} /></Field>
-      <div>
-        <label htmlFor="project-skill-search" className="label">Skills used</label>
-        <SkillPicker id="project-skill-search" defaultValue={knownSkills(p?.skills ?? [])} />
-      </div>
-      <Field label="Link to it"><input name="url" defaultValue={p?.url} placeholder="https://" className={input} /></Field>
-      <Field label="Link to the code"><input name="repo_url" defaultValue={p?.repo_url} placeholder="https://github.com/..." className={input} /></Field>
+      <Group label="Project">
+        <Field label="Name"><input name="title" defaultValue={p?.title} required maxLength={80} className="input" /></Field>
+        <Field label="One line about it"><input name="tagline" defaultValue={p?.tagline} maxLength={140} placeholder="Swap used textbooks with students on your campus" className="input" /></Field>
+        <Field label={p?.image_url ? "Image (choose a file to replace the current one)" : "Image"}><input name="image" type="file" accept="image/jpeg,image/png,image/webp" className="input" /></Field>
+      </Group>
+      <Group label="Your part">
+        <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
+          <Field label="Your role"><input name="role" defaultValue={p?.role} maxLength={60} placeholder="Frontend and design" className="input" /></Field>
+          <Field label="Year"><input name="year" type="number" min={2000} max={2100} defaultValue={p?.year ?? ""} className="input" /></Field>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Built at (optional)"><input name="built_at" defaultValue={p?.built_at} maxLength={100} placeholder="HackNU 2026" className="input" /></Field>
+          <Field label="Result (optional)"><input name="result" defaultValue={p?.result} maxLength={60} placeholder="2nd place" className="input" /></Field>
+        </div>
+      </Group>
+      <Group label="Details">
+        <Field label="What it does and what you did"><textarea name="description" rows={4} defaultValue={p?.description} maxLength={600} className="input leading-normal" /></Field>
+        <div>
+          <label htmlFor="project-skill-search" className="label">Skills used</label>
+          <SkillPicker id="project-skill-search" defaultValue={knownSkills(p?.skills ?? [])} />
+        </div>
+      </Group>
+      <Group label="Links">
+        <Field label="Link to it"><input name="url" defaultValue={p?.url} placeholder="https://" className="input" /></Field>
+        <Field label="Link to the code"><input name="repo_url" defaultValue={p?.repo_url} placeholder="https://github.com/..." className="input" /></Field>
+      </Group>
     </EditDialog>
   );
 }

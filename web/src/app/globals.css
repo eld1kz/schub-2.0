@@ -1,26 +1,48 @@
 @import "tailwindcss";
 
+/* Direction A ("Document"): neutral inks and rules, one indigo accent */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-  --muted: #737373;
-  --border: #e5e5e5;
+  --foreground: #141416;
+  --ink2: #3b3c41;
+  --muted: #5c5d64;
+  --border: #e7e6e2;
+  --line2: #cfcec9;
+  --chip: #f2f2ef;
+  --accent: oklch(0.49 0.2 275);
+  --accent-soft: oklch(0.95 0.03 275);
+  --on-accent: #ffffff;
+  /* Native controls (date pickers, scrollbars) follow the theme */
+  color-scheme: light dark;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-ink2: var(--ink2);
   --color-muted: var(--muted);
   --color-border: var(--border);
-  --font-sans: var(--font-geist-sans);
+  --color-line2: var(--line2);
+  --color-chip: var(--chip);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --font-sans: var(--font-instrument-sans);
+  --font-mono: var(--font-plex-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --muted: #a3a3a3;
-    --border: #262626;
+    --background: #141416;
+    --foreground: #f2f2f0;
+    --ink2: #cdcdd1;
+    --muted: #a0a0a8;
+    --border: #2a2a2e;
+    --line2: #3d3d43;
+    --chip: #232327;
+    --accent: oklch(0.75 0.13 275);
+    --accent-soft: oklch(0.31 0.07 275);
+    --on-accent: #111114;
   }
 }
 
@@ -31,19 +53,19 @@ body {
 
 @layer components {
   .input {
-    @apply w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-foreground;
+    @apply w-full rounded-md border border-line2 bg-transparent px-3 py-2 text-[15px] outline-none focus:border-accent focus:ring-1 focus:ring-accent;
   }
   .btn {
-    @apply rounded-md bg-foreground px-3 py-2 text-sm font-medium whitespace-nowrap text-background disabled:opacity-50;
+    @apply inline-flex h-[38px] items-center justify-center rounded-md bg-accent px-5 text-sm font-semibold whitespace-nowrap text-on-accent hover:opacity-90 disabled:opacity-50;
   }
   .btn-outline {
-    @apply rounded-md border border-border px-3 py-2 text-sm font-medium whitespace-nowrap;
+    @apply inline-flex h-[38px] items-center justify-center rounded-md border border-line2 bg-background px-4 text-sm font-semibold whitespace-nowrap hover:border-muted;
   }
-  /* Profile skills: the most prominent chips on the page */
+  /* A skill: mono text on a flat chip */
   .skill {
-    @apply rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 font-mono text-sm text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300;
+    @apply rounded bg-chip px-2 py-0.5 font-mono text-[13px];
   }
   .label {
-    @apply mb-1 block text-sm text-muted;
+    @apply mb-1.5 block text-[13px] text-ink2;
   }
 }

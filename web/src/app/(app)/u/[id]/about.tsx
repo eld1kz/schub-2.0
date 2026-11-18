@@ -18,7 +18,7 @@ export function About({ text }: { text: string }) {
     <div>
       <p ref={ref} className={`whitespace-pre-wrap ${open ? "" : "line-clamp-3"}`}>{text}</p>
       {long && (
-        <button type="button" onClick={() => setOpen(!open)} className="mt-1 text-sm text-muted hover:text-foreground">
+        <button type="button" onClick={() => setOpen(!open)} className="mt-1 text-sm font-medium text-accent hover:underline">
           {open ? "Show less" : "Show more"}
         </button>
       )}

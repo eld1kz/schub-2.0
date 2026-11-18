@@ -6,33 +6,32 @@ import { Avatar } from "./avatar";
 import { SignInButton } from "./sign-in";
 import { Notifications, type Notification } from "./notifications";
 import { GlobalSearch } from "./global-search";
+import { NavTabs, TabBar } from "./nav-tabs";
 
-const links = [
-  { href: "/opportunities", label: "Opportunities" },
-  { href: "/teams", label: "Teams" },
-  { href: "/people", label: "People" },
-  { href: "/profile", label: "Profile" },
-];
-
-function Nav({ counts = {}, account }: { counts?: Record<string, number>; account?: ReactNode }) {
+function Header({ counts = {}, profileHref = "/profile", account }: { counts?: Record<string, number>; profileHref?: string; account?: ReactNode }) {
   return (
-    <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm sm:gap-x-5">
-      {links.map((l) => (
-        <Link key={l.href} href={l.href} className="text-muted hover:text-foreground">
-          {l.label}
-          {counts[l.href] > 0 && <span className="ml-1 font-medium text-foreground tabular-nums">{counts[l.href]}</span>}
-        </Link>
-      ))}
-      <GlobalSearch />
-      {account}
-    </nav>
+    <>
+      <header className="border-b border-border">
+        <div className="mx-auto flex h-[60px] max-w-[1440px] items-center gap-4 px-4 sm:gap-11 sm:px-12">
+          <Link href="/opportunities" className="flex items-center gap-2 text-xl font-bold tracking-[-0.03em]">
+            <span aria-hidden className="h-3 w-3 rounded-[2px] bg-accent" />
+            schub
+          </Link>
+          <NavTabs counts={counts} />
+          <span className="flex-1" />
+          <GlobalSearch />
+          {account}
+        </div>
+      </header>
+      <TabBar counts={counts} profileHref={profileHref} />
+    </>
   );
 }
 
 // Things waiting on you: connection requests, and applications to your teams. Guests get a sign-in button.
 async function NavWithCounts() {
   const { supabase, userId, isGuest } = await requireUser();
-  if (isGuest) return <Nav account={<SignInButton label="Sign in" />} />;
+  if (isGuest) return <Header account={<SignInButton label="Sign in" />} />;
   const [requests, applications, me, notifications, unread] = await Promise.all([
     supabase.from("connections").select("id", { count: "exact", head: true }).eq("receiver_id", userId).eq("status", "pending"),
     // Pending applications you can see that aren't yours are the ones to your own teams
@@ -43,16 +42,15 @@ async function NavWithCounts() {
   ]);
   const name = me.data?.name ?? "";
   const account = (
-    <span className="flex items-center gap-3">
+    <span className="flex items-center gap-4 text-sm">
       <Notifications items={(notifications.data ?? []) as Notification[]} unread={(unread.count ?? 0) > 0} />
-      <Link href={`/u/${userId}`} className="flex items-center gap-2 hover:opacity-80">
-        <Avatar url={me.data?.avatar_url ?? ""} name={name} className="h-7 w-7 text-xs" sizes="28px" />
-        <span className="hidden max-w-32 truncate sm:inline">{name || "You"}</span>
+      <Link href={`/u/${userId}`} aria-label="Your profile" className="hover:opacity-80">
+        <Avatar url={me.data?.avatar_url ?? ""} name={name} className="h-8 w-8 text-xs" sizes="32px" />
       </Link>
       <form action={signOut}><button className="text-muted hover:text-foreground">Sign out</button></form>
     </span>
   );
-  return <Nav counts={{ "/people": requests.count ?? 0, "/teams": applications.count ?? 0 }} account={account} />;
+  return <Header counts={{ "/people": requests.count ?? 0, "/teams": applications.count ?? 0 }} profileHref={`/u/${userId}`} account={account} />;
 }
 
 async function ProfileNudge() {
@@ -70,13 +68,13 @@ async function ProfileNudge() {
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6">
-      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border py-4">
-        <Link href="/opportunities" className="font-semibold">Schub</Link>
-        <Suspense fallback={<Nav />}><NavWithCounts /></Suspense>
-      </header>
-      <Suspense><ProfileNudge /></Suspense>
-      <main className="py-8">{children}</main>
-    </div>
+    <>
+      <Suspense fallback={<Header />}><NavWithCounts /></Suspense>
+      <div className="mx-auto max-w-[1176px] px-4 sm:px-6">
+        <Suspense><ProfileNudge /></Suspense>
+        {/* Room at the bottom for the phone tab bar */}
+        <main className="pt-8 pb-28 sm:pt-12 sm:pb-24">{children}</main>
+      </div>
+    </>
   );
 }

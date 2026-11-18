@@ -46,7 +46,7 @@ export function SkillPicker({ id, defaultValue }: { id: string; defaultValue: st
         <ul className="flex max-h-40 flex-wrap gap-2 overflow-y-auto">
           {options.map((s) => (
             <li key={s}>
-              <button type="button" onClick={() => add(s)} className="rounded-full border border-border px-3 py-1 text-sm text-muted hover:border-foreground hover:text-foreground">
+              <button type="button" onClick={() => add(s)} className="rounded border border-line2 px-2 py-0.5 font-mono text-[13px] text-ink2 hover:border-foreground hover:text-foreground">
                 {s}
               </button>
             </li>
