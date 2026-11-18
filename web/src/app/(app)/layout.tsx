@@ -76,7 +76,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={<Nav />}><NavWithCounts /></Suspense>
       </header>
       <Suspense><ProfileNudge /></Suspense>
-      <main className="py-8">{children}</main>
+      <main className="py-8"><Suspense>{children}</Suspense></main>
     </div>
   );
 }

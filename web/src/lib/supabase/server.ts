@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -24,6 +25,8 @@ export async function createClient() {
 }
 
 export async function requireUser() {
+  // Checking the token reads the clock, which Next only allows once rendering is per-request
+  await connection();
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims.sub;
