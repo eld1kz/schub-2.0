@@ -70,13 +70,13 @@ async function ProfileNudge() {
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
-    <div className="mx-auto max-w-2xl px-4">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border py-4">
         <Link href="/opportunities" className="font-semibold">Schub</Link>
         <Suspense fallback={<Nav />}><NavWithCounts /></Suspense>
       </header>
       <Suspense><ProfileNudge /></Suspense>
-      <main className="py-8"><Suspense>{children}</Suspense></main>
+      <main className="py-8">{children}</main>
     </div>
   );
 }

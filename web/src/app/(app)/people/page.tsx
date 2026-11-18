@@ -4,11 +4,14 @@ import { knownSkills, SKILLS } from "@/lib/skills";
 import Link from "next/link";
 import { respond } from "@/app/actions";
 import { ConnectButton } from "../connect-button";
+import { cardBox } from "../card";
 
 const chipCount = 12;
 
 // "?skills=React,C%2B%2B": each skill encoded on its own so the commas stay readable
 const skillsHref = (skills: string[]) => (skills.length ? `/people?skills=${skills.map(encodeURIComponent).join(",")}` : "/people");
+
+export const instant = false;
 
 export default async function PeoplePage(props: PageProps<"/people">) {
   const { skills: skillsParam } = await props.searchParams;
@@ -94,13 +97,13 @@ export default async function PeoplePage(props: PageProps<"/people">) {
         {selected.length > 0 && <Link href="/people" className="ml-1 text-sm text-muted underline hover:text-foreground">Clear filters</Link>}
       </nav>
 
-      <section className="divide-y divide-border border-t border-border">
+      <section className="grid gap-4 lg:grid-cols-2">
         {matches.length === 0 && (
-          <p className="py-6 text-sm text-muted">{selected.length > 0 ? "Nobody has all of these skills yet." : "No other students yet."}</p>
+          <p className="py-6 text-sm text-muted lg:col-span-2">{selected.length > 0 ? "Nobody has all of these skills yet." : "No other students yet."}</p>
         )}
         {matches.map((p) => {
           return (
-            <article key={p.id} className="flex gap-4 py-5">
+            <article key={p.id} className={`${cardBox} flex gap-4 p-5`}>
               <div className="flex-1">
                 <p className="text-sm">
                   <Link href={`/u/${p.id}`} className="font-medium hover:underline">{p.name}</Link>

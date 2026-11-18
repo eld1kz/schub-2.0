@@ -5,6 +5,8 @@ import { experienceColumns, type Experience } from "@/lib/portfolio";
 import { SignInPrompt } from "../../../sign-in";
 
 // /profile/experience/new adds an entry; /profile/experience/<id> edits one of your own
+export const instant = false;
+
 export default async function ExperienceFormPage(props: PageProps<"/profile/experience/[id]">) {
   const [{ id }, { error }] = await Promise.all([props.params, props.searchParams]);
   const { supabase, userId, isGuest } = await requireUser();

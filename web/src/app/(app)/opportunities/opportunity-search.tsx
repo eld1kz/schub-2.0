@@ -27,9 +27,9 @@ export function OpportunitySearch({ rows }: { rows: { id: string; title: string;
           </button>
         )}
       </div>
-      <section className="divide-y divide-border border-t border-border">
-        {rows.length === 0 && <p className="py-6 text-sm text-muted">No upcoming opportunities yet.</p>}
-        {rows.length > 0 && shown.length === 0 && <p className="py-6 text-sm text-muted">No opportunities match &ldquo;{query.trim()}&rdquo;.</p>}
+      <section className="grid gap-4 lg:grid-cols-2">
+        {rows.length === 0 && <p className="py-6 text-sm text-muted lg:col-span-2">No upcoming opportunities yet.</p>}
+        {rows.length > 0 && shown.length === 0 && <p className="py-6 text-sm text-muted lg:col-span-2">No opportunities match &ldquo;{query.trim()}&rdquo;.</p>}
         {shown.map((r) => <Fragment key={r.id}>{r.node}</Fragment>)}
       </section>
     </div>

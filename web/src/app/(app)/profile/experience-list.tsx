@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { deleteExperience } from "@/app/actions";
 import { formatPeriod, type Experience } from "@/lib/portfolio";
-import { dividedList } from "../u/[id]/card";
+import { dividedList } from "../card";
 
 const deleteFormId = (id: string) => `delete-experience-${id}`;
 

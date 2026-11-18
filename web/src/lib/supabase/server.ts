@@ -25,7 +25,9 @@ export async function createClient() {
 }
 
 export async function requireUser() {
-  // Checking the token reads the clock, which Next only allows once rendering is per-request
+  // Checking the token reads the clock, which Next only allows once rendering is per-request.
+  // That makes the page wait for this call, so pages that call it export `instant = false`
+  // (Next only honors that per page, not from a shared layout).
   await connection();
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();

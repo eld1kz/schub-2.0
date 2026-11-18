@@ -5,6 +5,8 @@ import { knownGoals } from "@/lib/goals";
 import { OnboardingFlow } from "./onboarding-flow";
 
 // Outside the (app) group, so there's no nav. New Google accounts land here from /auth/callback.
+export const instant = false;
+
 export default async function OnboardingPage(props: PageProps<"/onboarding">) {
   const { error } = await props.searchParams;
   const { supabase, userId, isGuest } = await requireUser();

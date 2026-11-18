@@ -3,6 +3,8 @@ import { createTeam } from "@/app/actions";
 import { today } from "@/lib/opportunities";
 import { SignInPrompt } from "../../sign-in";
 
+export const instant = false;
+
 export default async function NewTeamPage(props: PageProps<"/teams/new">) {
   const { error, opportunity } = await props.searchParams;
   const { supabase, isGuest } = await requireUser();

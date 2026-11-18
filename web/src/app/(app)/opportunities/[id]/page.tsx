@@ -11,6 +11,8 @@ import { TeamList } from "../../team-list";
 
 type Person = { id: string; name: string; university: string; skills: string[]; interests: string[]; open_to_collaborate: boolean };
 
+export const instant = false;
+
 export default async function OpportunityPage(props: PageProps<"/opportunities/[id]">) {
   const { id } = await props.params;
   const { supabase, userId, isGuest } = await requireUser();

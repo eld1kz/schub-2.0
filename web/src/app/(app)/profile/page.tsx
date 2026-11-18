@@ -10,7 +10,7 @@ import { ExperienceDeleteForms, ExperienceList } from "./experience-list";
 import { GOALS } from "@/lib/goals";
 import { SignInPrompt } from "../sign-in";
 import { Avatar } from "../avatar";
-import { Card, PageBackground } from "../u/[id]/card";
+import { Card, PageBackground } from "../card";
 import { GitHubIcon, LinkedInIcon, WebsiteIcon } from "../u/[id]/link-icons";
 
 // Inputs on this page only; the rest of the site keeps the shared .input style
@@ -27,6 +27,8 @@ function LinkField({ id, label, icon, defaultValue, placeholder }: { id: string;
     </div>
   );
 }
+
+export const instant = false;
 
 export default async function ProfilePage(props: PageProps<"/profile">) {
   const { error } = await props.searchParams;

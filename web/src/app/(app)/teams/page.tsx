@@ -4,6 +4,8 @@ import { openRoles, teamSummaryColumns, type TeamSummary } from "@/lib/teams";
 import { TeamList } from "../team-list";
 import { TeamFilters } from "./team-filters";
 
+export const instant = false;
+
 export default async function TeamsPage(props: PageProps<"/teams">) {
   const params = await props.searchParams;
   const role = typeof params.role === "string" ? params.role : "";

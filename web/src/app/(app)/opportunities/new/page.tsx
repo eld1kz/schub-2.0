@@ -3,6 +3,8 @@ import { opportunityTypes } from "@/lib/opportunities";
 import { requireUser } from "@/lib/supabase/server";
 import { SignInPrompt } from "../../sign-in";
 
+export const instant = false;
+
 export default async function NewOpportunityPage(props: PageProps<"/opportunities/new">) {
   const { error } = await props.searchParams;
   const { isGuest } = await requireUser();

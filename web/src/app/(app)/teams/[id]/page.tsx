@@ -14,6 +14,8 @@ type Application = {
   person: { name: string; university: string; skills: string[] } | null;
 };
 
+export const instant = false;
+
 export default async function TeamPage(props: PageProps<"/teams/[id]">) {
   const { id } = await props.params;
   const { supabase, userId, isGuest } = await requireUser();

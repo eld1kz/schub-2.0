@@ -7,6 +7,8 @@ import { SignInPrompt } from "../../../sign-in";
 import { SkillPicker } from "../../skill-picker";
 
 // /profile/projects/new adds a project; /profile/projects/<id> edits one of your own
+export const instant = false;
+
 export default async function ProjectFormPage(props: PageProps<"/profile/projects/[id]">) {
   const [{ id }, { error }] = await Promise.all([props.params, props.searchParams]);
   const { supabase, userId, isGuest } = await requireUser();
