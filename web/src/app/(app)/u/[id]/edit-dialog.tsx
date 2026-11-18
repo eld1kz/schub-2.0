@@ -6,8 +6,9 @@ import { useToast } from "./toast";
 
 type Props = {
   title: string;
-  // "edit" is a pencil; "link" is "+ cta" in accent text; "button" is the outlined "+ cta" in an empty section
-  trigger: "edit" | "link" | "button";
+  // "edit" is a pencil; "link" is "+ cta" in accent text; "button" is the outlined "+ cta" in an empty section;
+  // "action" is a plain outlined button reading `cta`
+  trigger: "edit" | "link" | "button" | "action";
   label: string;
   // Text of the link and button triggers; defaults to `label`
   cta?: string;
@@ -19,6 +20,9 @@ type Props = {
   tall?: boolean;
   // Save stays disabled until every required field is filled and valid
   requireValid?: boolean;
+  // Text of the Save button, and of the toast after it worked
+  submit?: string;
+  done?: string;
   children: ReactNode;
 };
 
@@ -51,7 +55,7 @@ function PencilIcon() {
 
 // One section's form in a modal: a bottom sheet on phones, near the top of the screen from sm up.
 // The native modal dialog traps focus, closes on Escape and hands focus back to the trigger.
-export function EditDialog({ title, trigger, label, cta = label, note, save, remove, tall = false, requireValid = false, children }: Props) {
+export function EditDialog({ title, trigger, label, cta = label, note, save, remove, tall = false, requireValid = false, submit = "Save", done = "Saved", children }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const form = useRef<HTMLFormElement>(null);
   const pressedOutside = useRef(false);
@@ -86,7 +90,7 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
       const result = await save(formData);
       if (result.error) return setError({ message: result.error, field: result.field });
       close();
-      toast("Saved");
+      toast(done);
     });
   }
 
@@ -116,6 +120,11 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
         + {cta}
       </button>
     ),
+    action: (
+      <button type="button" onClick={() => setOpen(true)} className="btn-outline h-9">
+        {cta}
+      </button>
+    ),
   };
 
   return (
@@ -135,7 +144,7 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
         onClick={(e) => {
           if (pressedOutside.current && e.target === dialog.current) close();
         }}
-        className={`m-0 mt-auto w-full max-w-none overflow-hidden bg-background ${tall ? "h-dvh max-h-dvh sm:h-auto" : "max-h-[92dvh] rounded-t-2xl"} p-0 text-foreground backdrop:bg-[rgba(20,20,24,0.45)] sm:mx-auto sm:mt-16 sm:mb-auto sm:max-h-[calc(100dvh-8rem)] sm:max-w-[680px] sm:rounded-[10px] sm:border sm:border-line2 sm:shadow-[0_24px_60px_rgba(0,0,0,0.22)] dark:backdrop:bg-black/60`}
+        className={`m-0 mt-auto w-full max-w-none overflow-hidden bg-background ${tall ? "h-dvh max-h-dvh sm:h-fit" : "max-h-[92dvh] rounded-t-2xl"} p-0 text-foreground backdrop:bg-[rgba(20,20,24,0.45)] sm:mx-auto sm:mt-16 sm:mb-auto sm:max-h-[calc(100dvh-8rem)] sm:max-w-[680px] sm:rounded-[10px] sm:border sm:border-line2 sm:shadow-[0_24px_60px_rgba(0,0,0,0.22)] dark:backdrop:bg-black/60`}
       >
         {open && (
           <form
@@ -158,7 +167,7 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
                 <span aria-hidden className="w-12 sm:hidden" />
               ) : (
                 <button disabled={saving || !valid} className="text-[15px] font-semibold text-accent disabled:opacity-40 sm:hidden">
-                  {saving ? "Saving..." : "Save"}
+                  {saving ? "Saving..." : submit}
                 </button>
               )}
               <button type="button" onClick={close} aria-label="Close" className={`${iconButton} hidden sm:grid`}>
@@ -181,7 +190,7 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
               <div className={`${tall ? "flex flex-1 justify-end" : "hidden sm:flex"} ml-auto gap-2.5`}>
                 <button type="button" onClick={close} className="btn-outline hidden sm:inline-flex">Cancel</button>
                 <button disabled={saving || !valid} className={`btn disabled:opacity-40 ${tall ? `h-11 sm:h-[38px] ${remove ? "" : "w-full sm:w-auto"}` : ""}`}>
-                  {saving ? "Saving..." : "Save"}
+                  {saving ? "Saving..." : submit}
                 </button>
               </div>
             </div>

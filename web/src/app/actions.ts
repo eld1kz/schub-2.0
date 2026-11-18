@@ -349,8 +349,8 @@ export async function createTeam(formData: FormData) {
   const text = (key: string) => String(formData.get(key) ?? "").trim();
   const fail = (message: string): never => redirect(`/teams/new?error=${encodeURIComponent(message)}`);
 
-  // Keeps the casing people typed ("CTO"), drops repeats
-  const roles = text("roles").split(",").map((r) => r.trim().slice(0, 40)).filter(Boolean);
+  // One "roles" value per role row; commas inside one are split too. Keeps the casing people typed ("CTO"), drops repeats.
+  const roles = formData.getAll("roles").flatMap((v) => String(v).split(",")).map((r) => r.trim().slice(0, 40)).filter(Boolean);
   const unique = roles.filter((r, i) => roles.findIndex((x) => x.toLowerCase() === r.toLowerCase()) === i);
   if (unique.length === 0) fail("Add at least one open role.");
   if (unique.length > 10) fail("List up to 10 roles.");
@@ -378,15 +378,17 @@ export async function deleteTeam(id: string) {
   redirect("/teams");
 }
 
-export async function applyToTeam(teamId: string, formData: FormData) {
+export async function applyToTeam(teamId: string, formData: FormData): Promise<SaveResult> {
   const { supabase, userId } = await requireMember();
-  await supabase.from("team_applications").insert({
+  const { error } = await supabase.from("team_applications").insert({
     team_id: teamId,
     user_id: userId,
     role: String(formData.get("role") ?? ""),
     note: String(formData.get("note") ?? "").trim(),
   });
+  if (error) return error.code === "23505" ? { error: "You've already applied to this team." } : { error: "Couldn't send it. Try again." };
   revalidatePath("/", "layout");
+  return {};
 }
 
 export async function withdrawApplication(teamId: string) {
