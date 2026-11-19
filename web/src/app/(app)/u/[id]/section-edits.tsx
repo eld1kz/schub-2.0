@@ -66,14 +66,14 @@ export function HeroEdit({ profile: p }: { profile: ProfileData }) {
         <div className="flex gap-4">
           <PhotoField current={<Avatar url={p.avatar_url} name={p.name} className="h-20 w-20 text-2xl" sizes="80px" square />} />
           <div className="min-w-0 flex-1 space-y-3.5">
-            <Field label="Name"><input name="name" defaultValue={p.name} required className="input font-semibold" /></Field>
+            <Field label="Name"><input name="name" defaultValue={p.name} required maxLength={80} className="input font-semibold" /></Field>
             <Field label="Headline"><input name="headline" defaultValue={p.headline} maxLength={100} placeholder="CS student building a campus marketplace" className="input" /></Field>
           </div>
         </div>
       </Group>
       <Group label="School">
         <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
-          <Field label="University"><input name="university" defaultValue={p.university} className="input" /></Field>
+          <Field label="University"><input name="university" defaultValue={p.university} maxLength={120} className="input" /></Field>
           <Field label="Grad year"><input name="graduation_year" type="number" defaultValue={p.graduation_year || ""} className="input" /></Field>
         </div>
       </Group>
@@ -89,7 +89,7 @@ export function AboutEdit({ bio, trigger }: { bio: string; trigger: Trigger }) {
   return (
     <EditDialog title="Edit about" trigger={trigger} label="Edit about" cta="Write about you" save={saveAbout}>
       <Group label="About">
-        <Field label="About you"><textarea name="bio" rows={6} defaultValue={bio} className="input resize-none leading-normal" /></Field>
+        <Field label="About you"><textarea name="bio" rows={6} defaultValue={bio} maxLength={2000} className="input resize-none leading-normal" /></Field>
       </Group>
     </EditDialog>
   );
@@ -126,10 +126,10 @@ export function InterestsEdit({ profile: p, trigger }: { profile: ProfileData; t
         </fieldset>
       </Group>
       <Group label="Interests">
-        <Field label="Comma separated"><input name="interests" defaultValue={p.interests.join(", ")} placeholder="fintech, education" className="input" /></Field>
+        <Field label="Comma separated"><input name="interests" defaultValue={p.interests.join(", ")} maxLength={500} placeholder="fintech, education" className="input" /></Field>
       </Group>
       <Group label="Team up with">
-        <Field label="Who you want to work with"><input name="looking_for" defaultValue={p.looking_for.join(", ")} placeholder="designer, backend developer" className="input" /></Field>
+        <Field label="Who you want to work with"><input name="looking_for" defaultValue={p.looking_for.join(", ")} maxLength={500} placeholder="designer, backend developer" className="input" /></Field>
       </Group>
     </EditDialog>
   );

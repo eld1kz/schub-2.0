@@ -59,7 +59,7 @@ web/supabase/               SQL migrations, run by hand in the Supabase SQL Edit
 Migrations live in `web/supabase/` and are run by hand, in this order:
 `schema` → `opportunities` → `contact` → `teams` → `profile` → `portfolio` →
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
-`people-requests` → `opportunity-details` → `awards`. `seed_opportunities.sql` and
+`people-requests` → `opportunity-details` → `awards` → `length-limits`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 

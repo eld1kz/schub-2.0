@@ -70,7 +70,7 @@ export function OnboardingFlow({ university, graduationYear, skills, goals, erro
           <label htmlFor="university" className="mb-1.5 block text-sm font-medium">
             University<span aria-hidden className="ml-0.5 text-accent">*</span>
           </label>
-          <input id="university" name="university" defaultValue={university} autoFocus placeholder="Korea University" className="input h-11 sm:h-10" />
+          <input id="university" name="university" defaultValue={university} maxLength={120} autoFocus placeholder="Korea University" className="input h-11 sm:h-10" />
           {step === 0 && <FieldMessage text={problem} />}
         </div>
         <div>

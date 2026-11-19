@@ -1,4 +1,4 @@
-// Ways to flood someone's notifications, and text with no length limit.
+// Ways to flood someone's notifications. (Length limits are in limits.test.ts.)
 // These are known issues from the security review (Medium), written as the behavior we want and marked
 // it.fails until they're fixed. When one starts "failing", the fix landed: turn it back into a normal it().
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
@@ -17,7 +17,6 @@ afterEach(async () => {
   await service.from("connections").delete().eq("sender_id", A).eq("receiver_id", B);
   await service.from("awards").delete().eq("user_id", A).eq("event_name", "Spam test");
   await service.from("team_applications").delete().eq("user_id", A).eq("team_id", teamId(3));
-  await service.from("profiles").update({ name: "Minji Placeholder" }).eq("id", A);
 });
 
 describe("notification floods", () => {
@@ -53,24 +52,6 @@ describe("notification floods", () => {
     // A and 19 have no connection and no team in common
     const { data: award } = await userA.from("awards").insert({ user_id: A, placement: "Winner", event_name: "Spam test", awarded_on: "2025-01-01" }).select("id").single();
     const { error } = await userA.from("award_teammates").insert({ award_id: award?.id, user_id: id(19) });
-    expect(error).not.toBeNull();
-  });
-});
-
-describe("length limits", () => {
-  // The name is copied into other people's notifications ("<name> wants to connect")
-  it.fails("KNOWN ISSUE (High): profile name, university and bio have length limits", async () => {
-    const long = "x".repeat(20_000);
-    expect((await userA.from("profiles").update({ name: long }).eq("id", A)).error).not.toBeNull();
-    expect((await userA.from("profiles").update({ university: long }).eq("id", A)).error).not.toBeNull();
-    expect((await userA.from("profiles").update({ bio: long }).eq("id", A)).error).not.toBeNull();
-  });
-
-  it.fails("KNOWN ISSUE (High): team roles and interests have length and count limits", async () => {
-    const long = "x".repeat(5_000);
-    expect((await userA.from("profiles").update({ interests: Array(500).fill(long) }).eq("id", A)).error).not.toBeNull();
-    const { error } = await userA.from("teams").insert({ owner_id: A, title: "Spam test", roles: [long] });
-    if (!error) await service.from("teams").delete().eq("title", "Spam test");
     expect(error).not.toBeNull();
   });
 });
