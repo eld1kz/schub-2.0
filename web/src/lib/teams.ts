@@ -50,3 +50,8 @@ export function teamRank(team: TeamSummary, lookingFor: Set<string>, connections
   if (teamMembers(team).some((m) => connections.has(m.id))) return 1;
   return 2;
 }
+
+// Universities on a team row: up to two names, otherwise the first and how many more, so the line stays short
+export function universitiesLabel(universities: string[]) {
+  return universities.length <= 2 ? universities.join(", ") : `${universities[0]} + ${universities.length - 1} more`;
+}

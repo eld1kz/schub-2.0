@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { memberSummary, teamMembers, teamRank, type Member, type TeamSummary } from "./teams";
+import { memberSummary, teamMembers, teamRank, universitiesLabel, type Member, type TeamSummary } from "./teams";
 
 const person = (id: string, university = ""): Member => ({ id, name: `Person ${id}`, avatar_url: "", university });
 const team = (over: Partial<TeamSummary> = {}): TeamSummary => ({
@@ -60,5 +60,14 @@ describe("teamRank", () => {
   it("puts full teams last, even with a connection on them", () => {
     const full = team({ roles: ["Backend"], team_applications: withConnection.team_applications });
     expect(teamRank(full, new Set(), new Set(["friend"]))).toBe(3);
+  });
+});
+
+describe("universitiesLabel", () => {
+  it("names up to two, then the first and how many more", () => {
+    expect(universitiesLabel([])).toBe("");
+    expect(universitiesLabel(["KAIST"])).toBe("KAIST");
+    expect(universitiesLabel(["KAIST", "Korea University"])).toBe("KAIST, Korea University");
+    expect(universitiesLabel(["KAIST", "Korea University", "Seoul National University"])).toBe("KAIST + 2 more");
   });
 });

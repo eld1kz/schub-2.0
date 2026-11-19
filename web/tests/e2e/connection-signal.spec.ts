@@ -32,6 +32,8 @@ test("teams and events your connections are on say so; others don't", async ({ c
   await expect(page).toHaveURL(`${hack}#teams`);
   await expect(page.getByRole("main").getByRole("link", { name: "1 of your connections is going" })).toHaveAttribute("href", "#teams");
   await expect(teamRow(page, "Testerson Robotics")).toContainText("your connection");
+  // On the event's own page the rows don't repeat its name
+  await expect(teamRow(page, "Testerson Robotics")).not.toContainText("Placeholder Hack Seoul 2027");
 
   // The team page marks Minji among the members, and only her
   await page.goto(robotics);

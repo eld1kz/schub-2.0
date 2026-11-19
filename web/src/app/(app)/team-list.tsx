@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { SOON_DAYS, daysUntil, nextDate, today } from "@/lib/opportunities";
-import { memberSummary, openRoles, teamMembers, type TeamSummary } from "@/lib/teams";
+import { memberSummary, openRoles, teamMembers, universitiesLabel, type TeamSummary } from "@/lib/teams";
 import { AwardMark } from "./award-mark";
 import { Avatar } from "./avatar";
 
@@ -14,12 +14,14 @@ const daysLeft = (n: number) => (n === 0 ? "Today" : n === 1 ? "1 day left" : `$
 // `awarded`: people with an award, who get a small medal after their name
 // `applied`: teams you've already applied to, whose button reads "Applied"
 // `connections`: your accepted connections. A team with one on it leads with them, ringed in the accent.
-export function TeamList({ teams, userId, awarded, applied, connections = new Set(), empty }: {
+// `hideEvent`: on an opportunity's own page, where every row's event line would repeat the page title
+export function TeamList({ teams, userId, awarded, applied, connections = new Set(), hideEvent = false, empty }: {
   teams: TeamSummary[];
   userId: string;
   awarded: Set<string>;
   applied?: Set<string>;
   connections?: Set<string>;
+  hideEvent?: boolean;
   empty: ReactNode;
 }) {
   if (teams.length === 0) return <p className="py-8 text-sm text-ink2">{empty}</p>;
@@ -38,7 +40,7 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
         return (
           <article key={t.id} className="flex items-start justify-between gap-6 border-b border-border py-5 sm:py-6">
             <div className="flex min-w-0 flex-col gap-1.5">
-              <p className="font-mono text-[11px] font-medium tracking-[0.04em] text-ink2 uppercase sm:text-xs">
+              {!hideEvent && <p className="font-mono text-[11px] font-medium tracking-[0.04em] text-ink2 uppercase sm:text-xs">
                 {t.opportunity ? (
                   <>
                     <Link href={`/opportunities/${t.opportunity.id}`} className="hover:text-accent">{t.opportunity.title}</Link>
@@ -47,7 +49,7 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
                 ) : (
                   "Own project"
                 )}
-              </p>
+              </p>}
               <h3 className="text-[17px] leading-snug font-semibold text-pretty sm:text-lg">
                 <Link href={`/teams/${t.id}`} className="hover:text-accent">{t.title}</Link>
               </h3>
@@ -75,7 +77,7 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
                     ) : (
                       others > 0 && ` + ${others}`
                     )}
-                    {universities.length > 0 && ` · ${universities.join(", ")}`}
+                    {universities.length > 0 && ` · ${universitiesLabel(universities)}`}
                     {/* Phones have no button, so "Applied" goes here */}
                     {applied?.has(t.id) && <span className="sm:hidden"> · Applied</span>}
                     {toReview > 0 && <> · <Link href={`/teams/${t.id}#applications`} className="font-semibold text-accent hover:underline">{toReview} to review</Link></>}

@@ -186,7 +186,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
           count={teams.length}
           action={<Link href={`/teams/new?opportunity=${o.id}`} className="btn-outline h-9 shrink-0">Post a team for this</Link>}
         />
-        <TeamList teams={teams} userId={userId} awarded={awarded} connections={connections} empty="No teams yet. Already have one? Post it and list the roles you need." />
+        <TeamList teams={teams} userId={userId} awarded={awarded} connections={connections} hideEvent empty="No teams yet. Already have one? Post it and list the roles you need." />
       </section>
 
       <section id="looking" className="mt-12 scroll-mt-6">
