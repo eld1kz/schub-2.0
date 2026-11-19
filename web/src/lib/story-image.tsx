@@ -2,10 +2,10 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { publicClient } from "@/lib/supabase/server";
-import { mediaUrl } from "@/lib/portfolio";
+import { photoUrl } from "@/lib/portfolio";
 import { openRoles } from "@/lib/teams";
 import { today } from "@/lib/opportunities";
-import { clampLines, eventLine, firstName, fitSize, headline, qrPath, type StoryTheme } from "@/lib/story";
+import { clampLines, textWidth, eventLine, firstName, fitSize, headline, qrPath, storyLang, storyText, type Lang, type StoryTheme } from "@/lib/story";
 
 // The shareable team images: a 1080x1920 story and a 1200x630 link preview. Satori draws them from
 // JSX with inline style objects (it has no stylesheet), so this file is the one place styles are inline.
@@ -49,6 +49,8 @@ type Person = { name: string; avatar_url: string };
 type Member = { name: string; photo: string | null };
 export type StoryData = {
   id: string;
+  // Korean when the team's title and roles are mostly Hangul
+  lang: Lang;
   title: string;
   open: string[];
   event: ReturnType<typeof eventLine>;
@@ -56,9 +58,10 @@ export type StoryData = {
   members: Member[];
 };
 
-// An uploaded photo as a data URL (the renderer won't fetch addresses itself), or null for initials
+// The member's photo (uploaded, else from Google) as a data URL, since the renderer won't fetch addresses
+// itself; null for initials
 async function photo(url: string) {
-  const src = mediaUrl(url);
+  const src = photoUrl(url);
   if (!src) return null;
   try {
     const res = await fetch(src, { signal: AbortSignal.timeout(3000) });
@@ -89,11 +92,13 @@ export async function loadStory(id: string): Promise<StoryData | null> {
   };
   const accepted = team.team_applications.filter((a) => a.status === "accepted");
   const people = [team.owner, ...accepted.map((a) => a.person)].filter((p): p is Person => p !== null);
+  const lang = storyLang([team.title, ...team.roles]);
   return {
     id: team.id,
+    lang,
     title: team.title,
     open: openRoles({ roles: team.roles, team_applications: accepted }),
-    event: eventLine(team.opportunity, today()),
+    event: eventLine(team.opportunity, today(), lang),
     eventTitle: team.opportunity?.title ?? null,
     members: await Promise.all(people.map(async (p) => ({ name: firstName(p.name), photo: await photo(p.avatar_url) }))),
   };
@@ -112,7 +117,8 @@ function Wordmark({ c, size }: { c: Palette; size: number }) {
 function EventLine({ s, c, size, width }: { s: StoryData; c: Palette; size: number; width: number }) {
   // No-break spaces: the renderer drops ordinary spaces at the edge of a span
   const left = s.event.left ? `\u00a0·\u00a0${s.event.left}` : "";
-  const name = clampLines(s.event.name, size, width - left.length * size * 0.6, 1, true);
+  // Mono with 0.04em tracking; Hangul comes from the wider fallback font
+  const name = clampLines(s.event.name, size * 1.07, width - textWidth(left, true) * size * 1.07, 1, true);
   return (
     <div style={{ display: "flex", fontFamily: MONO, fontSize: size, fontWeight: 500, letterSpacing: size * 0.04, color: c.ink2 }}>
       <span>{name}</span>
@@ -140,7 +146,7 @@ function Qr({ url, size }: { url: string; size: number }) {
   return <img src={`data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`} alt="" width={size} height={size} style={{ borderRadius: 16 }} />;
 }
 
-const allText = (s: StoryData) => [s.title, s.event.name, ...s.open, ...s.members.map((m) => m.name)].join(" ");
+const allText = (s: StoryData) => [s.title, s.event.name, s.event.left ?? "", storyText[s.lang].scan, ...s.open, ...s.members.map((m) => m.name)].join(" ");
 
 // Instagram puts its own buttons in the top and bottom 250px, so everything sits between them
 const STORY = { width: 1080, height: 1920, safe: 250, side: 88 };
@@ -148,7 +154,7 @@ const STORY = { width: 1080, height: 1920, safe: 250, side: 88 };
 export async function storyImage(s: StoryData, theme: StoryTheme, joinUrl: string) {
   const c = palettes[theme];
   const width = STORY.width - STORY.side * 2;
-  const { line, list } = headline(s.open, s.eventTitle);
+  const { line, list } = headline(s.open, s.eventTitle, s.lang);
   const size = fitSize(line, width, list.length > 0 ? 2 : 3, 132, 72);
   const shown = list.slice(0, 4);
   // Up to 4 faces; with more, 3 and a "+N"
@@ -169,7 +175,7 @@ export async function storyImage(s: StoryData, theme: StoryTheme, joinUrl: strin
               {shown.map((role) => (
                 <div key={role} style={{ display: "flex", fontSize: 38, lineHeight: 1.25, padding: "11px 0", borderTop: `2px solid ${c.line}` }}>{clampLines(role, 38, width, 1)}</div>
               ))}
-              {list.length > shown.length && <div style={{ display: "flex", fontSize: 30, lineHeight: 1.25, color: c.muted, paddingTop: 11, borderTop: `2px solid ${c.line}` }}>+ {list.length - shown.length} more</div>}
+              {list.length > shown.length && <div style={{ display: "flex", fontSize: 30, lineHeight: 1.25, color: c.muted, paddingTop: 11, borderTop: `2px solid ${c.line}` }}>{storyText[s.lang].moreRoles(list.length - shown.length)}</div>}
             </div>
           )}
           {/* With the roles listed there's room for two lines of pitch, so the bottom stays clear of Instagram's buttons */}
@@ -187,13 +193,13 @@ export async function storyImage(s: StoryData, theme: StoryTheme, joinUrl: strin
             {extra > 0 && (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, width: 124 }}>
                 <div style={{ display: "flex", width: 104, height: 104, borderRadius: 104, border: `2px solid ${c.line}`, alignItems: "center", justifyContent: "center", fontSize: 34, color: c.ink2 }}>+{extra}</div>
-                <div style={{ display: "flex", fontSize: 28, color: c.ink2 }}>more</div>
+                <div style={{ display: "flex", fontSize: 28, color: c.ink2 }}>{storyText[s.lang].morePeople(extra)}</div>
               </div>
             )}
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 16 }}>
             <Qr url={joinUrl} size={216} />
-            <div style={{ display: "flex", fontSize: 26, fontWeight: 600 }}>Scan to join on Schub</div>
+            <div style={{ display: "flex", fontSize: 26, fontWeight: 600 }}>{storyText[s.lang].scan}</div>
           </div>
         </div>
       </div>
@@ -206,10 +212,11 @@ export async function storyImage(s: StoryData, theme: StoryTheme, joinUrl: strin
 export async function previewImage(s: StoryData, theme: StoryTheme) {
   const c = palettes[theme];
   const width = 1200 - 64 * 2;
-  const { line, list } = headline(s.open, s.eventTitle);
+  const { line, list } = headline(s.open, s.eventTitle, s.lang);
   const size = fitSize(line, width, 2, 84, 48);
   const faces = s.members.slice(0, 5);
-  const names = s.members.slice(0, 3).map((m) => m.name).join(", ") + (s.members.length > 3 ? ` + ${s.members.length - 3}` : "");
+  const first = s.members.slice(0, 3).map((m) => m.name).join(", ");
+  const names = s.members.length > 3 ? storyText[s.lang].andMore(first, s.members.length - 3) : first;
 
   return new ImageResponse(
     (

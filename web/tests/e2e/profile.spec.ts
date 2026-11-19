@@ -115,3 +115,16 @@ test("replacing a photo or project image deletes the old file, and so does delet
   await expect(page.getByText("Image Project")).toBeHidden();
   expect(await filesOf(me)).toEqual([pathOf(profile?.avatar_url ?? "")]);
 });
+
+test("a member without an uploaded photo shows their Google photo", async ({ page }) => {
+  const db = service();
+  const google = "https://lh3.googleusercontent.com/a/e2e-photo=s96-c";
+  await db.from("profiles").update({ avatar_url: google }).eq("id", id(13));
+  try {
+    await page.goto(`/u/${id(13)}`);
+    // Through the image optimizer, at the larger size
+    await expect(page.getByRole("main").locator("img").first()).toHaveAttribute("src", new RegExp(encodeURIComponent("https://lh3.googleusercontent.com/a/e2e-photo=s256-c")));
+  } finally {
+    await db.from("profiles").update({ avatar_url: "" }).eq("id", id(13));
+  }
+});

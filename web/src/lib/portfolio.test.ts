@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { formatPeriod, mediaPath, mediaUrl, sortExperiences, toLink, webLink } from "./portfolio";
+import { formatPeriod, mediaPath, mediaUrl, photoUrl, sortExperiences, toLink, webLink } from "./portfolio";
 
 describe("formatPeriod", () => {
   const now = new Date("2026-11-19T12:00:00Z");
@@ -75,6 +75,17 @@ describe("mediaUrl", () => {
     expect(mediaUrl("https://abc.supabase.co.evil.com/storage/v1/object/public/media/x.png")).toBeNull();
     expect(mediaUrl("javascript:alert(1)")).toBeNull();
     expect(mediaUrl(null)).toBeNull();
+  });
+
+  it("photoUrl takes an uploaded photo, else only a Google account photo", () => {
+    const own = "https://abc.supabase.co/storage/v1/object/public/media/u1/x.png";
+    expect(photoUrl(own)).toBe(own);
+    expect(photoUrl("https://lh3.googleusercontent.com/a/ACg8ocK=s96-c")).toBe("https://lh3.googleusercontent.com/a/ACg8ocK=s256-c");
+    expect(photoUrl("https://lh3.googleusercontent.com/a/ACg8ocK")).toBe("https://lh3.googleusercontent.com/a/ACg8ocK");
+    expect(photoUrl("https://lh3.googleusercontent.com.evil.com/a/x")).toBeNull();
+    expect(photoUrl("http://lh3.googleusercontent.com/a/x")).toBeNull();
+    expect(photoUrl("https://avatars.githubusercontent.com/u/1")).toBeNull();
+    expect(photoUrl("")).toBeNull();
   });
 
   it("mediaPath gives the file's place in the bucket, only for our own images", () => {

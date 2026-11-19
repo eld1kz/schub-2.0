@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { id, signInAs } from "./auth";
+import { id, service, signInAs } from "./auth";
 
 // Student 14 (Kai) adds the award and tags 15 (Dana), an accepted connection
 async function confirmTag(page: Page, placement: string) {
@@ -9,6 +9,11 @@ async function confirmTag(page: Page, placement: string) {
   await waiting.getByRole("button", { name: "Confirm" }).click();
   await expect(waiting).toBeHidden();
 }
+
+// Starts from no "E2E Robot Cup" award, so the test can run again on the same database
+test.beforeEach(async () => {
+  await service().from("awards").delete().eq("user_id", id(14)).eq("event_name", "E2E Robot Cup");
+});
 
 test("add an award, tag a teammate, confirm; changing the placement asks again", async ({ browser }) => {
   const owner = await browser.newContext();

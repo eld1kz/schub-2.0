@@ -31,7 +31,8 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    remotePatterns: [new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/**`)],
+    // Uploaded images, and Google account photos for members who haven't uploaded one (google-photos.sql)
+    remotePatterns: [new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/**`), new URL("https://lh3.googleusercontent.com/**")],
   },
   turbopack: {
     rules: {

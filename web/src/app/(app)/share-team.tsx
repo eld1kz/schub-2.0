@@ -4,9 +4,10 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { qrPath, storyPath, type StoryTheme } from "@/lib/story";
 
-// Sharing a team as a story image (/teams/[id]/story.png). Which options show depends on what the browser can do,
-// never on its user agent: if it can share an image file (phones), "Share" sends it straight to Instagram, Kakao or
-// Telegram; otherwise (laptops) a QR code hands the image over to your phone, and the image can be copied.
+// Sharing a team as a story image (/teams/[id]/story.png). Which options show depends on what the device can do,
+// never on its user agent. With a mouse or trackpad (pointer: fine) it's a laptop: a QR code hands the image over
+// to your phone, the image can be copied, and Share (for AirDrop and the like) comes second. Otherwise, if it can
+// share an image file, it's a phone: "Share" sends it straight to Instagram, Kakao or Telegram.
 
 type Team = { teamId: string; title: string; version: string };
 
@@ -129,6 +130,7 @@ export function ShareTeamButton({ variant, ...team }: Team & { variant: "primary
   const [open, setOpen] = useState(false);
   const [layout, setLayout] = useState<"phone" | "laptop">("laptop");
   const [copyImage, setCopyImage] = useState(false);
+  const [shareFiles, setShareFiles] = useState(false);
   const [theme, setTheme] = useState<StoryTheme>("light");
   const { blob, failed } = useStoryBlob(team, theme, open);
   const actions = useActions(team, theme, blob);
@@ -136,7 +138,9 @@ export function ShareTeamButton({ variant, ...team }: Team & { variant: "primary
 
   function openDialog() {
     // Decided each time it opens, from what this browser supports
-    setLayout(canShareImages() ? "phone" : "laptop");
+    const files = canShareImages();
+    setLayout(files && !matchMedia("(pointer: fine)").matches ? "phone" : "laptop");
+    setShareFiles(files);
     setCopyImage(canCopyImages());
     setOrigin(location.origin);
     setOpen(true);
@@ -201,6 +205,7 @@ export function ShareTeamButton({ variant, ...team }: Team & { variant: "primary
                     </section>
                     <div className="flex flex-wrap gap-2.5">
                       {copyImage && <button type="button" onClick={actions.copyImage} disabled={!blob} className="btn-outline disabled:opacity-50">Copy image</button>}
+                      {shareFiles && <button type="button" onClick={actions.share} disabled={!blob} className="btn-outline gap-2 disabled:opacity-50"><ShareIcon />Share</button>}
                       <button type="button" onClick={actions.copyLink} className="btn-outline">Copy link</button>
                       <a {...actions.download} className="btn-outline">Download image</a>
                     </div>

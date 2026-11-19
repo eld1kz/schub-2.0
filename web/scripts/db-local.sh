@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 # Same order as CLAUDE.md. New migrations go at the end.
 MIGRATIONS=(
   schema opportunities contact teams profile portfolio connections-list auth notifications
-  goals experience-details people-requests opportunity-details awards length-limits public-read people-discover notification-limits participant-notes display-name own-images team-contact
+  goals experience-details people-requests opportunity-details awards length-limits public-read people-discover notification-limits participant-notes display-name own-images team-contact google-photos
 )
 
 npx supabase start
@@ -35,4 +35,16 @@ eval "$(npx supabase status -o env 2>/dev/null | grep -E '^(API_URL|PUBLISHABLE_
   echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${PUBLISHABLE_KEY:-$ANON_KEY}"
   echo "AUTH_PROVIDERS=google,github,email"
 } > .env.test.local
+
+# `db reset` restarts the API containers, and the REST API answers 503 for a few seconds while it reloads
+# the schema. Tests that started then failed at random (usually the first one), so wait until the REST API
+# serves a function from a late migration, and sign-in answers too.
+run_sql <(echo "notify pgrst, 'reload schema';")
+KEY="${PUBLISHABLE_KEY:-$ANON_KEY}"
+ready() {
+  [ "$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API_URL/rest/v1/rpc/skill_counts" -H "apikey: $KEY" -H 'content-type: application/json' -d '{}')" = 200 ] &&
+  [ "$(curl -s -o /dev/null -w '%{http_code}' "$API_URL/auth/v1/health" -H "apikey: $KEY")" = 200 ]
+}
+for _ in $(seq 1 60); do ready && break; sleep 1; done
+ready || { echo "Local Supabase API didn't come up" >&2; exit 1; }
 echo "Local Supabase ready at $API_URL"

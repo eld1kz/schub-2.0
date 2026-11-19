@@ -43,6 +43,15 @@ export function mediaUrl(url: string | null | undefined) {
   return url && url.startsWith(mediaPrefix()) ? url : null;
 }
 
+// A profile photo: an uploaded one, else the Google account photo (google-photos.sql copies it into
+// avatar_url only from Google's own image host). Google's are 96px by default; ask for 256.
+export function photoUrl(url: string | null | undefined) {
+  const own = mediaUrl(url);
+  if (own) return own;
+  if (!url || !/^https:\/\/lh3\.googleusercontent\.com\/[^\s"'<>]+$/.test(url)) return null;
+  return url.replace(/=s\d+(-c)?$/, "=s256-c");
+}
+
 // Where an uploaded image sits in the bucket ("<user id>/<file>"), or null for anything else
 export function mediaPath(url: string | null | undefined) {
   const image = mediaUrl(url);

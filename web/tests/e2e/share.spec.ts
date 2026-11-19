@@ -27,7 +27,7 @@ test("the story image is a 1080x1920 PNG for an open team, a full team and an ow
   expect((await request.get(`/teams/00000000-0000-4000-a000-0000000000ff/story.png`)).status()).toBe(404);
 });
 
-test("Korean and Russian titles render", async ({ request }) => {
+test("Korean and Russian titles render", async ({ page, request }) => {
   const db = service();
   const rows = [
     { id: "00000000-0000-4000-a000-0000000000e1", owner_id: id(3), title: "대학생을 위한 AI 스터디 메이트", roles: ["iOS 개발자", "디자이너"] },
@@ -41,6 +41,11 @@ test("Korean and Russian titles render", async ({ request }) => {
       }
       expect(await png(await request.get(`/teams/${r.id}/og.png`))).toMatchObject({ width: 1200, height: 630 });
     }
+    // A mostly Hangul team gets its link preview in Korean; the Russian one stays English
+    await page.goto(`/teams/${rows[0].id}`);
+    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute("content", "모집 중: iOS 개발자, 디자이너 · 자체 프로젝트");
+    await page.goto(`/teams/${rows[1].id}`);
+    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute("content", /^Needs: /);
   } finally {
     await db.from("teams").delete().in("id", rows.map((r) => r.id));
   }
@@ -54,9 +59,12 @@ test("team pages have a link preview with the open roles and the event", async (
   expect(await png(await request.get(new URL(image!).pathname))).toMatchObject({ width: 1200, height: 630 });
 });
 
-// What the browser says it can do, which picks the dialog's layout
-async function canShareFiles(context: BrowserContext, yes: boolean) {
-  await context.addInitScript((yes) => {
+// What the device says it can do, which picks the dialog's layout: whether it can share files, and whether
+// it has a mouse or trackpad (pointer: fine)
+async function device(context: BrowserContext, { files, fine }: { files: boolean; fine: boolean }) {
+  await context.addInitScript(({ files: yes, fine }) => {
+    const media = window.matchMedia.bind(window);
+    window.matchMedia = (query: string) => (query === "(pointer: fine)" ? ({ ...media(query), matches: fine, media: query } as MediaQueryList) : media(query));
     const shared: { type: string; name: string }[] = [];
     Object.assign(window, { shared });
     Object.defineProperty(Navigator.prototype, "canShare", { configurable: true, value: yes ? () => true : undefined });
@@ -64,7 +72,7 @@ async function canShareFiles(context: BrowserContext, yes: boolean) {
       configurable: true,
       value: yes ? async (data: ShareData) => void shared.push(...(data.files ?? []).map((f) => ({ type: f.type, name: f.name }))) : undefined,
     });
-  }, yes);
+  }, { files, fine });
 }
 
 async function download(page: Page) {
@@ -76,7 +84,7 @@ async function download(page: Page) {
 }
 
 test("on a laptop the share dialog offers the phone QR code, copying and Download", async ({ context, page }) => {
-  await canShareFiles(context, false);
+  await device(context, { files: false, fine: true });
   await page.goto(`/teams/${robotics}`);
   // Everyone sees Share, signed out too
   await page.getByRole("button", { name: "Share", exact: true }).click();
@@ -91,8 +99,22 @@ test("on a laptop the share dialog offers the phone QR code, copying and Downloa
   await download(page);
 });
 
+test("a laptop that can share files still gets the laptop layout, with Share as a secondary option", async ({ context, page }) => {
+  await device(context, { files: true, fine: true });
+  await page.goto(`/teams/${robotics}`);
+  await page.getByRole("button", { name: "Share", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Share this team" });
+  await expect(dialog.getByRole("region", { name: "Post to your story from your phone" })).toBeVisible();
+  // In this order after the QR code: Copy image (Chromium can copy images), Share, Copy link, Download
+  const actions = dialog.locator("[data-layout=laptop] button, [data-layout=laptop] a").filter({ hasText: /^(Copy image|Share|Copy link|Download image)$/ });
+  await expect(actions).toHaveText(["Copy image", "Share", "Copy link", "Download image"]);
+  await expect(dialog.getByRole("button", { name: "Share", exact: true })).toHaveClass(/btn-outline/);
+  await dialog.getByRole("button", { name: "Share", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { shared: unknown[] }).shared)).toHaveLength(1);
+});
+
 test("on a phone the share dialog sends the image file with Share", async ({ context, page }) => {
-  await canShareFiles(context, true);
+  await device(context, { files: true, fine: false });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/teams/${robotics}`);
   await page.getByRole("button", { name: "Share", exact: true }).click();
@@ -107,7 +129,7 @@ test("on a phone the share dialog sends the image file with Share", async ({ con
 });
 
 test("the phone share page opens with the theme from the QR code", async ({ context, page }) => {
-  await canShareFiles(context, true);
+  await device(context, { files: true, fine: false });
   await page.goto(`/teams/${robotics}/share?theme=dark`);
   await expect(page.getByRole("img", { name: /Story image/ })).toHaveAttribute("src", /theme=dark/);
   await expect(page.getByRole("button", { name: "dark" })).toHaveAttribute("aria-pressed", "true");

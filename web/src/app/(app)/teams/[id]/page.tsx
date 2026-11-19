@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { publicClient, requireUser } from "@/lib/supabase/server";
 import { myConnections } from "@/lib/connections";
 import { openRoles } from "@/lib/teams";
-import { storyVersion } from "@/lib/story";
+import { storyLang, storyVersion } from "@/lib/story";
 import { TeamView, type Application, type Team } from "./team-view";
 
 export const instant = false;
@@ -18,7 +18,12 @@ export async function generateMetadata(props: PageProps<"/teams/[id]">): Promise
   if (!data) return {};
   const team = data as unknown as PublicTeam;
   const open = openRoles(team);
-  const description = [open.length > 0 ? `Needs: ${open.join(", ")}` : "All roles filled", team.opportunity ? `For ${team.opportunity.title}` : "Own project"].join(" · ");
+  // Same language as the image: Korean when the title and roles are mostly Hangul
+  const description = (
+    storyLang([team.title, ...team.roles]) === "ko"
+      ? [open.length > 0 ? `모집 중: ${open.join(", ")}` : "팀 구성 완료", team.opportunity?.title ?? "자체 프로젝트"]
+      : [open.length > 0 ? `Needs: ${open.join(", ")}` : "All roles filled", team.opportunity ? `For ${team.opportunity.title}` : "Own project"]
+  ).join(" · ");
   const image = { url: `/teams/${id}/og.png?v=${storyVersion(team)}`, width: 1200, height: 630, alt: `${team.title}: ${description}` };
   return {
     title: `${team.title} · Schub`,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampLines, eventLine, firstName, fitSize, headline, qrPath, storyVersion, withArticle, wrap } from "./story";
+import { clampLines, eventLine, firstName, fitSize, headline, qrPath, storyLang, storyVersion, withArticle, wrap } from "./story";
 
 describe("withArticle", () => {
   it("picks a or an by the sound, and leaves other scripts alone", () => {
@@ -23,6 +23,34 @@ describe("headline", () => {
   it("says the team is set when every role is filled", () => {
     expect(headline([], "Imagine Cup").line).toBe("Team set for Imagine Cup");
     expect(headline([], null).line).toBe("Team set");
+  });
+});
+
+describe("Korean", () => {
+  it("is used when most of the title's and roles' letters are Hangul", () => {
+    expect(storyLang(["대학생을 위한 AI 스터디 메이트", "iOS 개발자", "디자이너"])).toBe("ko");
+    expect(storyLang(["AI study buddy", "iOS developer"])).toBe("en");
+    expect(storyLang(["Study buddy for 대학생", "Designer"])).toBe("en");
+    expect(storyLang(["Сервис для поиска команды", "Дизайнер"])).toBe("en");
+  });
+
+  it("reads naturally, with the right particles", () => {
+    expect(headline(["iOS 개발자"], null, "ko").line).toBe("iOS 개발자를 찾고 있어요");
+    expect(headline(["백엔드 개발자"], null, "ko").line).toBe("백엔드 개발자를 찾고 있어요");
+    expect(headline(["마케팅 담당"], null, "ko").line).toBe("마케팅 담당을 찾고 있어요");
+    expect(headline(["iOS 개발자", "디자이너"], null, "ko").line).toBe("iOS 개발자와 디자이너를 찾고 있어요");
+    expect(headline(["백엔드", "기획 담당"], null, "ko").line).toBe("백엔드와 기획 담당을 찾고 있어요");
+    expect(headline(["디자인팀", "PM"], null, "ko").line).toBe("디자인팀과 PM 찾고 있어요");
+    expect(headline(["백엔드", "디자이너", "PM"], "Imagine Cup", "ko")).toEqual({ line: "팀원 3명을 더 찾고 있어요", list: ["백엔드", "디자이너", "PM"] });
+    expect(headline([], "Imagine Cup", "ko").line).toBe("Imagine Cup 팀 구성 완료");
+    expect(headline([], null, "ko").line).toBe("팀 구성 완료");
+  });
+
+  it("counts days in Korean", () => {
+    const event = { title: "Imagine Cup", deadline: "2026-12-01", starts_at: null, ends_at: null };
+    expect(eventLine(event, "2026-11-19", "ko")).toEqual({ name: "IMAGINE CUP", left: "12일 남음", soon: false });
+    expect(eventLine(event, "2026-12-01", "ko").left).toBe("오늘까지");
+    expect(eventLine(null, "2026-11-19", "ko").name).toBe("자체 프로젝트");
   });
 });
 

@@ -14,21 +14,63 @@ export function withArticle(role: string) {
   return `${an ? "an" : "a"} ${role}`;
 }
 
+export type Lang = "en" | "ko";
+
+const HANGUL = /[\u1100-\u11ff\u3130-\u318f\uac00-\ud7a3]/g;
+
+// Korean when most of the letters in the team's title and roles are Hangul; English otherwise
+export function storyLang(texts: string[]): Lang {
+  const text = texts.join(" ");
+  const letters = text.match(/\p{L}/gu)?.length ?? 0;
+  const hangul = text.match(HANGUL)?.length ?? 0;
+  return letters > 0 && hangul > letters / 2 ? "ko" : "en";
+}
+
+// Korean particles depend on whether the word before ends in a consonant (받침). Known for Hangul and digits;
+// for anything else (a Latin word) the particle is left out, which reads naturally in casual Korean.
+function hasBatchim(word: string): boolean | null {
+  const last = [...word.trim()].pop() ?? "";
+  const code = last.charCodeAt(0);
+  if (code >= 0xac00 && code <= 0xd7a3) return (code - 0xac00) % 28 !== 0;
+  if (/\d/.test(last)) return "013678".includes(last); // 영 일 삼 육 칠 팔 end in a consonant
+  return null;
+}
+const particle = (word: string, withBatchim: string, without: string) => {
+  const b = hasBatchim(word);
+  return b === null ? "" : b ? withBatchim : without;
+};
+
+// Words on the images that aren't the team's own
+export const storyText = {
+  en: { ownProject: "OWN PROJECT", scan: "Scan to join on Schub", moreRoles: (n: number) => `+ ${n} more`, morePeople: () => "more", andMore: (names: string, n: number) => `${names} + ${n}` },
+  ko: { ownProject: "자체 프로젝트", scan: "스캔해서 Schub에서 지원하기", moreRoles: (n: number) => `+ ${n}개 더`, morePeople: (n: number) => `외 ${n}명`, andMore: (names: string, n: number) => `${names} 외 ${n}명` },
+};
+
 // The big line, and the roles listed under it when there are too many to say
-export function headline(open: string[], event: string | null): { line: string; list: string[] } {
+export function headline(open: string[], event: string | null, lang: Lang = "en"): { line: string; list: string[] } {
+  if (lang === "ko") {
+    if (open.length === 0) return { line: event ? `${event} 팀 구성 완료` : "팀 구성 완료", list: [] };
+    if (open.length === 1) return { line: `${open[0]}${particle(open[0], "을", "를")} 찾고 있어요`, list: [] };
+    if (open.length === 2) {
+      const and = particle(open[0], "과", "와");
+      return { line: `${open[0]}${and || ","} ${open[1]}${particle(open[1], "을", "를")} 찾고 있어요`, list: [] };
+    }
+    return { line: `팀원 ${open.length}명을 더 찾고 있어요`, list: open };
+  }
   if (open.length === 0) return { line: event ? `Team set for ${event}` : "Team set", list: [] };
   if (open.length === 1) return { line: `We need ${withArticle(open[0])}`, list: [] };
   if (open.length === 2) return { line: `We need ${withArticle(open[0])} and ${withArticle(open[1])}`, list: [] };
   return { line: `We need ${open.length} more people`, list: open };
 }
 
-// "IMAGINE CUP · 12 DAYS LEFT", "OWN PROJECT", or just the name once the event is over.
+// "IMAGINE CUP · 12 DAYS LEFT" ("12일 남음"), "OWN PROJECT", or just the name once the event is over.
 // `soon`: the time left is within a week, so it shows in the accent.
-export function eventLine(opportunity: ({ title: string } & Dates) | null, day: string) {
-  if (!opportunity) return { name: "OWN PROJECT", left: null, soon: false };
+export function eventLine(opportunity: ({ title: string } & Dates) | null, day: string, lang: Lang = "en") {
+  if (!opportunity) return { name: storyText[lang].ownProject, left: null, soon: false };
   const next = nextDate(opportunity, day).date;
   const n = next === null ? null : daysUntil(next, day);
-  const left = n === null ? null : n === 0 ? "TODAY" : n === 1 ? "1 DAY LEFT" : `${n} DAYS LEFT`;
+  const left =
+    n === null ? null : lang === "ko" ? (n === 0 ? "오늘까지" : `${n}일 남음`) : n === 0 ? "TODAY" : n === 1 ? "1 DAY LEFT" : `${n} DAYS LEFT`;
   return { name: opportunity.title.toLocaleUpperCase("en-US"), left, soon: n !== null && n <= SOON_DAYS };
 }
 
@@ -50,7 +92,7 @@ function charWidth(c: string, mono: boolean) {
   return 0.65;
 }
 
-const textWidth = (text: string, mono: boolean) => [...text].reduce((w, c) => w + charWidth(c, mono), 0);
+export const textWidth = (text: string, mono: boolean) => [...text].reduce((w, c) => w + charWidth(c, mono), 0);
 
 // Greedy word wrap with the estimates above; a word wider than the line is split
 export function wrap(text: string, size: number, width: number, mono = false) {
