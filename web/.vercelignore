@@ -1,0 +1,6 @@
+# Local-only files `vercel deploy` would otherwise upload (it already skips .next and node_modules)
+.next-local
+test-results
+playwright-report
+.gstack
+.env.test.local
