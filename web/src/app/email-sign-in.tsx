@@ -4,7 +4,8 @@ import { useActionState, useId, useState } from "react";
 import type { EmailSignInState } from "./actions";
 
 // Email field and "Send sign-in link"; once sent, "Check your inbox" until they pick a different email
-export function EmailSignIn({ action }: { action: (prev: EmailSignInState, formData: FormData) => Promise<EmailSignInState> }) {
+// `lastUsed`: this browser signed in with email last time
+export function EmailSignIn({ action, lastUsed }: { action: (prev: EmailSignInState, formData: FormData) => Promise<EmailSignInState>; lastUsed: boolean }) {
   const [state, send, pending] = useActionState(action, {});
   // The sent state they've moved on from with "Use a different email"
   const [dismissed, setDismissed] = useState<EmailSignInState | null>(null);
@@ -41,8 +42,10 @@ export function EmailSignIn({ action }: { action: (prev: EmailSignInState, formD
         className="input h-11"
       />
       {state.error && <p role="alert" className="text-[13px] text-red-600 dark:text-red-400">{state.error}</p>}
-      <button className="btn h-11 w-full text-[15px]" disabled={pending}>
-        {pending ? "Sending..." : "Send sign-in link"}
+      <button className="btn h-11 w-full gap-2 px-4 text-[15px]" disabled={pending}>
+        <span className="flex-1">{pending ? "Sending..." : "Send sign-in link"}</span>
+        {/* Muted for the accent button: its own text color, faded */}
+        {lastUsed && <span className="font-mono text-[11px] font-normal text-on-accent/75">Last used</span>}
       </button>
     </form>
   );

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { sendSignInLink, signIn } from "./actions";
-import { enabledMethods, type OAuthProvider } from "@/lib/auth-providers";
+import { LAST_METHOD_COOKIE, enabledMethods, lastUsedFirst, type OAuthProvider } from "@/lib/auth-providers";
 import { EmailSignIn } from "./email-sign-in";
 
 const icon = "h-[18px] w-[18px] shrink-0";
@@ -37,10 +38,33 @@ const providers: Record<OAuthProvider, { name: string; icon: ReactNode }> = {
 
 // Every sign-in option, on /login and on the landing page. Only methods listed in AUTH_PROVIDERS show.
 // `next` is where people land after signing in; `error` says the last attempt failed.
-export function SignInOptions({ next = "/", error = false }: { next?: string; error?: boolean }) {
-  const methods = enabledMethods();
-  const oauth = methods.filter((m) => m !== "email");
-  const email = methods.includes("email");
+// The method this browser signed in with last (a cookie set by /auth/callback) goes first, marked "Last used".
+export async function SignInOptions({ next = "/", error = false }: { next?: string; error?: boolean }) {
+  const { lastUsed, ordered } = lastUsedFirst(enabledMethods(), (await cookies()).get(LAST_METHOD_COOKIE)?.value);
+  const oauth = ordered.filter((m) => m !== "email");
+  const email = ordered.includes("email");
+
+  const buttons = oauth.map((p) => (
+    <form key={p} action={signIn.bind(null, p, next)}>
+      {/* The label takes its room at the right and the rest centers beside it, so they never overlap on narrow phones */}
+      <button className="btn-outline h-11 w-full gap-2 text-[15px]">
+        <span className="flex flex-1 items-center justify-center gap-2.5">
+          {providers[p].icon}
+          Continue with {providers[p].name}
+        </span>
+        {lastUsed === p && <span className="font-mono text-[11px] font-normal text-muted">Last used</span>}
+      </button>
+    </form>
+  ));
+  const divider = oauth.length > 0 && email && (
+    <div className="flex items-center gap-3 text-[13px] text-muted">
+      <span aria-hidden className="h-px flex-1 bg-border" />
+      or
+      <span aria-hidden className="h-px flex-1 bg-border" />
+    </div>
+  );
+  const form = email && <EmailSignIn action={sendSignInLink.bind(null, next)} lastUsed={lastUsed === "email"} />;
+
   return (
     <div className="flex w-full max-w-[360px] flex-col gap-3">
       {error && (
@@ -48,22 +72,7 @@ export function SignInOptions({ next = "/", error = false }: { next?: string; er
           Sign-in didn&apos;t work. Try again or use another option.
         </p>
       )}
-      {oauth.map((p) => (
-        <form key={p} action={signIn.bind(null, p, next)}>
-          <button className="btn-outline h-11 w-full gap-2.5 text-[15px]">
-            {providers[p].icon}
-            Continue with {providers[p].name}
-          </button>
-        </form>
-      ))}
-      {oauth.length > 0 && email && (
-        <div className="flex items-center gap-3 text-[13px] text-muted">
-          <span aria-hidden className="h-px flex-1 bg-border" />
-          or
-          <span aria-hidden className="h-px flex-1 bg-border" />
-        </div>
-      )}
-      {email && <EmailSignIn action={sendSignInLink.bind(null, next)} />}
+      {lastUsed === "email" ? <>{form}{divider}{buttons}</> : <>{buttons}{divider}{form}</>}
     </div>
   );
 }

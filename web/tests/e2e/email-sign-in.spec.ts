@@ -58,6 +58,32 @@ test("the email link brings a member back to the page they signed in from", asyn
   await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
 });
 
+test("after signing out, the method used last is marked and on top", async ({ context, page }) => {
+  const since = Date.now() - 1000;
+  await page.goto("/login");
+  await expect(page.getByText("Last used")).toHaveCount(0);
+  await send(page, "student04@schub.test");
+  await page.goto(await signInLink("student04@schub.test", since));
+  await expect(page).toHaveURL(/\/opportunities$/);
+  // The cookie holds the method's name and nothing else
+  expect((await context.cookies()).find((c) => c.name === "last_sign_in_method")?.value).toBe("email");
+
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
+
+  await page.goto("/login");
+  await expect(page.getByText("Last used")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: /Send sign-in link/ })).toContainText("Last used");
+  // Email moved above the provider buttons
+  const field = await page.getByRole("textbox", { name: "Email" }).boundingBox();
+  const google = await page.getByRole("button", { name: /Continue with Google/ }).boundingBox();
+  expect(field?.y ?? Infinity).toBeLessThan(google?.y ?? 0);
+
+  // The landing page marks it in both places it shows the options
+  await page.goto("/");
+  await expect(page.getByText("Last used")).toHaveCount(2);
+});
+
 test("a failed sign-in comes back to /login with a message", async ({ page }) => {
   // What a provider does when someone cancels, or an expired link: no code
   await page.goto(`/auth/callback?error=access_denied&next=${encodeURIComponent(team)}`);

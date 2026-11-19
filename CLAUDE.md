@@ -112,6 +112,8 @@ Privacy details that are easy to break:
 - Members sign in on `/login` with Google, GitHub, Kakao or an emailed link. `AUTH_PROVIDERS`
   (e.g. `google,github,email`) lists the methods that get a button; unset means Google only.
   Every "Sign in ..." button links to `/login?next=<this page>`. Failures land on `/login?error=1`.
+  `/auth/callback` sets the `last_sign_in_method` cookie (the method name only, 1 year, kept on sign-out);
+  the sign-in buttons put that method first with a "Last used" label.
   After the first sign-in with any method, `/onboarding` collects the basics.
 - Never trust client-sent user IDs; read the user from the server session
   (`requireUser` / `requireMember`).
