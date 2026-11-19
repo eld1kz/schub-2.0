@@ -9,11 +9,11 @@ test("signed-out visitors browse without an account", async ({ page }) => {
 
   await page.goto("/opportunities");
   await expect(page.getByText("Placeholder Hack Seoul 2027").first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
 
   await page.goto("/people");
   await expect(page.getByRole("main").getByRole("article").first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Sign in to connect" }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in to connect" }).first()).toBeVisible();
 
   await page.goto(`/u/${id(1)}`);
   await expect(page.getByRole("heading", { name: "Minji Placeholder", level: 1 })).toBeVisible();
@@ -21,7 +21,7 @@ test("signed-out visitors browse without an account", async ({ page }) => {
   await expect(page.getByText("t.me/fake_student_1")).toBeHidden();
 
   await page.goto("/teams/00000000-0000-4000-a000-000000000003");
-  await expect(page.getByRole("button", { name: "Sign in to apply" }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in to apply" }).first()).toBeVisible();
 
   expect(await accounts()).toBe(before);
   const cookies = await page.context().cookies();

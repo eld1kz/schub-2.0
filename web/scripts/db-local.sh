@@ -26,11 +26,13 @@ done
 echo "Seeding"
 run_sql supabase/seed.local.sql
 
-# Only the two public values the app needs; the tests read the rest from `supabase status`
+# Only the two public values the app needs, and the sign-in methods to show (email works against the
+# local inbox); the tests read the rest from `supabase status`
 eval "$(npx supabase status -o env 2>/dev/null | grep -E '^(API_URL|PUBLISHABLE_KEY|ANON_KEY)=')"
 {
   echo "# Written by scripts/db-local.sh. Local Supabase only; gitignored."
   echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
   echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${PUBLISHABLE_KEY:-$ANON_KEY}"
+  echo "AUTH_PROVIDERS=google,github,email"
 } > .env.test.local
 echo "Local Supabase ready at $API_URL"

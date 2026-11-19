@@ -33,9 +33,11 @@ web/src/
     actions.ts              ALL server actions (every DB write goes through here)
     layout.tsx              root layout, fonts
     globals.css             design tokens (light + dark), .btn .btn-outline .input .skill .label
-    page.tsx                redirects to /opportunities
-    onboarding/             first-time flow after Google sign-in
-    auth/callback/          OAuth callback
+    page.tsx                landing page for signed-out visitors; members go to /opportunities
+    login/                  every sign-in option; ?next= is where to go back to
+    sign-in-options.tsx     the sign-in buttons and email form, shared by / and /login
+    onboarding/             first-time flow after the first sign-in
+    auth/callback/          OAuth and email-link callback
     (app)/
       layout.tsx            top bar (tabs, search, bell, avatar), phone tab bar, nav counts
       nav-tabs.tsx          active-tab tabs (desktop) and bottom tab bar (phones)
@@ -107,7 +109,10 @@ Privacy details that are easy to break:
   them with `isGuest: true` and a `userId` that matches no row; server actions use
   `requireMember()`. Old anonymous guest sessions are treated the same, and the restrictive
   "Guests can't ..." policies still block them. Nothing creates anonymous users any more.
-- Members sign in with Google. After the first sign-in, `/onboarding` collects the basics.
+- Members sign in on `/login` with Google, GitHub, Kakao or an emailed link. `AUTH_PROVIDERS`
+  (e.g. `google,github,email`) lists the methods that get a button; unset means Google only.
+  Every "Sign in ..." button links to `/login?next=<this page>`. Failures land on `/login?error=1`.
+  After the first sign-in with any method, `/onboarding` collects the basics.
 - Never trust client-sent user IDs; read the user from the server session
   (`requireUser` / `requireMember`).
 - Pages that call `requireUser` export `instant = false` (see the comment in `server.ts`).

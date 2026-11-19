@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { formatPeriod, type Experience } from "@/lib/portfolio";
 
 // The profile's building blocks: no cards, sections split by full-width rules,
 // with a fixed label column so the structure comes from alignment.
@@ -83,5 +84,36 @@ export function ChipTable({ rows, mono = false }: { rows: { name: string; items:
         </div>
       ))}
     </div>
+  );
+}
+
+// Experience as a timeline: one dot per entry on the line, filled with the accent for current roles
+export function Timeline({ children }: { children: ReactNode }) {
+  return <div className="ml-[5px] flex flex-col border-l-2 border-line2 sm:ml-1.5">{children}</div>;
+}
+
+// `edit`: the owner's pencil
+export function TimelineEntry({ experience: e, edit }: { experience: Omit<Experience, "id">; edit?: ReactNode }) {
+  return (
+    <article className="group relative flex flex-col gap-0.5 pb-[22px] pl-[22px] last:pb-0 sm:gap-1 sm:pb-8 sm:pl-8">
+      <span aria-hidden className={`absolute top-1 -left-[7px] h-3 w-3 rounded-full border-2 border-background sm:top-[5px] sm:-left-2 sm:h-3.5 sm:w-3.5 ${e.end_date ? "bg-line2" : "bg-accent"}`} />
+      <div className="flex items-start justify-between gap-4">
+        <p className="font-mono text-xs font-medium text-ink2 tabular-nums sm:text-[13px]">{formatPeriod(e.start_date, e.end_date)}</p>
+        {/* Pointer devices: the pencil shows on hover or keyboard focus; touch screens always show it */}
+        {edit && (
+          <span className="-my-2 transition-opacity [@media(hover:hover)]:opacity-0 group-focus-within:opacity-100 group-hover:opacity-100">
+            {edit}
+          </span>
+        )}
+      </div>
+      <h3 className="text-[17px] leading-snug font-semibold sm:text-xl sm:tracking-[-0.01em]">{e.role}</h3>
+      <p className="text-sm text-ink2 sm:text-[15px]">{[e.company, e.type, e.location, e.remote && "Remote"].filter(Boolean).join(" · ")}</p>
+      {e.description && <p className="mt-1.5 max-w-[600px] text-sm leading-[1.55] whitespace-pre-wrap sm:text-[15px]">{e.description}</p>}
+      {e.skills.length > 0 && (
+        <ul className="mt-2 flex flex-wrap gap-1.5">
+          {e.skills.map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
+        </ul>
+      )}
+    </article>
   );
 }

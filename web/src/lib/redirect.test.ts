@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { safeRedirect } from "./redirect";
+import { localPath, safeRedirect } from "./redirect";
+
+describe("localPath", () => {
+  it("keeps a path on this site and drops anything else", () => {
+    expect(localPath("/teams/1?tab=mine")).toBe("/teams/1?tab=mine");
+    expect(localPath("//evil.com/x")).toBe("/");
+    expect(localPath("https://evil.com")).toBe("/");
+    expect(localPath(null)).toBe("/");
+  });
+});
 
 const origin = "https://schub.example";
 const to = (next: string | null) => safeRedirect(next, origin).href;

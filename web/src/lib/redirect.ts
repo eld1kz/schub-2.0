@@ -4,3 +4,9 @@ export function safeRedirect(next: string | null, origin: string) {
   const url = URL.parse(next ?? "/", origin);
   return url && url.origin === origin ? url : new URL("/", origin);
 }
+
+// The same check for a `next` that stays a path: "/teams/1?tab=mine", or "/" when it would leave the site
+export function localPath(next: string | null) {
+  const url = safeRedirect(next, "http://local.invalid");
+  return url.pathname + url.search;
+}

@@ -1,11 +1,14 @@
-import { signIn } from "@/app/actions";
+"use client";
 
-export function SignInButton({ label = "Sign in with Google", className = "btn" }: { label?: string; className?: string }) {
-  return (
-    <form action={signIn}>
-      <button className={className}>{label}</button>
-    </form>
-  );
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+
+// Goes to /login, which brings people back to this page after they sign in
+export function SignInButton({ label = "Sign in", className = "btn" }: { label?: string; className?: string }) {
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
+  const next = pathname + (search ? `?${search}` : "");
+  return <Link href={`/login?next=${encodeURIComponent(next)}`} className={className}>{label}</Link>;
 }
 
 // Shown in place of a form guests can't use

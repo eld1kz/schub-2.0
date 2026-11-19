@@ -11,19 +11,36 @@ import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, mediaPath, toLink } from 
 import { AWARD_DESCRIPTION_MAX, AWARD_TEAMMATES_MAX, PLACEMENTS } from "@/lib/awards";
 import { knownSkills } from "@/lib/skills";
 import { knownGoals } from "@/lib/goals";
+import { enabledMethods, type OAuthProvider } from "@/lib/auth-providers";
+import { localPath } from "@/lib/redirect";
 
-// Starts Google sign-in; /auth/callback brings people back to the page the button was on
-export async function signIn() {
+// Where a provider or an email link sends people back to: /auth/callback, then `next`
+async function callbackUrl(next: string) {
+  const origin = (await headers()).get("origin") ?? "";
+  return `${origin}/auth/callback?next=${encodeURIComponent(localPath(next))}`;
+}
+
+// Starts sign-in with a provider; /auth/callback brings people back to `next`
+export async function signIn(provider: OAuthProvider, next: string) {
+  const back = localPath(next);
+  if (!enabledMethods().includes(provider)) redirect(`/login?error=1&next=${encodeURIComponent(back)}`);
   const supabase = await createClient();
-  const h = await headers();
-  const origin = h.get("origin") ?? "";
-  const from = URL.parse(h.get("referer") ?? "");
-  const next = from && from.origin === origin ? from.pathname + from.search : "/";
-  const { data } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
-  });
-  redirect(data.url ?? next);
+  const { data, error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: await callbackUrl(back) } });
+  if (error || !data.url) redirect(`/login?error=1&next=${encodeURIComponent(back)}`);
+  redirect(data.url);
+}
+
+export type EmailSignInState = { email?: string; sent?: string; error?: string };
+
+// Emails a sign-in link; new addresses get an account (and onboarding) when they open it
+export async function sendSignInLink(next: string, _prev: EmailSignInState, formData: FormData): Promise<EmailSignInState> {
+  if (!enabledMethods().includes("email")) return { error: "Email sign-in isn't available yet." };
+  const email = String(formData.get("email") ?? "").trim();
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { email, error: "Enter a valid email address." };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: await callbackUrl(next) } });
+  if (error) return { email, error: error.status === 429 ? "Too many sign-in emails. Wait a minute and try again." : "Couldn't send the link. Try again." };
+  return { sent: email };
 }
 
 // Afterwards the visitor browses read-only, without an account
