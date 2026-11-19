@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 # Same order as CLAUDE.md. New migrations go at the end.
 MIGRATIONS=(
   schema opportunities contact teams profile portfolio connections-list auth notifications
-  goals experience-details people-requests opportunity-details awards length-limits public-read people-discover notification-limits participant-notes display-name
+  goals experience-details people-requests opportunity-details awards length-limits public-read people-discover notification-limits participant-notes display-name own-images
 )
 
 npx supabase start

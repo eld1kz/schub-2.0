@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { id, signInAs } from "./auth";
+import { id, service, signInAs } from "./auth";
 
 // Student 06 (Joon Dummyson) has a sparse profile: no bio, interests, links, experience or projects
 const me = id(6);
@@ -76,4 +76,42 @@ test("add and delete a project", async ({ page }) => {
   await page.getByRole("button", { name: "Edit E2E Project" }).click();
   await page.getByRole("dialog", { name: "Edit project" }).getByRole("button", { name: "Delete project" }).click();
   await expect(page.getByText("E2E Project")).toBeHidden();
+});
+
+// The smallest valid PNG, as a file to pick
+const png = (name: string) => ({
+  name,
+  mimeType: "image/png",
+  buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64"),
+});
+const filesOf = async (user: string) => ((await service().storage.from("media").list(user)).data ?? []).map((f) => `${user}/${f.name}`);
+const pathOf = (url: string) => decodeURIComponent(url.split("/storage/v1/object/public/media/")[1] ?? "");
+
+test("replacing a photo or project image deletes the old file, and so does deleting the project", async ({ page }) => {
+  const admin = service();
+
+  // Profile photo, twice: only the latest stays
+  for (const name of ["first.png", "second.png"]) {
+    await page.getByRole("button", { name: "Edit intro" }).click();
+    await saveDialog(page, "Edit intro", (d) => d.getByLabel(/^Photo/).setInputFiles(png(name)));
+  }
+  const { data: profile } = await admin.from("profiles").select("avatar_url").eq("id", me).single();
+  expect(await filesOf(me)).toEqual([pathOf(profile?.avatar_url ?? "")]);
+
+  // A project image, replaced: still one file per image in use
+  await page.getByRole("button", { name: "+ Add project" }).click();
+  await saveDialog(page, "Add project", async (d) => {
+    await d.getByLabel("Name").fill("Image Project");
+    await d.getByLabel(/^Image/).setInputFiles(png("project.png"));
+  });
+  await page.getByRole("button", { name: "Edit Image Project" }).click();
+  await saveDialog(page, "Edit project", (d) => d.getByLabel(/^Image/).setInputFiles(png("project-2.png")));
+  const { data: project } = await admin.from("projects").select("image_url").eq("user_id", me).eq("title", "Image Project").single();
+  expect((await filesOf(me)).sort()).toEqual([pathOf(profile?.avatar_url ?? ""), pathOf(project?.image_url ?? "")].sort());
+
+  // Deleting the project deletes its image
+  await page.getByRole("button", { name: "Edit Image Project" }).click();
+  await page.getByRole("dialog", { name: "Edit project" }).getByRole("button", { name: "Delete project" }).click();
+  await expect(page.getByText("Image Project")).toBeHidden();
+  expect(await filesOf(me)).toEqual([pathOf(profile?.avatar_url ?? "")]);
 });

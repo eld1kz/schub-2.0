@@ -38,9 +38,8 @@ describe("media bucket", () => {
     expect(await exists(path)).toBe(true);
   });
 
-  // Low: Storage needs a select policy to find a file before deleting it, and there is none, so the
-  // "Users delete their own images" policy never takes effect. Replaced photos stay public for good.
-  it.fails("KNOWN ISSUE (Low): you can delete your own image", async () => {
+  // Storage finds a file before deleting it, which needs the select policy in supabase/own-images.sql
+  it("you can delete your own image", async () => {
     const path = `${A}/${name()}`;
     await bucket(userA).upload(path, png, { contentType: "image/png" });
     await bucket(userA).remove([path]);

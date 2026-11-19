@@ -35,11 +35,18 @@ export const EXPERIENCE_DESCRIPTION_MAX = 400;
 export const projectColumns = "id, title, tagline, description, role, built_at, result, year, url, repo_url, image_url, skills";
 export const experienceColumns = "id, role, company, type, location, remote, start_date, end_date, description, skills";
 
+const mediaPrefix = () => `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/`;
+
 // Uploaded images live in the public "media" bucket. Anything else stored in an image
 // column is ignored, so a profile can't point the page at an arbitrary address.
 export function mediaUrl(url: string | null | undefined) {
-  const prefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/`;
-  return url && url.startsWith(prefix) ? url : null;
+  return url && url.startsWith(mediaPrefix()) ? url : null;
+}
+
+// Where an uploaded image sits in the bucket ("<user id>/<file>"), or null for anything else
+export function mediaPath(url: string | null | undefined) {
+  const image = mediaUrl(url);
+  return image ? decodeURIComponent(image.slice(mediaPrefix().length)) : null;
 }
 
 // Links are typed in by users; only plain web links are ever rendered as links.

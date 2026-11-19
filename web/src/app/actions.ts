@@ -7,7 +7,7 @@ import { createClient, requireMember, requireUser } from "@/lib/supabase/server"
 import { parseList } from "@/lib/match";
 import { opportunityTypes } from "@/lib/opportunities";
 import { linkWorks } from "@/lib/link-check";
-import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, toLink } from "@/lib/portfolio";
+import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, mediaPath, toLink } from "@/lib/portfolio";
 import { AWARD_DESCRIPTION_MAX, AWARD_TEAMMATES_MAX, PLACEMENTS } from "@/lib/awards";
 import { knownSkills } from "@/lib/skills";
 import { knownGoals } from "@/lib/goals";
@@ -103,6 +103,13 @@ async function uploadImage(supabase: Supabase, userId: string, file: FormDataEnt
   return { url: supabase.storage.from("media").getPublicUrl(path).data.publicUrl };
 }
 
+// Deletes an image this user uploaded (a replaced photo, or a new one whose save failed).
+// Anything else, like another folder or an outside link, is left alone.
+async function removeImage(supabase: Supabase, userId: string, url: string | null | undefined) {
+  const path = mediaPath(url);
+  if (path?.startsWith(`${userId}/`)) await supabase.storage.from("media").remove([path]);
+}
+
 // Profile sections are edited one at a time from the profile page. Each action saves only its own
 // fields and returns an error to show in the form, or nothing when it worked.
 // `field` names the form field the error belongs to, so the form can show it there.
@@ -121,10 +128,11 @@ async function updateMyProfile(fields: Record<string, unknown>): Promise<SaveRes
 
 export async function saveHero(formData: FormData): Promise<SaveResult> {
   const { supabase, userId } = await requireMember();
+  if (!field(formData, "name")) return { error: "Add your name." };
   const photo = await uploadImage(supabase, userId, formData.get("photo"));
   if (photo.error) return { error: photo.error };
-  if (!field(formData, "name")) return { error: "Add your name." };
-  return updateMyProfile({
+  const { data: before } = await supabase.from("profiles").select("avatar_url").eq("id", userId).single();
+  const result = await updateMyProfile({
     name: field(formData, "name"),
     headline: field(formData, "headline"),
     university: field(formData, "university"),
@@ -133,6 +141,9 @@ export async function saveHero(formData: FormData): Promise<SaveResult> {
     // Only replace the photo when a new one was chosen
     ...(photo.url ? { avatar_url: photo.url } : {}),
   });
+  // Keep exactly one photo: the old one goes once the new one is saved, the new one if saving failed
+  if (photo.url) await removeImage(supabase, userId, result.error ? photo.url : before?.avatar_url);
+  return result;
 }
 
 export async function saveAbout(formData: FormData): Promise<SaveResult> {
@@ -210,9 +221,12 @@ export async function saveProject(id: string | null, formData: FormData): Promis
     skills: knownSkills(formData.getAll("skills")),
     ...(image.url ? { image_url: image.url } : {}),
   };
+  const { data: before } = id ? await supabase.from("projects").select("image_url").eq("id", id).eq("user_id", userId).maybeSingle() : { data: null };
   const { error } = id
     ? await supabase.from("projects").update(fields).eq("id", id).eq("user_id", userId)
     : await supabase.from("projects").insert({ ...fields, user_id: userId });
+  // Keep exactly one image: the old one goes once the new one is saved, the new one if saving failed
+  if (image.url) await removeImage(supabase, userId, error ? image.url : before?.image_url);
   if (error) return { error: "Couldn't save the project. Check the fields and try again." };
   revalidatePath("/", "layout");
   return {};
@@ -220,8 +234,9 @@ export async function saveProject(id: string | null, formData: FormData): Promis
 
 export async function deleteProject(id: string): Promise<SaveResult> {
   const { supabase, userId } = await requireMember();
-  const { error } = await supabase.from("projects").delete().eq("id", id).eq("user_id", userId);
+  const { data: deleted, error } = await supabase.from("projects").delete().eq("id", id).eq("user_id", userId).select("image_url").maybeSingle();
   if (error) return { error: "Couldn't delete the project. Try again." };
+  await removeImage(supabase, userId, deleted?.image_url);
   revalidatePath("/", "layout");
   return {};
 }

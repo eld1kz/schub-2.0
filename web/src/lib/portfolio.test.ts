@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { formatPeriod, mediaUrl, sortExperiences, toLink, webLink } from "./portfolio";
+import { formatPeriod, mediaPath, mediaUrl, sortExperiences, toLink, webLink } from "./portfolio";
 
 describe("formatPeriod", () => {
   const now = new Date("2026-11-19T12:00:00Z");
@@ -75,5 +75,12 @@ describe("mediaUrl", () => {
     expect(mediaUrl("https://abc.supabase.co.evil.com/storage/v1/object/public/media/x.png")).toBeNull();
     expect(mediaUrl("javascript:alert(1)")).toBeNull();
     expect(mediaUrl(null)).toBeNull();
+  });
+
+  it("mediaPath gives the file's place in the bucket, only for our own images", () => {
+    expect(mediaPath("https://abc.supabase.co/storage/v1/object/public/media/u1/x.png")).toBe("u1/x.png");
+    expect(mediaPath("https://abc.supabase.co/storage/v1/object/public/media/u1/a%20b.png")).toBe("u1/a b.png");
+    expect(mediaPath("https://example.com/storage/v1/object/public/media/u1/x.png")).toBeNull();
+    expect(mediaPath("")).toBeNull();
   });
 });
