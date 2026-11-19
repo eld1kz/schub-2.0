@@ -375,8 +375,10 @@ export async function connect(receiverId: string) {
   revalidatePath("/", "layout");
 }
 
+// Server actions can be called with any arguments, so the status is checked here too
 export async function respond(connectionId: string, status: "accepted" | "declined") {
   const { supabase } = await requireMember();
+  if (status !== "accepted" && status !== "declined") return;
   await supabase.from("connections").update({ status }).eq("id", connectionId);
   revalidatePath("/", "layout");
 }
@@ -439,6 +441,7 @@ export async function addOpportunity(formData: FormData): Promise<SaveResult> {
 
 export async function setOpportunityStatus(id: string, status: "live" | "removed") {
   const { supabase } = await requireMember();
+  if (status !== "live" && status !== "removed") return;
   await supabase.from("opportunities").update({ status }).eq("id", id);
   revalidatePath("/opportunities");
 }
@@ -534,6 +537,7 @@ export async function withdrawApplication(teamId: string) {
 
 export async function respondToApplication(teamId: string, applicationId: string, status: "accepted" | "declined") {
   const { supabase } = await requireMember();
+  if (status !== "accepted" && status !== "declined") return;
   await supabase.from("team_applications").update({ status }).eq("id", applicationId).eq("team_id", teamId);
   revalidatePath("/", "layout");
 }
