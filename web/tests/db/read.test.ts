@@ -170,10 +170,10 @@ describe("functions", () => {
     expect((await guestClient.rpc("is_admin")).data).toBe(false);
   });
 
-  // Low: display_name() is security definer and executable by anon, so anyone with the public key
-  // can turn a profile id into a name without signing in. Fix: revoke execute from anon (see report).
-  it.fails("KNOWN ISSUE (Low): display_name is closed to signed-out visitors", async () => {
+  // Security definer: signed-out visitors can't use it to turn ids into names (supabase/display-name.sql)
+  it("display_name is closed to signed-out visitors", async () => {
     const { data, error } = await signedOut().rpc("display_name", { profile_id: A });
-    expect(error ?? data === null).toBeTruthy();
+    expect(error).not.toBeNull();
+    expect(data).toBeNull();
   });
 });
