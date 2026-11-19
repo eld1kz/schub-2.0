@@ -1,9 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 import { id, signInAs } from "./auth";
 
-// Student 16 (Hyun) adds the award and tags 17 (Rin)
+// Student 14 (Kai) adds the award and tags 15 (Dana), an accepted connection
 async function confirmTag(page: Page, placement: string) {
-  await page.goto(`/u/${id(17)}`);
+  await page.goto(`/u/${id(15)}`);
   const waiting = page.getByRole("region", { name: "Awards to confirm" });
   await expect(waiting).toContainText(`tagged you in ${placement}, E2E Robot Cup`);
   await waiting.getByRole("button", { name: "Confirm" }).click();
@@ -13,13 +13,13 @@ async function confirmTag(page: Page, placement: string) {
 test("add an award, tag a teammate, confirm; changing the placement asks again", async ({ browser }) => {
   const owner = await browser.newContext();
   const teammate = await browser.newContext();
-  await signInAs(owner, 16);
-  await signInAs(teammate, 17);
+  await signInAs(owner, 14);
+  await signInAs(teammate, 15);
   const ownerPage = await owner.newPage();
   const teammatePage = await teammate.newPage();
 
   // Add
-  await ownerPage.goto(`/u/${id(16)}`);
+  await ownerPage.goto(`/u/${id(14)}`);
   await ownerPage.getByRole("button", { name: "+ Add award" }).click();
   const dialog = ownerPage.getByRole("dialog", { name: "Add award" });
   await dialog.getByPlaceholder("Search opportunities on Schub").fill("E2E Robot Cup");
@@ -27,8 +27,8 @@ test("add an award, tag a teammate, confirm; changing the placement asks again",
   await dialog.locator("#award-placement").selectOption("Finalist");
   await dialog.getByLabel("Month", { exact: true }).selectOption("03");
   await dialog.getByLabel("Year", { exact: true }).selectOption("2026");
-  await dialog.getByPlaceholder("Search people on Schub by name").fill("Rin San");
-  await dialog.getByRole("button", { name: /Rin Sandbox/ }).click();
+  await dialog.getByPlaceholder("Search your connections and teammates").fill("Dana Mock");
+  await dialog.getByRole("button", { name: /Dana Mockingbird/ }).click();
   await dialog.getByRole("button", { name: "Save", exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(ownerPage.getByRole("heading", { name: "E2E Robot Cup" })).toBeVisible();

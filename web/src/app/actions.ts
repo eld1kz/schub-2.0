@@ -268,12 +268,15 @@ export async function deleteExperience(id: string): Promise<SaveResult> {
 
 export type PersonResult = { id: string; name: string; avatar_url: string; headline: string };
 
-// Teammate search in the award form: people by name, up to 6, never you
+// Teammate search in the award form: your connections and teammates by name, up to 6.
+// Only they can be tagged (supabase/notification-limits.sql).
 export async function searchPeople(query: string): Promise<PersonResult[]> {
-  const { supabase, userId } = await requireMember();
+  const { supabase } = await requireMember();
   const q = query.trim().slice(0, 50);
   if (q.length < 2) return [];
-  const { data } = await supabase.from("profiles").select("id, name, avatar_url, headline").ilike("name", containing(q)).neq("id", userId).order("name").limit(6);
+  const { data: candidates } = await supabase.rpc("tag_candidates");
+  const ids = ((candidates ?? []) as { id: string }[]).map((c) => c.id);
+  const { data } = await supabase.from("profiles").select("id, name, avatar_url, headline").ilike("name", containing(q)).in("id", ids).order("name").limit(6);
   return data ?? [];
 }
 
@@ -335,7 +338,12 @@ export async function saveAward(id: string | null, formData: FormData): Promise<
   if (untagged.error || added.error) {
     // A new award comes out again, so saving once more doesn't add it twice
     if (!id) await supabase.from("awards").delete().eq("id", award.id);
-    return { error: "Couldn't tag the teammates. Try again.", field: "teammates" };
+    // Refused by the tag policy or the daily cap (supabase/notification-limits.sql)
+    const message =
+      added.error?.code === "42501" ? "You can only tag your connections and teammates."
+      : added.error?.message.includes("a day") ? added.error.message
+      : "Couldn't tag the teammates. Try again.";
+    return { error: message, field: "teammates" };
   }
   revalidatePath("/", "layout");
   return {};
@@ -508,7 +516,11 @@ export async function applyToTeam(teamId: string, formData: FormData): Promise<S
     role: String(formData.get("role") ?? ""),
     note: String(formData.get("note") ?? "").trim(),
   });
-  if (error) return error.code === "23505" ? { error: "You've already applied to this team." } : { error: "Couldn't send it. Try again." };
+  if (error) {
+    if (error.code === "23505") return { error: "You've already applied to this team." };
+    // The daily cap (supabase/notification-limits.sql)
+    return { error: error.message.includes("a day") ? error.message : "Couldn't send it. Try again." };
+  }
   revalidatePath("/", "layout");
   return {};
 }

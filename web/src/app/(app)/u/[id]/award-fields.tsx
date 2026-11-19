@@ -199,13 +199,13 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
                 if (e.target.value.trim().length < 2) setPeople(null);
               }}
               onKeyDown={(e) => pickOnEnter(e, () => found[0] && addTeammate(found[0]))}
-              placeholder="Search people on Schub by name"
+              placeholder="Search your connections and teammates"
               autoComplete="off"
               className={input}
             />
             {people && (
               <ul className="mt-1.5 divide-y divide-border overflow-hidden rounded-md border border-line2">
-                {found.length === 0 && <li className="px-3 py-2.5 text-sm text-muted">No one else on Schub by that name.</li>}
+                {found.length === 0 && <li className="px-3 py-2.5 text-sm text-muted">None of your connections or teammates has that name.</li>}
                 {found.map((p) => (
                   <li key={p.id}>
                     <button type="button" onClick={() => addTeammate(p)} className={`${option} flex items-center gap-2.5`}>
