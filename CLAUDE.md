@@ -65,7 +65,7 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
 `people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read` → `people-discover` →
 `notification-limits` → `participant-notes` → `display-name` →
-`own-images`. `seed_opportunities.sql` and
+`own-images` → `team-contact`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -99,8 +99,9 @@ Privacy details that are easy to break:
 - `telegram` and `email` are not selectable on `profiles`; the column-level grants in
   `contact.sql` exclude them. A new `profiles` column needs its own
   `grant select (column) on profiles to authenticated`.
-- Contact details are read only through `contact_for`, which returns a row for yourself
-  or an accepted connection and nothing otherwise.
+- Contact details are read only through `contact_for`, which returns a row for yourself,
+  an accepted connection, or someone on the same team (owner or accepted member; `team-contact.sql`),
+  and nothing otherwise.
 - The `connections` table is private to the two people in each row; profile pages use
   `connections_of` for someone's accepted connections. Receivers accept or decline (update);
   senders can withdraw while pending (delete, `people-requests.sql`).

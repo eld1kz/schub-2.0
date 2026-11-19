@@ -15,11 +15,11 @@ import { SignInOptions } from "./sign-in-options";
 // Signed-out visitors get the landing page; members go straight to opportunities
 export const instant = false;
 
-// Short answers that hold for everyone: contact details follow contact_for (teams.sql), awards follow awards.sql
+// Short answers that hold for everyone: contact details follow contact_for (team-contact.sql), awards follow awards.sql
 const faq = [
   ["Is it free?", "Yes. Browsing, posting teams and asking to join them are all free."],
   ["Who can join?", "Students building for hackathons, competitions and their own projects. Anyone can browse without an account; to post or join a team, sign in and add your university and skills."],
-  ["Who sees my contact info?", "Only your connections, and the people on a team with you: the owner once they accept you, or the people you accept onto yours. Everyone else sees your profile without it."],
+  ["Who sees my contact info?", "Your connections and your teammates."],
   ["How do awards get confirmed?", "Add the award to your profile and tag your teammates. It's marked confirmed once one of them says yes, and goes back to them if you change it later."],
 ];
 

@@ -118,6 +118,33 @@ describe("contact details (telegram, email)", () => {
     expect(await contact(await signInAs(14), 1)).toHaveLength(1); // and back
   });
 
+  // supabase/team-contact.sql: the team is the owner plus everyone accepted
+  it("are visible between two accepted members of the same team", async () => {
+    expect(await contact(userA, 16)).toHaveLength(1); // A and 16 are both accepted on Testerson Robotics
+    expect(await contact(await signInAs(16), 1)).toHaveLength(1);
+    const eight = await signInAs(8); // 8 and 14 are both accepted on Full Sample Team
+    expect(await contact(eight, 14)).toHaveLength(1);
+    expect(await contact(await signInAs(14), 8)).toHaveLength(1);
+    expect(await contact(eight, 7)).toHaveLength(1); // and its owner
+  });
+
+  it("stay hidden between members of different teams", async () => {
+    expect(await contact(userA, 8)).toEqual([]); // A is on Testerson Robotics, 8 on Full Sample Team
+    expect(await contact(await signInAs(8), 1)).toEqual([]);
+    expect(await contact(await signInAs(16), 8)).toEqual([]);
+  });
+
+  it("stay hidden from pending applicants, both ways", async () => {
+    // A is pending on Prototype Fintech, where 17 is accepted and 19 is also pending
+    expect(await contact(userA, 17)).toEqual([]);
+    expect(await contact(await signInAs(17), 1)).toEqual([]);
+    expect(await contact(userA, 19)).toEqual([]);
+    // 9 and 15 are both pending on Mock Team With Pending
+    const nine = await signInAs(9);
+    expect(await contact(nine, 15)).toEqual([]);
+    expect(await contact(nine, 2)).toEqual([]); // nor its owner (9's connection request to 2 is pending)
+  });
+
   it("are hidden from everyone else", async () => {
     expect(await contact(userA, 2)).toEqual([]); // no relation
     expect(await contact(userA, 5)).toEqual([]); // A's request is pending
@@ -127,7 +154,6 @@ describe("contact details (telegram, email)", () => {
     expect(await contact(await signInAs(18), 1)).toEqual([]); // the owner can't see a pending applicant either
     expect(await contact(userB, 9)).toEqual([]); // pending applicant to B's team
     expect(await contact(userB, 10)).toEqual([]); // declined applicant to B's team
-    expect(await contact(userA, 16)).toEqual([]); // fellow member, not the owner: not shared (by design)
     expect(await contact(admin, 1)).toEqual([]); // admins get nothing extra
     expect(await contact(guestClient, 1)).toEqual([]);
     expect(await contact(signedOut(), 1)).toEqual([]);
