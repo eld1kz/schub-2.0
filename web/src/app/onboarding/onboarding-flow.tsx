@@ -8,29 +8,34 @@ import { Select } from "@/app/(app)/select";
 
 const years = [2025, 2026, 2027, 2028, 2029, 2030];
 const yearOptions = years.map((y) => ({ value: String(y), label: String(y) }));
+// The first step asks for a name too when the account doesn't have one
+const aboutYou = { title: "About you", note: "Your name and where you study. You can change both later on your profile." };
+const noName = "Add your name to continue.";
 const steps = [
   { title: "What do you study?", note: "So people know where you are. You can change it later on your profile." },
   { title: "What can you build?", note: "These decide who you get matched with. Pick at least one." },
   { title: "What are you looking for?", note: "Pick any that fit. Teams and people use this to find you." },
 ];
 
-type Props = { university: string; graduationYear: number; skills: string[]; goals: string[]; error?: string };
+type Props = { needsName: boolean; university: string; graduationYear: number; skills: string[]; goals: string[]; error?: string };
 
 function FieldMessage({ text }: { text: string }) {
   return text ? <p role="alert" className="mt-1.5 text-[13px] text-red-600 dark:text-red-400">{text}</p> : null;
 }
 
 // One form across three screens: earlier steps are only hidden, so Finish submits everything at once
-export function OnboardingFlow({ university, graduationYear, skills, goals, error }: Props) {
+export function OnboardingFlow({ needsName, university, graduationYear, skills, goals, error }: Props) {
   const [step, setStep] = useState(0);
   // A step's own check, shown under the field it's about
   const [problem, setProblem] = useState("");
   const [year, setYear] = useState(years.includes(graduationYear) ? String(graduationYear) : "");
   const form = useRef<HTMLFormElement>(null);
   const last = step === steps.length - 1;
+  const current = step === 0 && needsName ? aboutYou : steps[step];
 
   const next = () => {
     const data = new FormData(form.current ?? undefined);
+    if (step === 0 && needsName && !String(data.get("name") ?? "").trim()) return setProblem(noName);
     if (step === 0 && !String(data.get("university") ?? "").trim()) return setProblem("Add your university to continue.");
     if (step === 1 && data.getAll("skills").length === 0) return setProblem("Pick at least one skill to continue.");
     setProblem("");
@@ -61,17 +66,26 @@ export function OnboardingFlow({ university, graduationYear, skills, goals, erro
           {steps.map((s, i) => <span key={s.title} className={`h-1 flex-1 rounded-full ${i <= step ? "bg-accent" : "bg-line2"}`} />)}
         </div>
         <p className="font-mono text-xs font-medium tracking-[0.04em] text-muted">STEP {step + 1} OF {steps.length}</p>
-        <h1 className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-4xl sm:tracking-[-0.03em]">{steps[step].title}</h1>
-        <p className="text-[15px] text-ink2 sm:text-base">{steps[step].note}</p>
+        <h1 className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-4xl sm:tracking-[-0.03em]">{current.title}</h1>
+        <p className="text-[15px] text-ink2 sm:text-base">{current.note}</p>
       </div>
 
       <div className={step === 0 ? "space-y-5" : "hidden"}>
+        {needsName && (
+          <div>
+            <label htmlFor="name" className="mb-1.5 block text-sm font-medium">
+              Name<span aria-hidden className="ml-0.5 text-accent">*</span>
+            </label>
+            <input id="name" name="name" maxLength={80} autoFocus autoComplete="name" placeholder="Your full name" className="input h-11 sm:h-10" />
+            {step === 0 && problem === noName && <FieldMessage text={problem} />}
+          </div>
+        )}
         <div>
           <label htmlFor="university" className="mb-1.5 block text-sm font-medium">
             University<span aria-hidden className="ml-0.5 text-accent">*</span>
           </label>
-          <input id="university" name="university" defaultValue={university} maxLength={120} autoFocus placeholder="Korea University" className="input h-11 sm:h-10" />
-          {step === 0 && <FieldMessage text={problem} />}
+          <input id="university" name="university" defaultValue={university} maxLength={120} autoFocus={!needsName} placeholder="Korea University" className="input h-11 sm:h-10" />
+          {step === 0 && problem !== noName && <FieldMessage text={problem} />}
         </div>
         <div>
           <label htmlFor="graduation_year" className="mb-1.5 block text-sm font-medium">

@@ -11,7 +11,7 @@ export default async function OnboardingPage(props: PageProps<"/onboarding">) {
   const { error } = await props.searchParams;
   const { supabase, userId, isGuest } = await requireUser();
   if (isGuest) redirect("/opportunities");
-  const { data: p } = await supabase.from("profiles").select("university, graduation_year, skills, goals").eq("id", userId).maybeSingle();
+  const { data: p } = await supabase.from("profiles").select("name, university, graduation_year, skills, goals").eq("id", userId).maybeSingle();
 
   return (
     <>
@@ -26,6 +26,8 @@ export default async function OnboardingPage(props: PageProps<"/onboarding">) {
       {/* Room at the bottom on phones for the pinned buttons */}
       <main className="mx-auto w-full max-w-[560px] px-4 pt-10 pb-32 sm:pt-16 sm:pb-16">
         <OnboardingFlow
+          // Email sign-ups (and providers without a display name) arrive with no name
+          needsName={!p?.name.trim()}
           university={p?.university ?? ""}
           graduationYear={p?.graduation_year ?? 0}
           skills={knownSkills(p?.skills ?? [])}

@@ -40,7 +40,9 @@ test("a new email address gets a link, then onboarding", async ({ page }) => {
   await send(page, address);
   await page.goto(await signInLink(address, since));
   await expect(page).toHaveURL(/\/onboarding$/);
-  await expect(page.getByRole("heading", { name: "What do you study?" })).toBeVisible();
+  // No name comes with an email address, so onboarding asks for one
+  await expect(page.getByRole("heading", { name: "About you" })).toBeVisible();
+  await expect(page.getByLabel("Name")).toBeVisible();
 });
 
 test("the email link brings a member back to the page they signed in from", async ({ page }) => {

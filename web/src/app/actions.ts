@@ -199,6 +199,12 @@ export async function saveContact(formData: FormData): Promise<SaveResult> {
 // The three onboarding steps, saved together
 export async function completeOnboarding(formData: FormData) {
   const { supabase, userId } = await requireMember();
+  // Only asked for when the account has no name yet (email sign-ups); never overwrites one
+  const { data: me } = await supabase.from("profiles").select("name").eq("id", userId).single();
+  const needsName = !me?.name.trim();
+  const name = field(formData, "name");
+  if (needsName && !name) redirect(`/onboarding?error=${encodeURIComponent("Add your name.")}`);
+  if (name.length > 80) redirect(`/onboarding?error=${encodeURIComponent("Keep your name to 80 characters or fewer.")}`);
   const university = String(formData.get("university") ?? "").trim();
   const skills = knownSkills(formData.getAll("skills"));
   if (!university || skills.length === 0) redirect(`/onboarding?error=${encodeURIComponent("Add your university and at least one skill.")}`);
@@ -207,6 +213,7 @@ export async function completeOnboarding(formData: FormData) {
   const { error } = await supabase
     .from("profiles")
     .update({
+      ...(needsName ? { name } : {}),
       university,
       skills,
       goals: knownGoals(formData.getAll("goals")),

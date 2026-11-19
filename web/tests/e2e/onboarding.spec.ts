@@ -5,8 +5,9 @@ test("a new user goes through onboarding and lands on opportunities", async ({ c
   const userId = await signUpNew(context, "Newbie Testcase");
   await page.goto("/onboarding");
 
-  // Step 1: university is required
+  // Step 1: university is required. The account already has a name, so there's no name field.
   await expect(page.getByRole("heading", { name: "What do you study?" })).toBeVisible();
+  await expect(page.getByLabel("Name")).toHaveCount(0);
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.getByText("Add your university to continue.")).toBeVisible();
   await page.getByLabel("University").fill("KAIST");
@@ -30,4 +31,27 @@ test("a new user goes through onboarding and lands on opportunities", async ({ c
   await page.goto(`/u/${userId}`);
   await expect(page.getByText("KAIST").first()).toBeVisible();
   await expect(page.getByText("Rust").first()).toBeVisible();
+});
+
+// Email sign-ups have no name: step 1 asks for one first
+test("a new user without a name adds one in onboarding", async ({ context, page }) => {
+  const userId = await signUpNew(context, "");
+  await page.goto("/onboarding");
+
+  await expect(page.getByRole("heading", { name: "About you" })).toBeVisible();
+  await expect(page.getByLabel("Name")).toHaveAttribute("maxlength", "80");
+  await page.getByLabel("University").fill("KAIST");
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.getByText("Add your name to continue.")).toBeVisible();
+  await page.getByLabel("Name").fill("Nameless Testcase");
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+
+  await page.getByPlaceholder("Search skills").fill("Rust");
+  await page.getByRole("button", { name: "Rust", exact: true }).click();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("button", { name: "Finish" }).click();
+  await expect(page).toHaveURL(/\/opportunities$/);
+
+  await page.goto(`/u/${userId}`);
+  await expect(page.getByRole("heading", { name: "Nameless Testcase", level: 1 })).toBeVisible();
 });
