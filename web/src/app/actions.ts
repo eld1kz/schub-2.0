@@ -381,13 +381,19 @@ export async function answerAwardTag(awardId: string, status: "confirmed" | "dec
   revalidatePath("/", "layout");
 }
 
-export async function connect(receiverId: string) {
+// Used with useActionState (connect-button.tsx): returns a message to show when the request wasn't sent
+export async function connect(receiverId: string): Promise<SaveResult> {
   const { supabase, userId } = await requireMember();
   // If they already asked you, connecting back accepts their request instead of creating a second one
   const { data: theirs } = await supabase.from("connections").select("id").eq("sender_id", receiverId).eq("receiver_id", userId).maybeSingle();
   if (theirs) await supabase.from("connections").update({ status: "accepted" }).eq("id", theirs.id).eq("status", "pending");
-  else await supabase.from("connections").insert({ sender_id: userId, receiver_id: receiverId });
+  else {
+    const { error } = await supabase.from("connections").insert({ sender_id: userId, receiver_id: receiverId });
+    // The daily cap (supabase/notification-limits.sql)
+    if (error) return { error: error.message.includes("a day") ? error.message : "Couldn't send the request. Try again." };
+  }
   revalidatePath("/", "layout");
+  return {};
 }
 
 // Server actions can be called with any arguments, so the status is checked here too
