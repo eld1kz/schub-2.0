@@ -31,8 +31,13 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    // Uploaded images, and Google account photos for members who haven't uploaded one (google-photos.sql)
-    remotePatterns: [new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/**`), new URL("https://lh3.googleusercontent.com/**")],
+    // Uploaded images, and Google or GitHub account photos for members who haven't uploaded one (account-photos.sql)
+    remotePatterns: [
+      new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/**`),
+      new URL("https://lh3.googleusercontent.com/**"),
+      // Exactly the query photoUrl gives GitHub avatars, so the optimizer takes no other variations
+      { protocol: "https", hostname: "avatars.githubusercontent.com", pathname: "/**", search: "?v=4&s=256" },
+    ],
   },
   turbopack: {
     rules: {

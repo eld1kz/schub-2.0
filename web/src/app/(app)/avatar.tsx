@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { photoUrl } from "@/lib/portfolio";
 
-// Round photo (uploaded, else from Google), or initials when there's none. `className` sets the size; `square` is for the profile photo.
+// Round photo (uploaded, else from Google or GitHub), or initials when there's none. `className` sets the size; `square` is for the profile photo.
 export function Avatar({ url, name, className, sizes, priority = false, square = false }: { url: string; name: string; className: string; sizes: string; priority?: boolean; square?: boolean }) {
   const photo = photoUrl(url);
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";

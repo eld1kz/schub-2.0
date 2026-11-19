@@ -77,14 +77,18 @@ describe("mediaUrl", () => {
     expect(mediaUrl(null)).toBeNull();
   });
 
-  it("photoUrl takes an uploaded photo, else only a Google account photo", () => {
+  it("photoUrl takes an uploaded photo, else only a Google or GitHub account photo", () => {
     const own = "https://abc.supabase.co/storage/v1/object/public/media/u1/x.png";
     expect(photoUrl(own)).toBe(own);
     expect(photoUrl("https://lh3.googleusercontent.com/a/ACg8ocK=s96-c")).toBe("https://lh3.googleusercontent.com/a/ACg8ocK=s256-c");
     expect(photoUrl("https://lh3.googleusercontent.com/a/ACg8ocK")).toBe("https://lh3.googleusercontent.com/a/ACg8ocK");
     expect(photoUrl("https://lh3.googleusercontent.com.evil.com/a/x")).toBeNull();
     expect(photoUrl("http://lh3.googleusercontent.com/a/x")).toBeNull();
-    expect(photoUrl("https://avatars.githubusercontent.com/u/1")).toBeNull();
+    expect(photoUrl("https://avatars.githubusercontent.com/u/1?v=4")).toBe("https://avatars.githubusercontent.com/u/1?v=4&s=256");
+    expect(photoUrl("https://avatars.githubusercontent.com/u/1")).toBe("https://avatars.githubusercontent.com/u/1?v=4&s=256");
+    expect(photoUrl("https://avatars.githubusercontent.com/u/1?s=9999&x=1")).toBe("https://avatars.githubusercontent.com/u/1?v=4&s=256");
+    expect(photoUrl("https://avatars.githubusercontent.com.evil.com/u/1")).toBeNull();
+    expect(photoUrl("https://github.com/someone.png")).toBeNull();
     expect(photoUrl("")).toBeNull();
   });
 

@@ -43,13 +43,16 @@ export function mediaUrl(url: string | null | undefined) {
   return url && url.startsWith(mediaPrefix()) ? url : null;
 }
 
-// A profile photo: an uploaded one, else the Google account photo (google-photos.sql copies it into
-// avatar_url only from Google's own image host). Google's are 96px by default; ask for 256.
+// A profile photo: an uploaded one, else the Google or GitHub account photo (account-photos.sql copies it into
+// avatar_url, only from those two image hosts). Both come small by default; ask for 256px.
 export function photoUrl(url: string | null | undefined) {
   const own = mediaUrl(url);
   if (own) return own;
-  if (!url || !/^https:\/\/lh3\.googleusercontent\.com\/[^\s"'<>]+$/.test(url)) return null;
-  return url.replace(/=s\d+(-c)?$/, "=s256-c");
+  if (!url || /[\s"'<>]/.test(url)) return null;
+  if (url.startsWith("https://lh3.googleusercontent.com/")) return url.replace(/=s\d+(-c)?$/, "=s256-c");
+  // Always the same query (next.config allows only this one)
+  if (url.startsWith("https://avatars.githubusercontent.com/")) return `https://avatars.githubusercontent.com${new URL(url).pathname}?v=4&s=256`;
+  return null;
 }
 
 // Where an uploaded image sits in the bucket ("<user id>/<file>"), or null for anything else

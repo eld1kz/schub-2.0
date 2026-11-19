@@ -71,7 +71,7 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
 `people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read` → `people-discover` →
 `notification-limits` → `participant-notes` → `display-name` →
-`own-images` → `team-contact` → `google-photos`. `seed_opportunities.sql` and
+`own-images` → `team-contact` → `google-photos` → `account-photos`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -121,8 +121,8 @@ Privacy details that are easy to break:
 - Members sign in on `/login` with Google, GitHub, Kakao or an emailed link. `AUTH_PROVIDERS`
   (e.g. `google,github,email`) lists the methods that get a button; unset means Google only.
   Every "Sign in ..." button links to `/login?next=<this page>`. Failures land on `/login?error=1`.
-  A member's Google account photo is copied into `profiles.avatar_url` while they have no uploaded photo
-  (`google-photos.sql`); `photoUrl` in `lib/portfolio.ts` shows only uploaded or `lh3.googleusercontent.com` photos.
+  A member's Google or GitHub account photo is copied into `profiles.avatar_url` while they have no uploaded
+  photo (`account-photos.sql`); `photoUrl` in `lib/portfolio.ts` shows only uploaded photos and those two hosts.
   `/auth/callback` sets the `last_sign_in_method` cookie (the method name only, 1 year, kept on sign-out,
   which lands on `/login`);
   the sign-in buttons put that method first with a "Last used" label.

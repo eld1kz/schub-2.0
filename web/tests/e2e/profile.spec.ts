@@ -116,14 +116,19 @@ test("replacing a photo or project image deletes the old file, and so does delet
   expect(await filesOf(me)).toEqual([pathOf(profile?.avatar_url ?? "")]);
 });
 
-test("a member without an uploaded photo shows their Google photo", async ({ page }) => {
+test("a member without an uploaded photo shows their Google or GitHub photo", async ({ page }) => {
   const db = service();
-  const google = "https://lh3.googleusercontent.com/a/e2e-photo=s96-c";
-  await db.from("profiles").update({ avatar_url: google }).eq("id", id(13));
+  const photos = [
+    ["https://lh3.googleusercontent.com/a/e2e-photo=s96-c", "https://lh3.googleusercontent.com/a/e2e-photo=s256-c"],
+    ["https://avatars.githubusercontent.com/u/1?v=4", "https://avatars.githubusercontent.com/u/1?v=4&s=256"],
+  ];
   try {
-    await page.goto(`/u/${id(13)}`);
-    // Through the image optimizer, at the larger size
-    await expect(page.getByRole("main").locator("img").first()).toHaveAttribute("src", new RegExp(encodeURIComponent("https://lh3.googleusercontent.com/a/e2e-photo=s256-c")));
+    for (const [stored, shown] of photos) {
+      await db.from("profiles").update({ avatar_url: stored }).eq("id", id(13));
+      await page.goto(`/u/${id(13)}`);
+      // Through the image optimizer, at the larger size
+      await expect(page.getByRole("main").locator("img").first()).toHaveAttribute("src", new RegExp(encodeURIComponent(shown).replace(/[?.*+]/g, "\\$&")));
+    }
   } finally {
     await db.from("profiles").update({ avatar_url: "" }).eq("id", id(13));
   }

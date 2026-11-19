@@ -58,7 +58,7 @@ export type StoryData = {
   members: Member[];
 };
 
-// The member's photo (uploaded, else from Google) as a data URL, since the renderer won't fetch addresses
+// The member's photo (uploaded, else from Google or GitHub) as a data URL, since the renderer won't fetch addresses
 // itself; null for initials
 async function photo(url: string) {
   const src = photoUrl(url);
