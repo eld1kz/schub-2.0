@@ -18,7 +18,12 @@ The repo has two apps on the same Supabase project:
 - Runs locally at http://localhost:3100 (`npx next dev -p 3100` in `web/`); deploy target is Vercel
 - This Next version differs from older docs: read `web/node_modules/next/dist/docs/`
   before using an API you're unsure of (see `web/AGENTS.md`)
-- No test suite. Check changes with `npx tsc --noEmit`, `npx eslint src` and `npx next build` in `web/`
+- Check changes with `npx tsc --noEmit`, `npx eslint src` and `npx next build` in `web/`
+- Tests, all in `web/`: `npm test` (Vitest unit tests next to the code), `npm run test:db` (permission
+  tests in `tests/db/`) and `npm run test:e2e` (Playwright, `tests/e2e/`). The last two need Docker:
+  they run `npm run db:local` first, which starts a local Supabase, applies every migration and loads
+  `supabase/seed.local.sql`. `npm run dev:local` serves the app on port 3101 against that local database.
+  Tests never touch the real project. Known open issues are `it.fails` tests marked KNOWN ISSUE.
 
 ## Web structure
 ```
@@ -55,7 +60,7 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `schema` → `opportunities` → `contact` → `teams` → `profile` → `portfolio` →
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
 `people-requests` → `opportunity-details` → `awards`. `seed_opportunities.sql` and
-`fix_admin.sql` are one-off helpers. New schema changes get a new file with a header
+`fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
 Tables:

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { safeRedirect } from "@/lib/redirect";
 
 // Google sends people back here after sign-in; the code becomes the session cookie
 export async function GET(request: NextRequest) {
@@ -15,6 +16,5 @@ export async function GET(request: NextRequest) {
     }
   }
   // Back to where they started, but only on this site
-  const next = new URL(searchParams.get("next") ?? "/", origin);
-  return NextResponse.redirect(next.origin === origin ? next : new URL("/", origin));
+  return NextResponse.redirect(safeRedirect(searchParams.get("next"), origin));
 }

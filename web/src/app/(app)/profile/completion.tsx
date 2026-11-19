@@ -30,10 +30,14 @@ function checks(p: Fields) {
   ];
 }
 
-export function ProfileCompletion({ profile }: { profile: Fields }) {
+// The score out of 100 and the hints for what's still missing
+export function completionScore(profile: Fields) {
   const all = checks(profile);
-  const score = all.reduce((sum, c) => sum + (c.done ? c.points : 0), 0);
-  const missing = all.filter((c) => !c.done);
+  return { score: all.reduce((sum, c) => sum + (c.done ? c.points : 0), 0), missing: all.filter((c) => !c.done) };
+}
+
+export function ProfileCompletion({ profile }: { profile: Fields }) {
+  const { score, missing } = completionScore(profile);
 
   if (score === 100) return <p className="text-sm text-ink2">Profile complete</p>;
 
