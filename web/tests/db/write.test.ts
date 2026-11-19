@@ -304,6 +304,19 @@ describe("opportunities", () => {
     expectRefused(await userA.from("opportunities").insert({ ...base, url: "javascript:alert(1)//x.y" }));
   });
 
+  it("you can change your 'looking for a team' note the way the app saves it (upsert), and only yours", async () => {
+    const mine = { opportunity_id: opportunityId(1), user_id: id(5) };
+    const user5 = await signInAs(5);
+    expect((await user5.from("opportunity_participants").upsert({ ...mine, note: "Changed by a test" })).error).toBeNull();
+    expect((await one("opportunity_participants", mine)).note).toBe("Changed by a test");
+    await expectNoChange(["opportunity_participants"], async () => {
+      // Not onto someone else, and not someone else's
+      expectRefused(await user5.from("opportunity_participants").update({ user_id: id(9) }).match(mine));
+      await user5.from("opportunity_participants").update({ note: "Hacked" }).eq("user_id", id(19));
+    });
+    await service.from("opportunity_participants").update({ note: "iOS dev looking for a team" }).match(mine);
+  });
+
   it("reports and 'looking for a team' are only ever your own", async () => {
     await expectNoChange(["opportunity_reports", "opportunity_participants"], async () => {
       expectRefused(await userA.from("opportunity_reports").insert({ opportunity_id: opportunityId(1), user_id: B, reason: "fake" }));
