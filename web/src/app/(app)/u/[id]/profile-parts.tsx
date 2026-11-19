@@ -85,13 +85,3 @@ export function ChipTable({ rows, mono = false }: { rows: { name: string; items:
     </div>
   );
 }
-
-// Initials of an organization on a chip, in place of a logo
-export function OrgMark({ name }: { name: string }) {
-  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
-  return (
-    <div aria-hidden className="grid h-9 w-9 place-items-center rounded-md bg-chip text-[13px] font-semibold text-ink2 sm:h-11 sm:w-11 sm:text-[15px]">
-      {initials}
-    </div>
-  );
-}

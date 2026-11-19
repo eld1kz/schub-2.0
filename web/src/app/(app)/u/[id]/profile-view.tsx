@@ -10,7 +10,7 @@ import { About } from "./about";
 import type { AwardOptions } from "./award-fields";
 import { AwardsSection, HeroAward, PendingTags, Placement } from "./awards";
 import { CopyLinkButton } from "./copy-link";
-import { ChipTable, EmptyPrompt, KeyValue, OrgMark, Section, SideBlock } from "./profile-parts";
+import { ChipTable, EmptyPrompt, KeyValue, Section, SideBlock } from "./profile-parts";
 import { AboutEdit, ContactEdit, ExperienceEdit, HeroEdit, InterestsEdit, LinksEdit, ProjectEdit, SkillsEdit } from "./section-edits";
 import { ToastProvider } from "./toast";
 
@@ -218,29 +218,28 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
           {(experiences.length > 0 || canEdit) && (
             <Section title="Experience" quiet={experiences.length === 0} owner={canEdit} add={canEdit && experiences.length > 0 && <ExperienceEdit trigger="link" />}>
               {experiences.length > 0 ? (
-                <div className="flex flex-col gap-5 sm:gap-7">
+                // Timeline: one dot per entry on the line, filled with the accent for current roles
+                <div className="ml-[5px] flex flex-col border-l-2 border-line2 sm:ml-1.5">
                   {experiences.map((e) => (
-                    <article key={e.id} className="grid grid-cols-[36px_minmax(0,1fr)] gap-3 sm:grid-cols-[44px_minmax(0,1fr)] sm:gap-4">
-                      <OrgMark name={e.company} />
-                      <div className="flex flex-col gap-0.5 sm:gap-[3px]">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                            <h3 className="text-[15px] font-semibold sm:text-[17px]">{e.role}</h3>
-                            {!e.end_date && <span className="rounded-[3px] border border-accent px-1.5 font-mono text-[11px] font-medium text-accent">CURRENT</span>}
-                          </div>
-                          {canEdit && <span className="-my-1.5"><ExperienceEdit experience={e} trigger="edit" /></span>}
-                        </div>
-                        <p className="text-sm text-ink2 sm:text-[15px]">{[e.company, e.type].filter(Boolean).join(" · ")}</p>
-                        <p className="text-[13px] text-muted tabular-nums sm:text-sm">
-                          {[formatPeriod(e.start_date, e.end_date), e.location, e.remote && "Remote"].filter(Boolean).join(" · ")}
-                        </p>
-                        {e.description && <p className="mt-2 max-w-[600px] text-sm leading-normal whitespace-pre-wrap sm:text-[15px]">{e.description}</p>}
-                        {e.skills.length > 0 && (
-                          <ul className="mt-2 flex flex-wrap gap-1.5">
-                            {e.skills.map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
-                          </ul>
+                    <article key={e.id} className="group relative flex flex-col gap-0.5 pb-[22px] pl-[22px] last:pb-0 sm:gap-1 sm:pb-8 sm:pl-8">
+                      <span aria-hidden className={`absolute top-1 -left-[7px] h-3 w-3 rounded-full border-2 border-background sm:top-[5px] sm:-left-2 sm:h-3.5 sm:w-3.5 ${e.end_date ? "bg-line2" : "bg-accent"}`} />
+                      <div className="flex items-start justify-between gap-4">
+                        <p className="font-mono text-xs font-medium text-ink2 tabular-nums sm:text-[13px]">{formatPeriod(e.start_date, e.end_date)}</p>
+                        {/* Pointer devices: the pencil shows on hover or keyboard focus; touch screens always show it */}
+                        {canEdit && (
+                          <span className="-my-2 transition-opacity [@media(hover:hover)]:opacity-0 group-focus-within:opacity-100 group-hover:opacity-100">
+                            <ExperienceEdit experience={e} trigger="edit" />
+                          </span>
                         )}
                       </div>
+                      <h3 className="text-[17px] leading-snug font-semibold sm:text-xl sm:tracking-[-0.01em]">{e.role}</h3>
+                      <p className="text-sm text-ink2 sm:text-[15px]">{[e.company, e.type, e.location, e.remote && "Remote"].filter(Boolean).join(" · ")}</p>
+                      {e.description && <p className="mt-1.5 max-w-[600px] text-sm leading-[1.55] whitespace-pre-wrap sm:text-[15px]">{e.description}</p>}
+                      {e.skills.length > 0 && (
+                        <ul className="mt-2 flex flex-wrap gap-1.5">
+                          {e.skills.map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
+                        </ul>
+                      )}
                     </article>
                   ))}
                 </div>
