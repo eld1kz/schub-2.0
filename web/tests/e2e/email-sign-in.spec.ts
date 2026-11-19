@@ -68,10 +68,9 @@ test("after signing out, the method used last is marked and on top", async ({ co
   // The cookie holds the method's name and nothing else
   expect((await context.cookies()).find((c) => c.name === "last_sign_in_method")?.value).toBe("email");
 
+  // Signing out lands on /login
   await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
-
-  await page.goto("/login");
+  await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByText("Last used")).toHaveCount(1);
   await expect(page.getByRole("button", { name: /Send sign-in link/ })).toContainText("Last used");
   // Email moved above the provider buttons

@@ -60,7 +60,7 @@ function PeopleStack({ people }: { people: AwardPerson[] }) {
 }
 
 // One award on the profile of `profileId`: their own, or one they confirmed as a teammate ("with Hana")
-function AwardItem({ award: a, profileId, edit, waiting }: { award: Award; profileId: string; edit?: ReactNode; waiting: number }) {
+export function AwardItem({ award: a, profileId, edit, waiting }: { award: Award; profileId: string; edit?: ReactNode; waiting: number }) {
   const byTeammate = a.user_id !== profileId;
   const others = awardPeople(a, profileId);
   const proof = webLink(a.proof_url);

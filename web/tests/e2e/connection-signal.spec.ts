@@ -45,7 +45,10 @@ test("signed-out visitors never see the connection signal", async ({ page }) => 
   for (const path of ["/", "/teams", "/opportunities", hack, robotics]) {
     await page.goto(path);
     await expect(page.getByRole("main").getByRole("article").first()).toBeVisible();
-    // The signals themselves; the Find teams intro may still mention connections in general
-    await expect(page.getByText(/^(your connection|Your connection|\d+ of your connections (is|are) going)$/), path).toHaveCount(0);
+    // The signals themselves; the Find teams intro may still mention connections in general,
+    // and the landing page's sample previews show a made-up one
+    const signal = /^(your connection|Your connection|\d+ of your connections (is|are) going)$/;
+    const inSamples = await page.locator("[data-sample]").getByText(signal).count();
+    await expect(page.getByText(signal), path).toHaveCount(inSamples);
   }
 });

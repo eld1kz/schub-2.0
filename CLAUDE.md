@@ -34,6 +34,7 @@ web/src/
     layout.tsx              root layout, fonts
     globals.css             design tokens (light + dark), .btn .btn-outline .input .skill .label
     page.tsx                landing page for signed-out visitors; members go to /opportunities
+    landing-samples.tsx     the landing page's sample previews, built from app components (inert, data-sample)
     login/                  every sign-in option; ?next= is where to go back to
     sign-in-options.tsx     the sign-in buttons and email form, shared by / and /login
     onboarding/             first-time flow after the first sign-in
@@ -113,7 +114,8 @@ Privacy details that are easy to break:
 - Members sign in on `/login` with Google, GitHub, Kakao or an emailed link. `AUTH_PROVIDERS`
   (e.g. `google,github,email`) lists the methods that get a button; unset means Google only.
   Every "Sign in ..." button links to `/login?next=<this page>`. Failures land on `/login?error=1`.
-  `/auth/callback` sets the `last_sign_in_method` cookie (the method name only, 1 year, kept on sign-out);
+  `/auth/callback` sets the `last_sign_in_method` cookie (the method name only, 1 year, kept on sign-out,
+  which lands on `/login`);
   the sign-in buttons put that method first with a "Last used" label.
   After the first sign-in with any method, `/onboarding` collects the basics.
 - Never trust client-sent user IDs; read the user from the server session

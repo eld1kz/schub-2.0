@@ -43,11 +43,11 @@ export async function sendSignInLink(next: string, _prev: EmailSignInState, form
   return { sent: email };
 }
 
-// Afterwards the visitor browses read-only, without an account
+// Back to /login, where the method used last (its cookie outlives the session) is marked
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/opportunities");
+  redirect("/login");
 }
 
 export type SearchResults = { people: { id: string; name: string }[]; teams: { id: string; title: string }[] };
