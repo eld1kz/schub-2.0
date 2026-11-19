@@ -47,24 +47,3 @@ export function dateRange(start: string | null, end: string | null) {
 
 // Where it happens: the place, "Online", or both
 export const placeLabel = (o: { location: string; online: boolean }) => [o.location, o.online && "Online"].filter(Boolean).join(" · ");
-
-// Rejects links that don't resolve or are gone (404/410). Sites that block bots (403, 429)
-// still count as working, since a person can open them.
-export async function linkWorks(url: string) {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return false;
-  }
-  // Only public websites: no localhost, bare hostnames or raw IP addresses.
-  if (!/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes(".") || /^[\d.]+$|:/.test(parsed.hostname)) {
-    return false;
-  }
-  try {
-    const res = await fetch(parsed, { redirect: "follow", signal: AbortSignal.timeout(8000), headers: { "user-agent": "Mozilla/5.0 (Schub link check)" } });
-    return res.status !== 404 && res.status !== 410;
-  } catch {
-    return false;
-  }
-}
