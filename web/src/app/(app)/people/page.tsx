@@ -7,46 +7,59 @@ import { ConnectButton } from "../connect-button";
 import { PersonRow } from "./person-row";
 
 const chipCount = 12;
+const pageSize = 20;
 
-// "?skills=React,C%2B%2B": each skill encoded on its own so the commas stay readable
-const skillsHref = (skills: string[]) => (skills.length ? `/people?skills=${skills.map(encodeURIComponent).join(",")}` : "/people");
+// "?skills=React,C%2B%2B&page=2": each skill encoded on its own so the commas stay readable
+function peopleHref(skills: string[], page = 1) {
+  const params = [skills.length > 0 && `skills=${skills.map(encodeURIComponent).join(",")}`, page > 1 && `page=${page}`].filter(Boolean);
+  return params.length ? `/people?${params.join("&")}` : "/people";
+}
 
 export const instant = false;
 
-// Discover: people you have no connection or pending request with, best match first
+// Discover: people you have no connection or pending request with, a page at a time. The query filters
+// and pages; open-to-collaborate people come first, then the most recently updated. Within a page, the best
+// match comes first (the score is computed in lib/match.ts, so it can't order the query itself).
 export default async function PeoplePage(props: PageProps<"/people">) {
-  const { skills: skillsParam } = await props.searchParams;
+  const { skills: skillsParam, page: pageParam } = await props.searchParams;
   const selected = knownSkills(typeof skillsParam === "string" ? skillsParam.split(",") : []);
+  const page = Math.max(1, Math.floor(Number(pageParam)) || 1);
   const { supabase, userId, isGuest } = await requireUser();
-  const [profiles, connections, awarded] = await Promise.all([
-    supabase.from("profiles").select("id, name, headline, university, avatar_url, skills, interests, open_to_collaborate"),
+  const [mine, connections, skillCounts, awarded] = await Promise.all([
+    supabase.from("profiles").select("skills, interests, open_to_collaborate").eq("id", userId).maybeSingle(),
     supabase.from("connections").select("sender_id, receiver_id, status"),
+    // How many people have each skill (supabase/people-discover.sql)
+    supabase.rpc("skill_counts"),
     awardedIds(supabase),
   ]);
 
-  const all = profiles.data ?? [];
-  const me = all.find((p) => p.id === userId) ?? { skills: [], interests: [], open_to_collaborate: true };
+  const me = mine.data ?? { skills: [], interests: [], open_to_collaborate: true };
   const links = connections.data ?? [];
   const statusWith = (id: string) => links.find((c) => c.sender_id === id || c.receiver_id === id)?.status as string | undefined;
+  // Connected and pending people live in the other tabs
+  const elsewhere = links.filter((c) => c.status !== "declined").map((c) => (c.sender_id === userId ? c.receiver_id : c.sender_id));
+
+  let query = supabase
+    .from("profiles")
+    .select("id, name, headline, university, avatar_url, skills, interests, open_to_collaborate", { count: "exact" })
+    .neq("name", "")
+    .neq("id", userId);
+  if (elsewhere.length > 0) query = query.not("id", "in", `(${elsewhere.join(",")})`);
+  // Must have every selected skill
+  if (selected.length > 0) query = query.contains("skills", selected);
+  const { data: people, count } = await query
+    .order("open_to_collaborate", { ascending: false })
+    .order("updated_at", { ascending: false })
+    .order("id")
+    .range((page - 1) * pageSize, page * pageSize - 1);
+  const pages = Math.ceil((count ?? 0) / pageSize);
 
   // Chips: the 12 skills most people have (listed order breaks ties), plus any already selected
-  const counts = new Map<string, number>();
-  for (const p of all) for (const s of knownSkills(p.skills)) counts.set(s, (counts.get(s) ?? 0) + 1);
+  const counts = new Map<string, number>((skillCounts.data ?? []).map((r: { skill: string; people: number }) => [r.skill, Number(r.people)]));
   const top = [...SKILLS].sort((a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0)).slice(0, chipCount);
   const chips = [...top, ...selected.filter((s) => !top.includes(s))];
 
-  const matches = all
-    .filter((p) => p.id !== userId && p.name)
-    // Connected and pending people live in the other tabs
-    .filter((p) => {
-      const status = statusWith(p.id);
-      return status !== "accepted" && status !== "pending";
-    })
-    // Must have every selected skill
-    .filter((p) => {
-      const has = knownSkills(p.skills);
-      return selected.every((s) => has.includes(s));
-    })
+  const matches = (people ?? [])
     .map((p) => ({ ...p, score: matchScore(p, me).score, reason: matchReason(p, me) }))
     .sort((a, b) => Number(b.open_to_collaborate) - Number(a.open_to_collaborate) || b.score - a.score);
 
@@ -58,7 +71,7 @@ export default async function PeoplePage(props: PageProps<"/people">) {
           return (
             <Link
               key={s}
-              href={skillsHref(on ? selected.filter((x) => x !== s) : [...selected, s])}
+              href={peopleHref(on ? selected.filter((x) => x !== s) : [...selected, s])}
               aria-current={on ? "true" : undefined}
               className={`rounded px-2.5 py-1 text-sm ${on ? "bg-foreground font-medium text-background" : "border border-line2 text-ink2 hover:border-muted hover:text-foreground"}`}
             >
@@ -113,6 +126,14 @@ export default async function PeoplePage(props: PageProps<"/people">) {
             );
           })}
         </div>
+      )}
+
+      {pages > 1 && (
+        <nav aria-label="Pages" className="flex items-center justify-between border-t border-border pt-5 text-sm">
+          {page > 1 ? <Link href={peopleHref(selected, page - 1)} className="font-semibold text-accent hover:underline">Previous</Link> : <span />}
+          <span className="text-muted tabular-nums">Page {page} of {pages}</span>
+          {page < pages ? <Link href={peopleHref(selected, page + 1)} className="font-semibold text-accent hover:underline">Next</Link> : <span />}
+        </nav>
       )}
     </div>
   );

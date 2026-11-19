@@ -153,6 +153,17 @@ describe("functions", () => {
     }
   });
 
+  it("skill_counts counts named people per skill, for anyone", async () => {
+    const truth = new Map<string, number>();
+    for (const p of await rows("profiles", "name, skills")) {
+      if (p.name) for (const skill of p.skills as string[]) truth.set(skill, (truth.get(skill) ?? 0) + 1);
+    }
+    for (const client of [signedOut(), userA]) {
+      const { data } = await client.rpc("skill_counts");
+      expect(new Map((data ?? []).map((r: { skill: string; people: number }) => [r.skill, Number(r.people)]))).toEqual(truth);
+    }
+  });
+
   it("is_admin is true only for admins", async () => {
     expect((await admin.rpc("is_admin")).data).toBe(true);
     expect((await userA.rpc("is_admin")).data).toBe(false);

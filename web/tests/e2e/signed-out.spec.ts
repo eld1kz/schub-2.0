@@ -12,7 +12,7 @@ test("signed-out visitors browse without an account", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
 
   await page.goto("/people");
-  await expect(page.getByRole("link", { name: "Minji Placeholder" }).first()).toBeVisible();
+  await expect(page.getByRole("main").getByRole("article").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign in to connect" }).first()).toBeVisible();
 
   await page.goto(`/u/${id(1)}`);
