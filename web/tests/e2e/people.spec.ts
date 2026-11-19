@@ -50,3 +50,18 @@ test("Discover filters and pages in the query", async ({ context, page }) => {
   // People connected to B never show up
   await expect(page.getByRole("link", { name: "Taeho Stubbs" })).toBeHidden();
 });
+
+test("the profile sidebar suggests a few open collaborators you aren't connected to", async ({ context, page }) => {
+  await signInAs(context, 2);
+  await page.goto(`/u/${(await service().from("profiles").select("id").eq("name", "Minji Placeholder").single()).data?.id}`);
+  const sidebar = page.locator("section").filter({ has: page.getByRole("heading", { name: "People you may team up with" }) });
+  // It streams in after the page loads
+  await expect(sidebar.getByRole("listitem").first()).toBeVisible();
+  const names = await sidebar.getByRole("listitem").getByRole("link").allInnerTexts();
+  expect(names.length).toBeGreaterThan(0);
+  expect(names.length).toBeLessThanOrEqual(4);
+  // Not the profile, not you, not people you're connected to or asked
+  for (const name of ["Minji Placeholder", "Jisoo Sampleton", "Taeho Stubbs", "Ara Lorem"]) {
+    expect(names.join("\n")).not.toContain(name);
+  }
+});

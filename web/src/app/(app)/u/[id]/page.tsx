@@ -11,6 +11,8 @@ type Opportunity = { id: string; title: string; starts_at: string | null; deadli
 type Person = { id: string; name: string; headline: string; avatar_url: string; skills: string[]; interests: string[]; open_to_collaborate: boolean };
 
 const suggestionCount = 4;
+// "People you may team up with" picks the best matches from this many recently updated open collaborators
+const suggestionPool = 50;
 const suggestionButton = "h-[30px] rounded-md border border-accent px-3 text-[13px] font-semibold whitespace-nowrap text-accent hover:bg-accent-soft";
 
 export const instant = false;
@@ -24,7 +26,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
   const canEdit = isSelf && !isGuest;
   // "?as=visitor": the owner sees the page without edit controls, empty sections or contact details
   const preview = canEdit && as === "visitor";
-  const [profile, ideas, myConnections, contacts, projects, experiences, owned, joined, looking, connections, people, ownAwards, tags, opportunities] = await Promise.all([
+  const [profile, ideas, myConnections, contacts, projects, experiences, owned, joined, looking, connections, mine, people, ownAwards, tags, opportunities] = await Promise.all([
     supabase
       .from("profiles")
       .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, goals, open_to_collaborate, avatar_url, github, linkedin, website")
@@ -42,7 +44,16 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
     supabase.from("opportunity_participants").select("opportunity:opportunities(id, title, starts_at, deadline)").eq("user_id", id),
     // Accepted connections of this profile (supabase/connections-list.sql)
     supabase.rpc("connections_of", { profile_id: id }),
-    supabase.from("profiles").select("id, name, headline, avatar_url, skills, interests, open_to_collaborate"),
+    supabase.from("profiles").select("skills, interests, open_to_collaborate").eq("id", userId).maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("id, name, headline, avatar_url, skills, interests, open_to_collaborate")
+      .neq("name", "")
+      .eq("open_to_collaborate", true)
+      .neq("id", userId)
+      .neq("id", id)
+      .order("updated_at", { ascending: false })
+      .limit(suggestionPool),
     supabase.from("awards").select(awardColumns).eq("user_id", id),
     // Awards this profile was tagged in: confirmed ones for everyone, and on your own profile the pending ones too
     supabase.from("award_teammates").select(`status, award:awards(${awardColumns})`).eq("user_id", id).in("status", ["confirmed", "pending"]),
@@ -74,10 +85,9 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
   const links = myConnections.data ?? [];
   const statusWith = (other: string) => links.find((c) => c.sender_id === other || c.receiver_id === other)?.status as string | undefined;
   // Open collaborators you have no connection with yet, best match for you first
-  const everyone = (people.data ?? []) as Person[];
-  const me = everyone.find((x) => x.id === userId) ?? { skills: [], interests: [], open_to_collaborate: true };
-  const suggestions: Suggestion[] = everyone
-    .filter((x) => x.id !== userId && x.id !== id && x.name && x.open_to_collaborate && !statusWith(x.id))
+  const me = mine.data ?? { skills: [], interests: [], open_to_collaborate: true };
+  const suggestions: Suggestion[] = ((people.data ?? []) as Person[])
+    .filter((x) => !statusWith(x.id))
     .map((x) => ({ ...x, score: matchScore(x, me).score }))
     .sort((a, b) => b.score - a.score)
     .slice(0, suggestionCount)
