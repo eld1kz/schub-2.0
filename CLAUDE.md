@@ -53,6 +53,7 @@ web/src/
     skills.ts               the fixed skill list and its groups
     portfolio.ts            project/experience types, period formatting, safe link/image helpers
     opportunities.ts, teams.ts, goals.ts
+    connections.ts          your accepted connections (one query per page) and which events they're going to
     supabase/server.ts      createClient, requireUser, requireMember
 web/supabase/               SQL migrations, run by hand in the Supabase SQL Editor
 ```

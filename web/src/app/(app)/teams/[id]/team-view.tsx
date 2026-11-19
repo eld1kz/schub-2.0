@@ -8,7 +8,7 @@ import { EditDialog } from "../../u/[id]/edit-dialog";
 import { Section } from "../../u/[id]/profile-parts";
 import { ToastProvider } from "../../u/[id]/toast";
 
-type Person = { name: string; university: string; skills: string[]; avatar_url: string } | null;
+type Person = { name: string; headline: string; university: string; skills: string[]; avatar_url: string } | null;
 export type Application = {
   id: string;
   user_id: string;
@@ -19,8 +19,6 @@ export type Application = {
 };
 
 const row = "flex flex-col gap-3 border-b border-border py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6";
-// Team members stay on one line, role on the left and person on the right, at every width
-const memberRow = "flex items-center justify-between gap-4 border-b border-border py-3.5 first:pt-0";
 
 function PersonLink({ id, person, you }: { id: string; person: { name: string; avatar_url: string } | null; you: boolean }) {
   return (
@@ -28,6 +26,30 @@ function PersonLink({ id, person, you }: { id: string; person: { name: string; a
       <Avatar url={person?.avatar_url ?? ""} name={person?.name ?? ""} className="h-8 w-8 text-[11px]" sizes="32px" />
       <span className="truncate text-[15px] font-medium">{you ? "You" : person?.name || "Unnamed"}</span>
     </Link>
+  );
+}
+
+// A team member in the spotlight: photo, name, headline and role. Your connections get the accent ring and a label.
+function Member({ id, person, role, you, connection }: { id: string; person: { name: string; headline: string; avatar_url: string } | null; role: string; you: boolean; connection: boolean }) {
+  return (
+    <article className="flex items-start gap-3.5 border-b border-border py-4 first:pt-0">
+      <Link href={`/u/${id}`} aria-hidden tabIndex={-1} className="shrink-0">
+        <Avatar
+          url={person?.avatar_url ?? ""}
+          name={person?.name ?? ""}
+          className={`h-11 w-11 text-sm ${connection ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : ""}`}
+          sizes="44px"
+        />
+      </Link>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+          <Link href={`/u/${id}`} className="text-base font-semibold hover:text-accent">{you ? "You" : person?.name || "Unnamed"}</Link>
+          {connection && <span className="text-[13px] font-medium text-accent">Your connection</span>}
+        </div>
+        {person?.headline && <p className="text-sm leading-snug text-ink2">{person.headline}</p>}
+      </div>
+      <span className="shrink-0 pt-0.5 text-sm text-ink2">{role}</span>
+    </article>
   );
 }
 
@@ -66,12 +88,13 @@ export type Team = {
   description: string;
   roles: string[];
   owner_id: string;
-  owner: { name: string; avatar_url: string } | null;
+  owner: { name: string; avatar_url: string; headline: string } | null;
   opportunity: { id: string; title: string } | null;
 };
 
 // The team page for whoever is looking: open roles to apply for, the team, and applicants for the owner
-export function TeamView({ team: t, applications, userId, isGuest }: { team: Team; applications: Application[]; userId: string; isGuest: boolean }) {
+// `connections`: your accepted connections, marked among the members; empty when signed out
+export function TeamView({ team: t, applications, userId, isGuest, connections }: { team: Team; applications: Application[]; userId: string; isGuest: boolean; connections: Set<string> }) {
   const { owner, opportunity } = t;
   const roles = t.roles;
   const isOwner = t.owner_id === userId;
@@ -149,15 +172,9 @@ export function TeamView({ team: t, applications, userId, isGuest }: { team: Tea
 
         <Section title="Team">
           <div className="flex flex-col">
-            <div className={memberRow}>
-              <span className="text-[15px] text-ink2">Started it</span>
-              <PersonLink id={t.owner_id} person={owner} you={isOwner} />
-            </div>
+            <Member id={t.owner_id} person={owner} role="Started it" you={isOwner} connection={connections.has(t.owner_id)} />
             {members.map((m) => (
-              <div key={m.id} className={memberRow}>
-                <span className="text-[15px] text-ink2">{m.role}</span>
-                <PersonLink id={m.user_id} person={m.person} you={m.user_id === userId} />
-              </div>
+              <Member key={m.id} id={m.user_id} person={m.person} role={m.role} you={m.user_id === userId} connection={connections.has(m.user_id)} />
             ))}
           </div>
         </Section>

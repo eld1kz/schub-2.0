@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/supabase/server";
 import { withdrawApplication } from "@/app/actions";
 import { teamSummaryColumns, type TeamSummary } from "@/lib/teams";
 import { awardedIds } from "@/lib/awards";
+import { myConnections } from "@/lib/connections";
 import { TeamList } from "../../../team-list";
 
 export const instant = false;
@@ -42,8 +43,8 @@ function Row({ teamId, title, children, action }: { teamId: string; title: strin
 
 // Teams you run, teams you're on, and applications still waiting or recently declined
 export default async function YourTeamsPage() {
-  const { supabase, userId } = await requireUser();
-  const [owned, applications, declines, awarded] = await Promise.all([
+  const { supabase, userId, isGuest } = await requireUser();
+  const [owned, applications, declines, awarded, connections] = await Promise.all([
     supabase.from("teams").select(teamSummaryColumns).eq("owner_id", userId).order("created_at", { ascending: false }),
     supabase
       .from("team_applications")
@@ -53,6 +54,7 @@ export default async function YourTeamsPage() {
     // The decline notification says when an application was declined
     supabase.from("notifications").select("link, created_at").eq("user_id", userId).eq("type", "application_declined"),
     awardedIds(supabase),
+    myConnections(supabase, userId, isGuest),
   ]);
   const running = (owned.data ?? []) as unknown as TeamSummary[];
   const mine = ((applications.data ?? []) as unknown as MyApplication[]).filter((a) => a.team);
@@ -84,7 +86,7 @@ export default async function YourTeamsPage() {
       {running.length > 0 && (
         <section>
           <Heading title="Running" count={running.length} />
-          <TeamList teams={running} userId={userId} awarded={awarded} empty="" />
+          <TeamList teams={running} userId={userId} awarded={awarded} connections={connections} empty="" />
         </section>
       )}
 

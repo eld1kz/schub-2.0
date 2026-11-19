@@ -4,7 +4,8 @@ import { matchScore, type MatchableProfile } from "@/lib/match";
 import { knownSkills } from "@/lib/skills";
 import { SOON_DAYS, dateRange, daysLabel, daysUntil, formatDay, opportunityTypes, placeLabel, type OpportunityType } from "@/lib/opportunities";
 import { deleteOpportunity, reportOpportunity } from "@/app/actions";
-import type { TeamSummary } from "@/lib/teams";
+import { teamMembers, type TeamSummary } from "@/lib/teams";
+import { goingLabel, tallyGoing } from "@/lib/connections";
 import type { Award } from "@/lib/awards";
 import { formatMonth } from "@/lib/portfolio";
 import { Avatar } from "../../avatar";
@@ -43,6 +44,8 @@ type Props = {
   participants: Participant[];
   me: MatchableProfile;
   statusWith: Record<string, string>;
+  // Your accepted connections; empty when signed out
+  connections: Set<string>;
   myReport: string | null;
   canDelete: boolean;
   teams: TeamSummary[];
@@ -100,12 +103,19 @@ function PlacedAward({ award: a }: { award: Award }) {
 }
 
 // People come here to find teammates, so that comes first; the official page has the details
-export function OpportunityView({ o, participants, me, statusWith, myReport, canDelete, teams, placed, awarded, userId, isGuest, today }: Props) {
+export function OpportunityView({ o, participants, me, statusWith, connections, myReport, canDelete, teams, placed, awarded, userId, isGuest, today }: Props) {
   const mine = participants.find((p) => p.user_id === userId);
   const others = participants
     .filter((p) => p.user_id !== userId)
     .map((p) => ({ ...p, score: matchScore(p.person, me).score }))
-    .sort((a, b) => b.score - a.score);
+    // Your connections first, then the best match
+    .sort((a, b) => Number(connections.has(b.user_id)) - Number(connections.has(a.user_id)) || b.score - a.score);
+  // Your connections looking for a team here or on a team for it
+  const going = tallyGoing(
+    participants.map((p) => ({ opportunity_id: o.id, user_id: p.user_id })),
+    teams.flatMap((t) => teamMembers(t).map((m) => ({ opportunity_id: o.id, user_id: m.id }))),
+    connections,
+  ).get(o.id);
   const place = placeLabel(o);
   const dates = dateRange(o.starts_at, o.ends_at);
   const deadlineDays = o.deadline && o.deadline >= today ? daysUntil(o.deadline, today) : null;
@@ -132,6 +142,11 @@ export function OpportunityView({ o, participants, me, statusWith, myReport, can
               </span>
             )}
           </p>
+          {going && (
+            <a href={going.onTeam ? "#teams" : "#looking"} className="mt-1 w-fit text-[15px] font-medium text-accent hover:underline">
+              {goingLabel(going.people.size)}
+            </a>
+          )}
           {o.status !== "live" && <p className="font-mono text-xs text-muted uppercase">{o.status}</p>}
         </div>
         <a href={o.url} target="_blank" rel="noreferrer" className="btn-outline shrink-0">Official page ↗</a>
@@ -165,16 +180,16 @@ export function OpportunityView({ o, participants, me, statusWith, myReport, can
         </section>
       )}
 
-      <section className="mt-12">
+      <section id="teams" className="mt-12 scroll-mt-6">
         <SectionHeader
           title="Teams recruiting"
           count={teams.length}
           action={<Link href={`/teams/new?opportunity=${o.id}`} className="btn-outline h-9 shrink-0">Post a team for this</Link>}
         />
-        <TeamList teams={teams} userId={userId} awarded={awarded} empty="No teams yet. Already have one? Post it and list the roles you need." />
+        <TeamList teams={teams} userId={userId} awarded={awarded} connections={connections} empty="No teams yet. Already have one? Post it and list the roles you need." />
       </section>
 
-      <section className="mt-12">
+      <section id="looking" className="mt-12 scroll-mt-6">
         <SectionHeader title="Looking for a team" count={others.length} />
         {others.length === 0 ? (
           <p className="py-8 text-sm text-ink2">{mine ? "Nobody else yet. You're the first." : "Nobody yet. Be the first."}</p>
@@ -195,6 +210,7 @@ export function OpportunityView({ o, participants, me, statusWith, myReport, can
                   </>
                 }
               >
+                {connections.has(p.user_id) && <p className="text-[13px] font-medium text-accent">Your connection</p>}
                 {p.note && <p className="mt-1 max-w-[560px] text-[15px] leading-normal">&ldquo;{p.note}&rdquo;</p>}
                 {knownSkills(p.person.skills).length > 0 && (
                   <ul className="mt-1.5 flex flex-wrap gap-1.5">

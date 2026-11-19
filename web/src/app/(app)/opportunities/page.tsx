@@ -4,6 +4,7 @@ import { nextDate, opportunityTypes, today, type OpportunityType } from "@/lib/o
 import { setOpportunityStatus } from "@/app/actions";
 import { OpportunitySearch } from "./opportunity-search";
 import { OpportunityHeader, OpportunityRow, type OpportunityRowData } from "./opportunity-row";
+import { connectionsGoing, myConnections } from "@/lib/connections";
 
 export const instant = false;
 
@@ -13,7 +14,7 @@ const tabLabel = (t: OpportunityType) => (t === "other" ? "Other" : `${opportuni
 export default async function OpportunitiesPage(props: PageProps<"/opportunities">) {
   const { type: typeParam } = await props.searchParams;
   const type = typeof typeParam === "string" && typeParam in opportunityTypes ? (typeParam as OpportunityType) : null;
-  const { supabase } = await requireUser();
+  const { supabase, userId, isGuest } = await requireUser();
   const day = today();
 
   // Every upcoming one; the type tabs filter here, so each tab can show its count
@@ -24,7 +25,9 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
     .eq("status", "live")
     .or(`deadline.gte.${day},starts_at.gte.${day},and(deadline.is.null,starts_at.is.null)`);
 
-  const [{ data: items }, { data: admin }] = await Promise.all([query, supabase.rpc("is_admin")]);
+  // Your connections going to each one: loaded once for the whole list
+  const going = myConnections(supabase, userId, isGuest).then((connections) => connectionsGoing(supabase, connections));
+  const [{ data: items }, { data: admin }, goingTo] = await Promise.all([query, supabase.rpc("is_admin"), going]);
   const { data: hidden } = admin
     ? await supabase.from("opportunities").select("id, title, opportunity_reports(reason)").eq("status", "hidden").order("created_at")
     : { data: [] };
@@ -85,7 +88,7 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
       <OpportunitySearch
         empty={type ? `No upcoming ${tabLabel(type).toLowerCase()} yet.` : "No upcoming opportunities yet."}
         header={<OpportunityHeader />}
-        rows={shown.map((o) => ({ id: o.id, title: o.title, node: <OpportunityRow o={o} day={day} /> }))}
+        rows={shown.map((o) => ({ id: o.id, title: o.title, node: <OpportunityRow o={o} day={day} going={goingTo.get(o.id)} /> }))}
       />
     </div>
   );

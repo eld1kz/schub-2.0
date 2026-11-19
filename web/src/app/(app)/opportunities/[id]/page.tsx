@@ -34,6 +34,7 @@ export default async function OpportunityPage(props: PageProps<"/opportunities/[
   // Your connection status with each person, by their id
   const statusWith: Record<string, string> = {};
   for (const c of connections.data ?? []) statusWith[c.sender_id === userId ? c.receiver_id : c.sender_id] = c.status;
+  const accepted = new Set(isGuest ? [] : Object.keys(statusWith).filter((id) => statusWith[id] === "accepted"));
 
   return (
     <OpportunityView
@@ -41,6 +42,7 @@ export default async function OpportunityPage(props: PageProps<"/opportunities/[
       participants={(participants.data ?? []) as unknown as Participant[]}
       me={me.data ?? { skills: [], interests: [], open_to_collaborate: true }}
       statusWith={statusWith}
+      connections={accepted}
       myReport={myReport.data?.reason ?? null}
       canDelete={o.submitted_by === userId || Boolean(admin.data)}
       teams={(teams.data ?? []) as unknown as TeamSummary[]}

@@ -124,12 +124,12 @@ export default async function Home() {
 // A titled list in "Live from Schub", with a link to the full page
 function Block({ title, href, more, children }: { title: string; href: string; more: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-2">
+    <section aria-label={title} className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-4">
         <h3 className="text-lg font-semibold tracking-[-0.01em] sm:text-xl">{title}</h3>
         <Link href={href} className="text-sm font-semibold text-accent hover:underline">{more}</Link>
       </div>
       <div>{children}</div>
-    </div>
+    </section>
   );
 }

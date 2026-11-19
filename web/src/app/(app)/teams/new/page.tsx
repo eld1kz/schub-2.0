@@ -30,11 +30,11 @@ export default async function NewTeamPage(props: PageProps<"/teams/new">) {
 
       <div className="space-y-5 py-6">
         <div>
-          <label htmlFor="title" className={label}>Team or project name{required}</label>
-          <input id="title" name="title" required minLength={3} maxLength={120} placeholder="Gongsil 2.0" className="input h-11 sm:h-10" />
+          <label htmlFor="title" className={label}>What are you building?{required}</label>
+          <input id="title" name="title" required minLength={3} maxLength={120} placeholder="AI study buddy for university students" className="input h-11 sm:h-10" />
         </div>
         <div>
-          <label htmlFor="description" className={label}>What are you building?</label>
+          <label htmlFor="description" className={label}>More about it <span className="font-normal text-muted">(optional)</span></label>
           <textarea id="description" name="description" rows={4} maxLength={2000} placeholder="One or two lines on the idea and where it's at." className="input resize-none leading-normal" />
         </div>
         <RoleFields />

@@ -12,7 +12,7 @@ test("signed-out visitors get the landing page with live data", async ({ page })
 
   // Live from Schub: up to 3 soonest upcoming opportunities, past and removed ones never
   const main = page.getByRole("main");
-  const opportunities = main.locator('a[href^="/opportunities/"]').filter({ has: page.locator("span.font-mono") });
+  const opportunities = main.getByRole("region", { name: "Soonest opportunities" }).getByRole("article");
   await expect(opportunities.first()).toBeVisible();
   expect(await opportunities.count()).toBeLessThanOrEqual(3);
   await expect(main.getByText("Mock AI Challenge Winter")).toBeVisible();
@@ -20,7 +20,7 @@ test("signed-out visitors get the landing page with live data", async ({ page })
   await expect(main.getByText("Removed Sample Event")).toBeHidden();
 
   // Up to 3 teams, only ones with an open role
-  const teams = main.getByRole("article").filter({ has: page.locator('a[href^="/teams/"]') });
+  const teams = main.getByRole("region", { name: "Teams with open roles" }).getByRole("article");
   await expect(teams.first()).toBeVisible();
   expect(await teams.count()).toBeLessThanOrEqual(3);
   await expect(main.getByText("Full Sample Team")).toBeHidden();
@@ -32,7 +32,7 @@ test("signed-out visitors get the landing page with live data", async ({ page })
   await expect(page.getByRole("navigation", { name: "Browse" }).getByRole("link")).toHaveText(["Opportunities", "Teams", "People"]);
 
   // Rows link to their pages
-  await main.getByRole("link", { name: /Mock AI Challenge Winter/ }).click();
+  await main.getByRole("region", { name: "Soonest opportunities" }).getByRole("link", { name: "Mock AI Challenge Winter" }).click();
   await expect(page).toHaveURL(/\/opportunities\/00000000-0000-4000-9000-000000000002$/);
 
   await page.goto("/");

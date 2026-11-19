@@ -12,7 +12,7 @@ test("post a team, apply from a second user, accept, and contact details appear"
 
   // Post
   await ownerPage.goto("/teams/new");
-  await ownerPage.getByLabel("Team or project name").fill("E2E Rocket Team");
+  await ownerPage.getByLabel("What are you building?").fill("E2E Rocket Team");
   await ownerPage.getByLabel("Role 1", { exact: true }).fill("Frontend");
   await ownerPage.getByRole("button", { name: "Post team" }).click();
   await expect(ownerPage).toHaveURL(/\/teams\/[0-9a-f-]{36}$/);
