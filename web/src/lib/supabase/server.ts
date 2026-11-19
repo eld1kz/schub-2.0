@@ -1,6 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createPlainClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
+
+// No session at all: reads exactly what a signed-out visitor can, whoever asks. For generated images,
+// which are cached and shared, so they must never depend on who requested them.
+export function publicClient() {
+  return createPlainClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 export async function createClient() {
   const cookieStore = await cookies();

@@ -7,6 +7,7 @@ import { SignInButton } from "../../sign-in";
 import { EditDialog } from "../../u/[id]/edit-dialog";
 import { Section } from "../../u/[id]/profile-parts";
 import { ToastProvider } from "../../u/[id]/toast";
+import { ShareTeamButton } from "../../share-team";
 
 type Person = { name: string; headline: string; university: string; skills: string[]; avatar_url: string } | null;
 export type Application = {
@@ -94,7 +95,8 @@ export type Team = {
 
 // The team page for whoever is looking: open roles to apply for, the team, and applicants for the owner
 // `connections`: your accepted connections, marked among the members; empty when signed out
-export function TeamView({ team: t, applications, userId, isGuest, connections }: { team: Team; applications: Application[]; userId: string; isGuest: boolean; connections: Set<string> }) {
+// `shareVersion`: storyVersion of the team, for the share image's address
+export function TeamView({ team: t, applications, userId, isGuest, connections, shareVersion }: { team: Team; applications: Application[]; userId: string; isGuest: boolean; connections: Set<string>; shareVersion: string }) {
   const { owner, opportunity } = t;
   const roles = t.roles;
   const isOwner = t.owner_id === userId;
@@ -146,6 +148,10 @@ export function TeamView({ team: t, applications, userId, isGuest, connections }
               <Avatar url={owner?.avatar_url ?? ""} name={owner?.name ?? ""} className="h-6 w-6 text-[10px]" sizes="24px" />
               {isOwner ? "you" : owner?.name || "Unnamed"}
             </Link>
+          </div>
+          {/* Everyone can share a team; for its owner it's the main thing to do here */}
+          <div className="mt-2">
+            <ShareTeamButton teamId={t.id} title={t.title} version={shareVersion} variant={isOwner ? "primary" : "outline"} />
           </div>
           {mine?.status === "accepted" && (
             <p className="mt-2 text-sm">

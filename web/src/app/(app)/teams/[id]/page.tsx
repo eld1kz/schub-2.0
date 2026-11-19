@@ -1,9 +1,32 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/supabase/server";
+import { publicClient, requireUser } from "@/lib/supabase/server";
 import { myConnections } from "@/lib/connections";
+import { openRoles } from "@/lib/teams";
+import { storyVersion } from "@/lib/story";
 import { TeamView, type Application, type Team } from "./team-view";
 
 export const instant = false;
+
+type PublicTeam = Parameters<typeof storyVersion>[0] & { opportunity: { id: string; title: string } | null };
+
+// Link previews in chats: the open roles and the event, with the image from ./og.png. Public data only,
+// like a signed-out visitor sees it, so the preview is the same whoever pasted the link.
+export async function generateMetadata(props: PageProps<"/teams/[id]">): Promise<Metadata> {
+  const { id } = await props.params;
+  const { data } = await publicClient().from("teams").select("title, roles, owner_id, opportunity:opportunities(id, title), team_applications(user_id, role, status)").eq("id", id).maybeSingle();
+  if (!data) return {};
+  const team = data as unknown as PublicTeam;
+  const open = openRoles(team);
+  const description = [open.length > 0 ? `Needs: ${open.join(", ")}` : "All roles filled", team.opportunity ? `For ${team.opportunity.title}` : "Own project"].join(" · ");
+  const image = { url: `/teams/${id}/og.png?v=${storyVersion(team)}`, width: 1200, height: 630, alt: `${team.title}: ${description}` };
+  return {
+    title: `${team.title} · Schub`,
+    description,
+    openGraph: { title: team.title, description, siteName: "Schub", images: [image] },
+    twitter: { card: "summary_large_image", title: team.title, description, images: [image] },
+  };
+}
 
 export default async function TeamPage(props: PageProps<"/teams/[id]">) {
   const { id } = await props.params;
@@ -17,5 +40,7 @@ export default async function TeamPage(props: PageProps<"/teams/[id]">) {
   const t = team.data;
   if (!t) notFound();
 
-  return <TeamView team={t as unknown as Team} applications={(applicationRows.data ?? []) as unknown as Application[]} userId={userId} isGuest={isGuest} connections={connections} />;
+  const applications = (applicationRows.data ?? []) as unknown as Application[];
+  const version = storyVersion({ ...(t as unknown as Team), team_applications: applications });
+  return <TeamView team={t as unknown as Team} applications={applications} userId={userId} isGuest={isGuest} connections={connections} shareVersion={version} />;
 }

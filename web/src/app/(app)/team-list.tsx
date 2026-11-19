@@ -2,8 +2,10 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { SOON_DAYS, daysUntil, nextDate, today } from "@/lib/opportunities";
 import { memberSummary, openRoles, teamMembers, universitiesLabel, type TeamSummary } from "@/lib/teams";
+import { storyVersion } from "@/lib/story";
 import { AwardMark } from "./award-mark";
 import { Avatar } from "./avatar";
+import { ShareTeamButton } from "./share-team";
 
 // Overlapping avatars: each sits above the next, so the lead's ring is never covered
 const stack = ["z-30", "z-20", "z-10", "z-0"];
@@ -15,13 +17,15 @@ const daysLeft = (n: number) => (n === 0 ? "Today" : n === 1 ? "1 day left" : `$
 // `applied`: teams you've already applied to, whose button reads "Applied"
 // `connections`: your accepted connections. A team with one on it leads with them, ringed in the accent.
 // `hideEvent`: on an opportunity's own page, where every row's event line would repeat the page title
-export function TeamList({ teams, userId, awarded, applied, connections = new Set(), hideEvent = false, empty }: {
+// `share`: a share icon on each row, opening the share dialog (Your teams > Running)
+export function TeamList({ teams, userId, awarded, applied, connections = new Set(), hideEvent = false, share = false, empty }: {
   teams: TeamSummary[];
   userId: string;
   awarded: Set<string>;
   applied?: Set<string>;
   connections?: Set<string>;
   hideEvent?: boolean;
+  share?: boolean;
   empty: ReactNode;
 }) {
   if (teams.length === 0) return <p className="py-8 text-sm text-ink2">{empty}</p>;
@@ -85,13 +89,16 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
                 </div>
               )}
             </div>
-            {applied?.has(t.id) ? (
-              <span className="hidden h-9 shrink-0 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold text-muted sm:inline-flex">Applied</span>
-            ) : (
-              <Link href={`/teams/${t.id}`} className="btn-outline hidden h-9 shrink-0 sm:inline-flex">
-                {mine ? "Manage" : open.length > 0 ? "Ask to join" : "View"}
-              </Link>
-            )}
+            <div className="flex shrink-0 items-center gap-1.5">
+              {share && <ShareTeamButton teamId={t.id} title={t.title} version={storyVersion(t)} variant="icon" />}
+              {applied?.has(t.id) ? (
+                <span className="hidden h-9 shrink-0 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold text-muted sm:inline-flex">Applied</span>
+              ) : (
+                <Link href={`/teams/${t.id}`} className="btn-outline hidden h-9 shrink-0 sm:inline-flex">
+                  {mine ? "Manage" : open.length > 0 ? "Ask to join" : "View"}
+                </Link>
+              )}
+            </div>
           </article>
         );
       })}

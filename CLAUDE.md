@@ -39,24 +39,29 @@ web/src/
     sign-in-options.tsx     the sign-in buttons and email form, shared by / and /login
     onboarding/             first-time flow after the first sign-in
     auth/callback/          OAuth and email-link callback
+    teams/[id]/share/       phone page opened from the share dialog's QR code: the story image and Share
     (app)/
       layout.tsx            top bar (tabs, search, bell, avatar), phone tab bar, nav counts
       nav-tabs.tsx          active-tab tabs (desktop) and bottom tab bar (phones)
       opportunities/        list, [id] detail, new
-      teams/                list with filters; [id] (page.tsx loads, team-view.tsx renders); new
+      teams/                list with filters; [id] (page.tsx loads, team-view.tsx renders,
+                            story.png 1080x1920 share image, og.png link preview); new
       people/               tabs: Discover (/people), Requests (/people/requests), Connections (/people/connections)
       u/[id]/               profile: view + in-place editing for the owner (?as=visitor previews)
       profile/              redirects to /u/<you>; holds skill-picker and completion score
       feed/                 posts and ideas; on hold, not linked from the nav
       connect-button.tsx, avatar.tsx, select.tsx, team-list.tsx, global-search.tsx, notifications.tsx
+      share-team.tsx        Share button and dialog: Web Share on phones, QR code / copy image on laptops
   lib/
     match.ts                matching score (same as the iOS DiscoverViewModel)
     skills.ts               the fixed skill list and its groups
     portfolio.ts            project/experience types, period formatting, safe link/image helpers
     opportunities.ts, teams.ts, goals.ts
     connections.ts          your accepted connections (one query per page) and which events they're going to
+    story.ts, story-image.tsx  the team share images: wording and sizing (story.ts), drawing with next/og
     supabase/server.ts      createClient, requireUser, requireMember
 web/supabase/               SQL migrations, run by hand in the Supabase SQL Editor
+web/assets/fonts/           TTFs for the share images (Instrument Sans, Plex Mono, Noto Sans KR for Hangul and Cyrillic)
 ```
 
 ## Database

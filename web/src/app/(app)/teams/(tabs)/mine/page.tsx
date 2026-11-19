@@ -86,7 +86,7 @@ export default async function YourTeamsPage() {
       {running.length > 0 && (
         <section>
           <Heading title="Running" count={running.length} />
-          <TeamList teams={running} userId={userId} awarded={awarded} connections={connections} empty="" />
+          <TeamList teams={running} userId={userId} awarded={awarded} connections={connections} share empty="" />
         </section>
       )}
 
