@@ -23,9 +23,8 @@ export async function proxy(request: NextRequest) {
   );
 
   // Refreshes the session cookie; must run before the response is returned.
-  // No login for now: first-time visitors get an anonymous guest account.
-  const { data } = await supabase.auth.getClaims();
-  if (!data?.claims) await supabase.auth.signInAnonymously();
+  // Visitors without a session browse read-only, with no account (supabase/public-read.sql).
+  await supabase.auth.getClaims();
 
   return response;
 }

@@ -1,8 +1,11 @@
 // Who can read what, table by table, and who can see contact details.
 import { beforeAll, describe, expect, it } from "vitest";
 import {
-  A, ADMIN, B, accessToken, expectSees, expectSeesNothing, guest, id, rows, signInAs, signedOut, url, type Client,
+  A, ADMIN, B, accessToken, expectSees, guest, id, rows, signInAs, signedOut, url, type Client,
 } from "./helpers";
+
+// A signed-out visitor has no id; nothing matches this one
+const NOBODY = "00000000-0000-0000-0000-000000000000";
 
 const everything = () => true;
 
@@ -60,10 +63,10 @@ beforeAll(async () => {
 
 describe("reading tables", () => {
   for (const [table, columns] of Object.entries(tables)) {
-    it(`${table}: signed-out visitors see nothing`, async () => {
-      await expectSeesNothing(signedOut(), table, columns);
+    it(`${table}: signed-out visitors see only what's public`, async () => {
+      await expectSees(signedOut(), table, columns, allowedFor(NOBODY, false)[table]);
     });
-    it(`${table}: a guest sees what any signed-in user sees`, async () => {
+    it(`${table}: an old anonymous guest session sees what any signed-in user sees`, async () => {
       await expectSees(guestClient, table, columns, allowedFor(guestId, false)[table]);
     });
     it(`${table}: user A sees only their share`, async () => {
@@ -82,7 +85,7 @@ describe("contact details (telegram, email)", () => {
   const contact = async (client: Client, n: number) => (await client.rpc("contact_for", { profile_id: id(n) })).data ?? [];
 
   it("are never readable from the profiles table", async () => {
-    for (const client of [userA, guestClient, admin]) {
+    for (const client of [signedOut(), userA, guestClient, admin]) {
       expect((await client.from("profiles").select("email")).error).not.toBeNull();
       expect((await client.from("profiles").select("telegram")).error).not.toBeNull();
       expect((await client.from("profiles").select("*")).error).not.toBeNull();
@@ -142,14 +145,12 @@ describe("contact details (telegram, email)", () => {
 });
 
 describe("functions", () => {
-  it("connections_of is closed to signed-out visitors", async () => {
-    expect((await signedOut().rpc("connections_of", { profile_id: A })).error).not.toBeNull();
-  });
-
-  it("connections_of returns only id, name and photo", async () => {
-    const { data } = await userB.rpc("connections_of", { profile_id: A });
-    expect(data?.length).toBeGreaterThan(0);
-    for (const row of data ?? []) expect(Object.keys(row).sort()).toEqual(["avatar_url", "id", "name"]);
+  it("connections_of returns only id, name and photo, to anyone (profile pages list connections)", async () => {
+    for (const client of [userB, signedOut()]) {
+      const { data } = await client.rpc("connections_of", { profile_id: A });
+      expect(data?.length).toBeGreaterThan(0);
+      for (const row of data ?? []) expect(Object.keys(row).sort()).toEqual(["avatar_url", "id", "name"]);
+    }
   });
 
   it("is_admin is true only for admins", async () => {

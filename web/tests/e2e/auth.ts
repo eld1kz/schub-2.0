@@ -1,7 +1,9 @@
 // Signs a browser in as a local user. The app only offers Google sign-in, so the tests sign in
 // with a password against the LOCAL Supabase and hand the browser the same session cookies the app sets.
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import type { BrowserContext } from "@playwright/test";
 
 const env = Object.fromEntries(
@@ -13,6 +15,12 @@ const env = Object.fromEntries(
 
 const url = env.NEXT_PUBLIC_SUPABASE_URL;
 if (!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(url)) throw new Error(`Refusing to run against ${url}: local Supabase only`);
+
+// Bypasses row level security, for checking what the app did. Local only (checked above).
+export function service() {
+  const status = JSON.parse(execFileSync("npx", ["supabase", "status", "-o", "json"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }));
+  return createClient(url, status.SECRET_KEY ?? status.SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+}
 
 // Same ids and emails as supabase/seed.local.sql
 export const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;

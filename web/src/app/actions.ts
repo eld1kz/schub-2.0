@@ -25,7 +25,7 @@ export async function signIn() {
   redirect(data.url ?? next);
 }
 
-// The proxy gives the next request a fresh guest account
+// Afterwards the visitor browses read-only, without an account
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
@@ -37,7 +37,7 @@ export type SearchResults = { people: { id: string; name: string }[]; teams: { i
 // % and _ are wildcards in ilike; match them literally
 const containing = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
-// Nav search: people by name and teams by title, up to 5 of each. Guests can search too.
+// Nav search: people by name and teams by title, up to 5 of each. Signed-out visitors can search too.
 export async function searchGlobal(query: string): Promise<SearchResults> {
   const { supabase } = await requireUser();
   const q = query.trim().slice(0, 50);

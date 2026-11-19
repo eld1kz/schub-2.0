@@ -24,6 +24,11 @@ export async function createClient() {
   );
 }
 
+// A signed-out visitor's userId: matches no row, so queries keyed on the user return nothing
+export const NOBODY = "00000000-0000-0000-0000-000000000000";
+
+// The visitor, signed in or not. `isGuest` is true for signed-out visitors (and for old anonymous guest
+// sessions from before guests were removed): they browse read-only and see "Sign in to ..." buttons.
 export async function requireUser() {
   // Checking the token reads the clock, which Next only allows once rendering is per-request.
   // That makes the page wait for this call, so pages that call it export `instant = false`
@@ -32,12 +37,10 @@ export async function requireUser() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims.sub;
-  if (!userId) throw new Error("Not signed in");
-  // Guests are anonymous accounts the proxy creates so visitors can browse
-  return { supabase, userId, isGuest: data?.claims.is_anonymous === true };
+  return { supabase, userId: userId ?? NOBODY, isGuest: !userId || data?.claims.is_anonymous === true };
 }
 
-// For writes: guests have to sign in with Google first
+// For writes: visitors have to sign in with Google first
 export async function requireMember() {
   const user = await requireUser();
   if (user.isGuest) throw new Error("Sign in to do that");

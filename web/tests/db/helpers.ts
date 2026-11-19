@@ -83,8 +83,3 @@ export async function expectSees(client: Client, table: string, columns: string,
   expect(error, `${table}: ${error?.message}`).toBeNull();
   expect(sortRows((data ?? []) as unknown as Row[]), table).toEqual(truth);
 }
-
-export async function expectSeesNothing(client: Client, table: string, columns = "*") {
-  const { data } = await client.from(table).select(columns);
-  expect(data ?? [], table).toEqual([]);
-}

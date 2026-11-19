@@ -28,7 +28,7 @@ The repo has two apps on the same Supabase project:
 ## Web structure
 ```
 web/src/
-  proxy.ts                  refreshes the session; creates a guest account for new visitors
+  proxy.ts                  refreshes the session
   app/
     actions.ts              ALL server actions (every DB write goes through here)
     layout.tsx              root layout, fonts
@@ -59,7 +59,7 @@ web/supabase/               SQL migrations, run by hand in the Supabase SQL Edit
 Migrations live in `web/supabase/` and are run by hand, in this order:
 `schema` → `opportunities` → `contact` → `teams` → `profile` → `portfolio` →
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
-`people-requests` → `opportunity-details` → `awards` → `length-limits`. `seed_opportunities.sql` and
+`people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -100,9 +100,11 @@ Privacy details that are easy to break:
   senders can withdraw while pending (delete, `people-requests.sql`).
 
 ## Auth
-- New visitors get an anonymous Supabase guest account (created in `proxy.ts`) so they
-  can browse. Guests can't write: restrictive RLS policies block them, and server
-  actions use `requireMember()`.
+- Signed-out visitors browse read-only with no account: they use the `anon` role, which the
+  read policies include (`public-read.sql`) and no write policy does. `requireUser()` returns
+  them with `isGuest: true` and a `userId` that matches no row; server actions use
+  `requireMember()`. Old anonymous guest sessions are treated the same, and the restrictive
+  "Guests can't ..." policies still block them. Nothing creates anonymous users any more.
 - Members sign in with Google. After the first sign-in, `/onboarding` collects the basics.
 - Never trust client-sent user IDs; read the user from the server session
   (`requireUser` / `requireMember`).
