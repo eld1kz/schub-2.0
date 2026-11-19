@@ -163,7 +163,7 @@ export function TeamView({ team: t, applications, userId, isGuest }: { team: Tea
         </Section>
 
         {isOwner && (
-          <Section title="Applications" count={pending.length}>
+          <Section id="applications" title="Applications" count={pending.length}>
             {byRole.length === 0 ? (
               <p className="text-[15px] text-ink2">Nobody has applied yet. People see your open roles on the Teams page.</p>
             ) : (

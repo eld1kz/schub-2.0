@@ -53,9 +53,10 @@ export async function searchGlobal(query: string): Promise<SearchResults> {
 // Notifications are written by database triggers (supabase/notifications.sql); here they're only read
 export async function openNotification(id: string) {
   const { supabase, userId } = await requireMember();
-  const { data } = await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", userId).select("link").maybeSingle();
+  const { data } = await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", userId).select("type, link").maybeSingle();
   revalidatePath("/", "layout");
-  redirect(data?.link ?? "/");
+  // New applicants to your team are reviewed from Your teams; the stored link points at the team
+  redirect(data?.type === "team_application" ? "/teams/mine" : (data?.link ?? "/"));
 }
 
 export async function markAllRead() {

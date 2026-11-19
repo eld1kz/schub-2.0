@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Select } from "../select";
+import { Select } from "../../select";
 
 const statusOptions = [
   { value: "open", label: "Open roles" },
