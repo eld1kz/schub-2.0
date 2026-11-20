@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { PersonRow } from "../person-row";
 
-export type ConnectionItem = { id: string; name: string; headline: string; avatar_url: string; telegram: string; email: string; awarded: boolean };
+export type ConnectionItem = { id: string; name: string; headline: string; avatar_url: string; open: boolean; telegram: string; email: string; awarded: boolean };
 
 const contactLink = "text-[13px] font-medium text-accent hover:underline";
 
@@ -35,7 +35,7 @@ export function ConnectionList({ people }: { people: ConnectionItem[] }) {
       ) : (
         <div className="flex flex-col">
           {shown.map((p) => (
-            <PersonRow key={p.id} id={p.id} name={p.name} headline={p.headline} avatarUrl={p.avatar_url} awarded={p.awarded}>
+            <PersonRow key={p.id} id={p.id} name={p.name} headline={p.headline} avatarUrl={p.avatar_url} awarded={p.awarded} open={p.open}>
               {(p.telegram || p.email) && (
                 <p className="mt-0.5 flex flex-wrap gap-x-4 gap-y-1">
                   {p.telegram && <a href={`https://t.me/${encodeURIComponent(p.telegram)}`} target="_blank" rel="noreferrer" className={contactLink}>t.me/{p.telegram}</a>}

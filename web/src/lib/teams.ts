@@ -1,5 +1,5 @@
 // A team member as rows show them; all of it is public on profiles
-export type Member = { id: string; name: string; avatar_url: string; university: string };
+export type Member = { id: string; name: string; avatar_url: string; university: string; open_to_collaborate: boolean };
 
 export type TeamSummary = {
   id: string;
@@ -12,7 +12,7 @@ export type TeamSummary = {
   team_applications: { role: string; status: string; user_id: string; person: Member | null }[];
 };
 
-const member = "id, name, avatar_url, university";
+const member = "id, name, avatar_url, university, open_to_collaborate";
 export const teamSummaryColumns =
   `id, title, roles, owner_id, owner:profiles(${member}), opportunity:opportunities(id, title, deadline, starts_at, ends_at), team_applications(role, status, user_id, person:profiles(${member}))`;
 

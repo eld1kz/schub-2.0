@@ -29,7 +29,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
   const [profile, ideas, myConnections, contacts, projects, experiences, owned, joined, looking, connections, mine, people, ownAwards, tags, opportunities] = await Promise.all([
     supabase
       .from("profiles")
-      .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, goals, open_to_collaborate, avatar_url, github, linkedin, website")
+      .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, goals, open_to_collaborate, wanted_roles, avatar_url, github, linkedin, website")
       .eq("id", id)
       .maybeSingle(),
     supabase.from("ideas").select("id, title, description, skills_needed, stage").eq("author_id", id).order("created_at", { ascending: false }),

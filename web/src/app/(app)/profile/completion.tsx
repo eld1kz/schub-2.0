@@ -26,7 +26,7 @@ function checks(p: Fields) {
     { points: 15, done: knownSkills(p.skills).length >= 3, hint: "Pick at least 3 skills" },
     { points: 10, done: p.interests.length > 0, hint: "Add an interest" },
     { points: 10, done: p.github !== "" || p.linkedin !== "", hint: "Link your GitHub or LinkedIn" },
-    { points: 5, done: p.open_to_collaborate, hint: "Turn on Open to collaborate" },
+    { points: 5, done: p.open_to_collaborate, hint: "Turn on Open to a team" },
   ];
 }
 

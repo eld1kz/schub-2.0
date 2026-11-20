@@ -9,7 +9,7 @@ import { Section } from "../../u/[id]/profile-parts";
 import { ToastProvider } from "../../u/[id]/toast";
 import { ShareTeamButton } from "../../share-team";
 
-type Person = { name: string; headline: string; university: string; skills: string[]; avatar_url: string } | null;
+type Person = { name: string; headline: string; university: string; skills: string[]; avatar_url: string; open_to_collaborate: boolean } | null;
 export type Application = {
   id: string;
   user_id: string;
@@ -21,17 +21,18 @@ export type Application = {
 
 const row = "flex flex-col gap-3 border-b border-border py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6";
 
-function PersonLink({ id, person, you }: { id: string; person: { name: string; avatar_url: string } | null; you: boolean }) {
+function PersonLink({ id, person, you }: { id: string; person: { name: string; avatar_url: string; open_to_collaborate: boolean } | null; you: boolean }) {
   return (
     <Link href={`/u/${id}`} className="flex min-w-0 items-center gap-2.5 hover:text-accent">
-      <Avatar url={person?.avatar_url ?? ""} name={person?.name ?? ""} className="h-8 w-8 text-[11px]" sizes="32px" />
+      <Avatar url={person?.avatar_url ?? ""} name={person?.name ?? ""} className="h-8 w-8 text-[11px]" sizes="32px" open={person?.open_to_collaborate} />
       <span className="truncate text-[15px] font-medium">{you ? "You" : person?.name || "Unnamed"}</span>
     </Link>
   );
 }
 
-// A team member in the spotlight: photo, name, headline and role. Your connections get the accent ring and a label.
-function Member({ id, person, role, you, connection }: { id: string; person: { name: string; headline: string; avatar_url: string } | null; role: string; you: boolean; connection: boolean }) {
+// A team member in the spotlight: photo, name, headline and role. Your connections get the accent ring and a label;
+// other people open to a team get the green one.
+function Member({ id, person, role, you, connection }: { id: string; person: { name: string; headline: string; avatar_url: string; open_to_collaborate: boolean } | null; role: string; you: boolean; connection: boolean }) {
   return (
     <article className="flex items-start gap-3.5 border-b border-border py-4 first:pt-0">
       <Link href={`/u/${id}`} aria-hidden tabIndex={-1} className="shrink-0">
@@ -40,6 +41,7 @@ function Member({ id, person, role, you, connection }: { id: string; person: { n
           name={person?.name ?? ""}
           className={`h-11 w-11 text-sm ${connection ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : ""}`}
           sizes="44px"
+          open={!connection && person?.open_to_collaborate}
         />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -88,8 +90,10 @@ export type Team = {
   title: string;
   description: string;
   roles: string[];
+  // Optional notes on open roles, by role
+  role_notes: Record<string, string>;
   owner_id: string;
-  owner: { name: string; avatar_url: string; headline: string } | null;
+  owner: { name: string; avatar_url: string; headline: string; open_to_collaborate: boolean } | null;
   opportunity: { id: string; title: string } | null;
 };
 
@@ -145,7 +149,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
           <div className="mt-1 flex items-center gap-2 text-sm text-ink2">
             Started by
             <Link href={`/u/${t.owner_id}`} className="flex items-center gap-2 font-medium text-foreground hover:text-accent">
-              <Avatar url={owner?.avatar_url ?? ""} name={owner?.name ?? ""} className="h-6 w-6 text-[10px]" sizes="24px" />
+              <Avatar url={owner?.avatar_url ?? ""} name={owner?.name ?? ""} className="h-6 w-6 text-[10px]" sizes="24px" open={owner?.open_to_collaborate} />
               {isOwner ? "you" : owner?.name || "Unnamed"}
             </Link>
           </div>
@@ -166,7 +170,10 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
             <div className="flex flex-col">
               {open.map((role) => (
                 <div key={role} className={row}>
-                  <span className="text-[17px] font-semibold">{role}</span>
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="text-[17px] font-semibold">{role}</span>
+                    {Object.hasOwn(t.role_notes, role) && <span className="text-sm text-ink2">{t.role_notes[role]}</span>}
+                  </span>
                   {openRoleAction(role)}
                 </div>
               ))}

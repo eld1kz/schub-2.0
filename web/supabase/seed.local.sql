@@ -72,6 +72,19 @@ update profiles p set
 from fake_students s
 where p.id = pg_temp.fake_id(s.n);
 
+-- Roles some of them are open to joining a team as (open-to-team.sql)
+update profiles p set wanted_roles = r.roles
+from (values
+  (3,  '{"ML / AI"}'::text[]),
+  (4,  '{Designer}'),
+  (9,  '{Frontend}'),
+  (10, '{Designer,Frontend}'),
+  (15, '{Full-stack,Backend}'),
+  (16, '{iOS,Android}'),
+  (19, '{"ML / AI",Data}')
+) as r(n, roles)
+where p.id = pg_temp.fake_id(r.n);
+
 insert into admins (user_id) values (pg_temp.fake_id(20));
 
 -- Experience and projects -------------------------------------------------------------

@@ -16,6 +16,7 @@ const daysLeft = (n: number) => (n === 0 ? "Today" : n === 1 ? "1 day left" : `$
 // `awarded`: people with an award, who get a small medal after their name
 // `applied`: teams you've already applied to, whose button reads "Applied"
 // `connections`: your accepted connections. A team with one on it leads with them, ringed in the accent.
+// Other members open to a team are ringed in green.
 // `hideEvent`: on an opportunity's own page, where every row's event line would repeat the page title
 // `share`: a share icon on each row, opening the share dialog (Your teams > Running)
 export function TeamList({ teams, userId, awarded, applied, connections = new Set(), hideEvent = false, share = false, empty }: {
@@ -68,7 +69,7 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
                         key={m.id}
                         url={m.avatar_url}
                         name={m.name}
-                        className={`h-6 w-6 text-[9px] ring-2 ${stack[i]} ${connections.has(m.id) ? "ring-accent" : "ring-background"}`}
+                        className={`h-6 w-6 text-[9px] ring-2 ${stack[i]} ${connections.has(m.id) ? "ring-accent" : m.open_to_collaborate ? "ring-open" : "ring-background"}`}
                         sizes="24px"
                       />
                     ))}

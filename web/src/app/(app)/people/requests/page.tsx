@@ -4,7 +4,7 @@ import { respond, withdrawRequest } from "@/app/actions";
 import { awardedIds } from "@/lib/awards";
 import { PersonRow } from "../person-row";
 
-type Person = { name: string; headline: string; avatar_url: string } | null;
+type Person = { name: string; headline: string; avatar_url: string; open_to_collaborate: boolean } | null;
 type Request = { id: string; sender_id: string; receiver_id: string; created_at: string; sender: Person; receiver: Person };
 
 export const instant = false;
@@ -25,7 +25,7 @@ export default async function RequestsPage() {
   const [{ data }, awarded] = await Promise.all([
     supabase
       .from("connections")
-      .select("id, sender_id, receiver_id, created_at, sender:profiles!sender_id(name, headline, avatar_url), receiver:profiles!receiver_id(name, headline, avatar_url)")
+      .select("id, sender_id, receiver_id, created_at, sender:profiles!sender_id(name, headline, avatar_url, open_to_collaborate), receiver:profiles!receiver_id(name, headline, avatar_url, open_to_collaborate)")
       .eq("status", "pending")
       .order("created_at", { ascending: false }),
     awardedIds(supabase),
@@ -57,6 +57,7 @@ export default async function RequestsPage() {
               name={c.sender?.name ?? ""}
               headline={c.sender?.headline ?? ""}
               avatarUrl={c.sender?.avatar_url ?? ""}
+              open={c.sender?.open_to_collaborate}
               awarded={awarded.has(c.sender_id)}
               actions={
                 <>
@@ -83,6 +84,7 @@ export default async function RequestsPage() {
               name={c.receiver?.name ?? ""}
               headline={c.receiver?.headline ?? ""}
               avatarUrl={c.receiver?.avatar_url ?? ""}
+              open={c.receiver?.open_to_collaborate}
               awarded={awarded.has(c.receiver_id)}
               actions={<form action={withdrawRequest.bind(null, c.id)}><button className="h-9 text-sm text-ink2 hover:text-foreground">Withdraw</button></form>}
             >

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { deleteAward, deleteExperience, deleteProject, saveAbout, saveAward, saveContact, saveExperience, saveHero, saveInterests, saveLinks, saveProject, saveSkills } from "@/app/actions";
 import { placementLabel, type Award } from "@/lib/awards";
 import { GOALS } from "@/lib/goals";
+import { ROLES } from "@/lib/roles";
 import { knownSkills } from "@/lib/skills";
 import type { Experience, Project } from "@/lib/portfolio";
 import { Avatar } from "../../avatar";
@@ -16,6 +17,9 @@ import type { ProfileData } from "./profile-view";
 // The owner's edit modals, one per profile section. Each saves only its own fields.
 
 type Trigger = "edit" | "link" | "button";
+
+// Checkbox chips in a grid, like the goals and roles pickers
+const chipOption = "flex cursor-pointer items-center justify-center rounded-md border border-line2 px-3 py-2 text-center text-sm text-ink2 transition-colors hover:border-muted has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent";
 
 // A labelled row of fields: the label sits in its own column from sm up
 function Group({ label, children }: { label: string; children: ReactNode }) {
@@ -77,9 +81,20 @@ export function HeroEdit({ profile: p }: { profile: ProfileData }) {
           <Field label="Grad year"><input name="graduation_year" type="number" defaultValue={p.graduation_year || ""} className="input" /></Field>
         </div>
       </Group>
-      <Group label="Status">
-        <Toggle name="open_to_collaborate" label="Open to collaborate" defaultChecked={p.open_to_collaborate} />
-        <p className="text-[13px] text-ink2">Shown on your profile and in team search</p>
+      <Group label="Open to a team">
+        <Toggle name="open_to_collaborate" label="Open to a team" defaultChecked={p.open_to_collaborate} />
+        <p className="text-[13px] text-ink2">A green ring on your photo, and team owners can find you in People</p>
+        <fieldset>
+          <legend className="label">Roles you&apos;d join as (shown while you&apos;re open to a team)</legend>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {ROLES.map((r) => (
+              <label key={r} className={chipOption}>
+                <input type="checkbox" name="wanted_roles" value={r} defaultChecked={p.wanted_roles.includes(r)} className="sr-only" />
+                {r}
+              </label>
+            ))}
+          </div>
+        </fieldset>
       </Group>
     </EditDialog>
   );
@@ -114,10 +129,7 @@ export function InterestsEdit({ profile: p, trigger }: { profile: ProfileData; t
           <legend className="sr-only">What you&apos;re looking for</legend>
           <div className="grid grid-cols-2 gap-2">
             {GOALS.map((g) => (
-              <label
-                key={g}
-                className="flex cursor-pointer items-center justify-center rounded-md border border-line2 px-3 py-2 text-center text-sm text-ink2 transition-colors hover:border-muted has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent"
-              >
+              <label key={g} className={chipOption}>
                 <input type="checkbox" name="goals" value={g} defaultChecked={p.goals.includes(g)} className="sr-only" />
                 {g}
               </label>

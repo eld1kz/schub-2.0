@@ -11,6 +11,7 @@ import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, mediaPath, toLink } from 
 import { AWARD_DESCRIPTION_MAX, AWARD_TEAMMATES_MAX, PLACEMENTS } from "@/lib/awards";
 import { knownSkills } from "@/lib/skills";
 import { knownGoals } from "@/lib/goals";
+import { knownRoles, rolesWithNotes } from "@/lib/roles";
 import { LAST_METHOD_COOKIE, enabledMethods, type OAuthProvider } from "@/lib/auth-providers";
 import { localPath } from "@/lib/redirect";
 
@@ -194,12 +195,19 @@ export async function saveHero(formData: FormData): Promise<SaveResult> {
     university: field(formData, "university"),
     graduation_year: Number(formData.get("graduation_year")) || 0,
     open_to_collaborate: formData.get("open_to_collaborate") === "on",
+    // Only roles from the fixed list (lib/roles.ts)
+    wanted_roles: knownRoles(formData.getAll("wanted_roles")),
     // Only replace the photo when a new one was chosen
     ...(photo.url ? { avatar_url: photo.url } : {}),
   });
   // Keep exactly one photo: the old one goes once the new one is saved, the new one if saving failed
   if (photo.url) await removeImage(supabase, userId, result.error ? photo.url : before?.avatar_url);
   return result;
+}
+
+// The one-tap switch in your profile hero
+export async function setOpenToTeam(open: boolean) {
+  await updateMyProfile({ open_to_collaborate: open === true });
 }
 
 export async function saveAbout(formData: FormData): Promise<SaveResult> {
@@ -567,11 +575,10 @@ export async function createTeam(formData: FormData) {
   const text = (key: string) => String(formData.get(key) ?? "").trim();
   const fail = (message: string): never => redirect(`/teams/new?error=${encodeURIComponent(message)}`);
 
-  // One "roles" value per role row; commas inside one are split too. Keeps the casing people typed ("CTO"), drops repeats.
-  const roles = formData.getAll("roles").flatMap((v) => String(v).split(",")).map((r) => r.trim().slice(0, 40)).filter(Boolean);
-  const unique = roles.filter((r, i) => roles.findIndex((x) => x.toLowerCase() === r.toLowerCase()) === i);
-  if (unique.length === 0) fail("Add at least one open role.");
-  if (unique.length > 10) fail("List up to 10 roles.");
+  // One "roles" value per picked role from the fixed list (lib/roles.ts), each with its "role_notes" value
+  const { roles: unique, notes } = rolesWithNotes(formData.getAll("roles"), formData.getAll("role_notes"));
+  if (unique.length === 0) fail("Pick at least one open role.");
+  if (unique.length > 10) fail("Pick up to 10 roles.");
 
   const { data, error } = await supabase
     .from("teams")
@@ -580,6 +587,7 @@ export async function createTeam(formData: FormData) {
       title: text("title"),
       description: text("description"),
       roles: unique,
+      role_notes: notes,
       opportunity_id: text("opportunity_id") || null,
     })
     .select("id")

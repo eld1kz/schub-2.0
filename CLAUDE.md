@@ -56,6 +56,7 @@ web/src/
   lib/
     match.ts                matching score (same as the iOS DiscoverViewModel)
     skills.ts               the fixed skill list and its groups
+    roles.ts                the fixed team role list (wanted_roles, new teams' open roles) and role notes
     portfolio.ts            project/experience types, period formatting, safe link/image helpers
     opportunities.ts, teams.ts, goals.ts
     connections.ts          your accepted connections (one query per page) and which events they're going to
@@ -72,14 +73,14 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
 `people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read` → `people-discover` →
 `notification-limits` → `participant-notes` → `display-name` →
-`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account`. `seed_opportunities.sql` and
+`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
 Tables:
 - `profiles` — name, headline, university, graduation_year, bio, skills[], interests[],
-  looking_for[], goals[], open_to_collaborate, avatar_url, github, linkedin, website,
-  telegram, email
+  looking_for[], goals[], open_to_collaborate (the "Open to a team" switch: a green ring on avatars),
+  wanted_roles[] (from `lib/roles.ts`), avatar_url, github, linkedin, website, telegram, email
 - `experiences` — role, company, type, location, remote, start/end (1st of the month), description, skills[]
 - `projects` — the profile's portfolio
 - `connections` — sender_id, receiver_id, status (pending / accepted / declined)
@@ -88,7 +89,8 @@ Tables:
   rejects past dates and near-duplicate titles.
 - `opportunity_participants` — people looking for a team for an opportunity
 - `opportunity_reports` — 3 reports hide an opportunity; `admins` can restore or remove
-- `teams` — owner, optional opportunity, title, description, roles[]
+- `teams` — owner, optional opportunity, title, description, roles[] (new teams pick from `lib/roles.ts`; old
+  ones keep typed-in roles), role_notes (jsonb, role → short note)
 - `team_applications` — one per person per team, for one role; the owner accepts or declines
 - `awards` — placement, prize_name, event_name (always set; the opportunity's title when linked),
   optional opportunity_id / project_id (own project) / team_id (a team you were on, set by the server

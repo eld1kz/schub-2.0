@@ -203,6 +203,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
                 headline={p.person.headline}
                 avatarUrl={p.person.avatar_url}
                 awarded={awarded.has(p.user_id)}
+                open={p.person.open_to_collaborate}
                 actions={
                   <>
                     <span className="text-[13px] text-muted tabular-nums">{p.score}% match</span>

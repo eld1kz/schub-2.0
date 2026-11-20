@@ -10,6 +10,7 @@ import { About } from "./about";
 import type { AwardOptions } from "./award-fields";
 import { AwardsSection, HeroAward, PendingTags, Placement } from "./awards";
 import { CopyLinkButton } from "./copy-link";
+import { OpenToTeamSwitch } from "./open-to-team-switch";
 import { ChipTable, EmptyPrompt, KeyValue, Section, SideBlock, Timeline, TimelineEntry } from "./profile-parts";
 import { AboutEdit, ContactEdit, ExperienceEdit, HeroEdit, InterestsEdit, LinksEdit, ProjectEdit, SkillsEdit } from "./section-edits";
 import { ToastProvider } from "./toast";
@@ -25,6 +26,8 @@ export type ProfileData = {
   looking_for: string[];
   goals: string[];
   open_to_collaborate: boolean;
+  // Roles they'd join a team as (lib/roles.ts); shown while open_to_collaborate is on
+  wanted_roles: string[];
   avatar_url: string;
   github: string;
   linkedin: string;
@@ -160,7 +163,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_296px] lg:items-start lg:gap-20">
         <div>
           <header className="relative grid grid-cols-[72px_minmax(0,1fr)] items-center gap-x-4 gap-y-3.5 pb-8 sm:grid-cols-[120px_minmax(0,1fr)] sm:grid-rows-[auto_1fr] sm:items-start sm:gap-x-8 sm:gap-y-2.5 sm:pb-10">
-            <Avatar url={p.avatar_url} name={p.name} className="h-[72px] w-[72px] border border-border text-xl sm:row-span-2 sm:h-[120px] sm:w-[120px] sm:text-3xl" sizes="(min-width: 640px) 120px, 72px" priority square />
+            <Avatar url={p.avatar_url} name={p.name} className="h-[72px] w-[72px] border border-border text-xl sm:row-span-2 sm:h-[120px] sm:w-[120px] sm:text-3xl" sizes="(min-width: 640px) 120px, 72px" priority square open={p.open_to_collaborate} />
             <h1 className={`text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-[44px] sm:leading-[1.05] sm:tracking-[-0.03em] ${canEdit ? "pr-10" : ""}`}>
               {p.name || "Unnamed"}
             </h1>
@@ -173,23 +176,25 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                   {education && <span>{education}</span>}
                 </p>
               )}
+              {p.open_to_collaborate && p.wanted_roles.length > 0 && (
+                <p className="text-sm sm:text-[15px]">
+                  <span className="text-muted">Open to:</span> <span className="font-medium">{p.wanted_roles.join(", ")}</span>
+                </p>
+              )}
+              {canEdit && p.open_to_collaborate && p.wanted_roles.length === 0 && (
+                <p className="text-sm text-muted">Open to: pick the roles you&apos;d join as in Edit intro</p>
+              )}
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-3 sm:mt-4">
                 {canEdit ? (
-                  <span className="flex items-center gap-2.5">
-                    <span className="flex h-[34px] items-center gap-2 rounded-md border border-line2 px-3 text-sm font-medium">
-                      <span aria-hidden className={`h-2 w-2 rounded-full ${p.open_to_collaborate ? "bg-accent" : "bg-line2"}`} />
-                      {p.open_to_collaborate ? "Open to collaborate" : "Not open to collaborate"}
-                    </span>
-                    <span className="hidden text-sm text-muted sm:inline">Shown on your profile and in team search</span>
-                  </span>
+                  <OpenToTeamSwitch open={p.open_to_collaborate} />
                 ) : (
                   <>
                     {action}
                     <CopyLinkButton path={`/u/${id}`} />
                     {p.open_to_collaborate && (
                       <span className="flex items-center gap-2 text-sm font-medium">
-                        <span aria-hidden className="h-2 w-2 rounded-full bg-accent" />
-                        Open to collaborate
+                        <span aria-hidden className="h-2 w-2 rounded-full bg-open" />
+                        Open to a team
                       </span>
                     )}
                   </>
@@ -392,7 +397,8 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                 {suggestions.map((s) => (
                   <li key={s.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                     <Link href={`/u/${s.id}`} className="flex min-w-0 items-center gap-3 hover:opacity-80">
-                      <Avatar url={s.avatar_url} name={s.name} className="h-10 w-10 text-[13px]" sizes="40px" />
+                      {/* Suggestions are all open to a team */}
+                      <Avatar url={s.avatar_url} name={s.name} className="h-10 w-10 text-[13px]" sizes="40px" open />
                       <span className="min-w-0">
                         <span className="block truncate text-[15px] font-semibold">{s.name}</span>
                         {s.headline && <span className="block truncate text-[13px] text-ink2">{s.headline}</span>}

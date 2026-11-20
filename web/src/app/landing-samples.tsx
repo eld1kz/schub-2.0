@@ -13,8 +13,8 @@ import { AwardItem, TrustLabels } from "./(app)/u/[id]/awards";
 // Every preview is `inert` (not clickable or focusable) and marked `data-sample`, so tests can tell it from real data.
 // The ids match nothing in the database.
 
-const alex = { id: "00000000-0000-4000-f000-000000000001", name: "Alex Sample", avatar_url: "", university: "Example University" };
-const jordan = { id: "00000000-0000-4000-f000-000000000002", name: "Jordan Example", avatar_url: "", university: "Example University" };
+const alex = { id: "00000000-0000-4000-f000-000000000001", name: "Alex Sample", avatar_url: "", university: "Example University", open_to_collaborate: false };
+const jordan = { id: "00000000-0000-4000-f000-000000000002", name: "Jordan Example", avatar_url: "", university: "Example University", open_to_collaborate: false };
 
 // A few days from now, so the time left shows in the accent like a deadline that's close
 function soon() {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { memberSummary, teamMembers, teamRank, universitiesLabel, type Member, type TeamSummary } from "./teams";
 
-const person = (id: string, university = ""): Member => ({ id, name: `Person ${id}`, avatar_url: "", university });
+const person = (id: string, university = ""): Member => ({ id, name: `Person ${id}`, avatar_url: "", university, open_to_collaborate: false });
 const team = (over: Partial<TeamSummary> = {}): TeamSummary => ({
   id: "t",
   title: "T",

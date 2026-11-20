@@ -5,15 +5,11 @@ import { knownSkills, SKILLS } from "@/lib/skills";
 import { awardedIds } from "@/lib/awards";
 import { ConnectButton } from "../connect-button";
 import { PersonRow } from "./person-row";
+import { PeopleFilters } from "./people-filters";
+import { peopleHref, readPeopleQuery } from "./people-query";
 
 const chipCount = 12;
 const pageSize = 20;
-
-// "?skills=React,C%2B%2B&page=2": each skill encoded on its own so the commas stay readable
-function peopleHref(skills: string[], page = 1) {
-  const params = [skills.length > 0 && `skills=${skills.map(encodeURIComponent).join(",")}`, page > 1 && `page=${page}`].filter(Boolean);
-  return params.length ? `/people?${params.join("&")}` : "/people";
-}
 
 export const instant = false;
 
@@ -21,9 +17,10 @@ export const instant = false;
 // and pages; open-to-collaborate people come first, then the most recently updated. Within a page, the best
 // match comes first (the score is computed in lib/match.ts, so it can't order the query itself).
 export default async function PeoplePage(props: PageProps<"/people">) {
-  const { skills: skillsParam, page: pageParam } = await props.searchParams;
-  const selected = knownSkills(typeof skillsParam === "string" ? skillsParam.split(",") : []);
-  const page = Math.max(1, Math.floor(Number(pageParam)) || 1);
+  const filters = readPeopleQuery(await props.searchParams);
+  const { skills: selected, page } = filters;
+  // Every filter but the page, for links that change one of them
+  const at = (change: Partial<typeof filters>) => peopleHref({ ...filters, page: 1, ...change });
   const { supabase, userId, isGuest } = await requireUser();
   const [mine, connections, skillCounts, awarded] = await Promise.all([
     supabase.from("profiles").select("skills, interests, open_to_collaborate").eq("id", userId).maybeSingle(),
@@ -41,18 +38,22 @@ export default async function PeoplePage(props: PageProps<"/people">) {
 
   let query = supabase
     .from("profiles")
-    .select("id, name, headline, university, avatar_url, skills, interests, open_to_collaborate", { count: "exact" })
+    .select("id, name, headline, university, avatar_url, skills, interests, open_to_collaborate, wanted_roles", { count: "exact" })
     .neq("name", "")
     .neq("id", userId);
   if (elsewhere.length > 0) query = query.not("id", "in", `(${elsewhere.join(",")})`);
   // Must have every selected skill
   if (selected.length > 0) query = query.contains("skills", selected);
+  // A role only counts while they're open to a team
+  if (filters.open || filters.role) query = query.eq("open_to_collaborate", true);
+  if (filters.role) query = query.contains("wanted_roles", [filters.role]);
   const { data: people, count } = await query
     .order("open_to_collaborate", { ascending: false })
     .order("updated_at", { ascending: false })
     .order("id")
     .range((page - 1) * pageSize, page * pageSize - 1);
   const pages = Math.ceil((count ?? 0) / pageSize);
+  const filtered = selected.length > 0 || filters.open || filters.role !== "";
 
   // Chips: the 12 skills most people have (listed order breaks ties), plus any already selected
   const counts = new Map<string, number>((skillCounts.data ?? []).map((r: { skill: string; people: number }) => [r.skill, Number(r.people)]));
@@ -65,13 +66,14 @@ export default async function PeoplePage(props: PageProps<"/people">) {
 
   return (
     <div className="flex flex-col gap-6">
+      <PeopleFilters query={filters} />
       <nav aria-label="Filter by skill" className="flex flex-wrap items-center gap-1.5">
         {chips.map((s) => {
           const on = selected.includes(s);
           return (
             <Link
               key={s}
-              href={peopleHref(on ? selected.filter((x) => x !== s) : [...selected, s])}
+              href={at({ skills: on ? selected.filter((x) => x !== s) : [...selected, s] })}
               aria-current={on ? "true" : undefined}
               className={`rounded px-2.5 py-1 text-sm ${on ? "bg-foreground font-medium text-background" : "border border-line2 text-ink2 hover:border-muted hover:text-foreground"}`}
             >
@@ -79,13 +81,13 @@ export default async function PeoplePage(props: PageProps<"/people">) {
             </Link>
           );
         })}
-        {selected.length > 0 && <Link href="/people" className="ml-2 text-sm font-medium text-accent hover:underline">Clear filters</Link>}
+        {filtered && <Link href="/people" className="ml-2 text-sm font-medium text-accent hover:underline">Clear filters</Link>}
       </nav>
 
       {matches.length === 0 ? (
         <div className="flex flex-col items-start gap-2 border-t border-border py-8">
-          <p className="text-[15px] font-medium">{selected.length > 0 ? "No one matches these filters" : "No one new to discover right now"}</p>
-          {selected.length > 0 ? (
+          <p className="text-[15px] font-medium">{filtered ? "No one matches these filters" : "No one new to discover right now"}</p>
+          {filtered ? (
             <Link href="/people" className="text-sm font-semibold text-accent hover:underline">Clear filters</Link>
           ) : (
             <p className="text-sm text-ink2">You&apos;ve connected with or asked everyone here so far.</p>
@@ -103,6 +105,7 @@ export default async function PeoplePage(props: PageProps<"/people">) {
                 headline={p.headline}
                 avatarUrl={p.avatar_url}
                 awarded={awarded.has(p.id)}
+                open={p.open_to_collaborate}
                 actions={
                   <>
                     <span className="text-[13px] text-muted tabular-nums">{p.score}% match</span>
@@ -121,7 +124,12 @@ export default async function PeoplePage(props: PageProps<"/people">) {
                     {p.reason && <p className="text-[13px] font-medium text-accent">{p.reason}</p>}
                   </div>
                 )}
-                {!p.open_to_collaborate && <p className="text-[13px] text-muted">Not looking for collaborators</p>}
+                {p.open_to_collaborate && (
+                  <p className="text-[13px]">
+                    {p.wanted_roles.length > 0 ? <><span className="text-muted">Open to:</span> {p.wanted_roles.join(", ")}</> : <span className="text-muted">Open to a team</span>}
+                  </p>
+                )}
+                {!p.open_to_collaborate && <p className="text-[13px] text-muted">Not open to a team</p>}
               </PersonRow>
             );
           })}
@@ -130,9 +138,9 @@ export default async function PeoplePage(props: PageProps<"/people">) {
 
       {pages > 1 && (
         <nav aria-label="Pages" className="flex items-center justify-between border-t border-border pt-5 text-sm">
-          {page > 1 ? <Link href={peopleHref(selected, page - 1)} className="font-semibold text-accent hover:underline">Previous</Link> : <span />}
+          {page > 1 ? <Link href={at({ page: page - 1 })} className="font-semibold text-accent hover:underline">Previous</Link> : <span />}
           <span className="text-muted tabular-nums">Page {page} of {pages}</span>
-          {page < pages ? <Link href={peopleHref(selected, page + 1)} className="font-semibold text-accent hover:underline">Next</Link> : <span />}
+          {page < pages ? <Link href={at({ page: page + 1 })} className="font-semibold text-accent hover:underline">Next</Link> : <span />}
         </nav>
       )}
     </div>
