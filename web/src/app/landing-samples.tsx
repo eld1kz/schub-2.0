@@ -25,6 +25,8 @@ const sampleTeam = (): TeamSummary => ({
   id: "00000000-0000-4000-f000-000000000010",
   title: "AI study buddy for university students",
   roles: ["Backend", "iOS developer", "Designer"],
+  languages: [],
+  work_mode: "",
   owner_id: alex.id,
   owner: alex,
   opportunity: { id: "00000000-0000-4000-f000-000000000020", title: "Sample Hack Seoul", deadline: soon(), starts_at: null, ends_at: null },

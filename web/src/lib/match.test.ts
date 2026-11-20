@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchReason, matchScore, parseList } from "./match";
+import { matchReason, matchScore, NO_SHARED_LANGUAGE_PENALTY, parseList, SHARED_LANGUAGE_BONUS } from "./match";
 
 const person = (skills: string[], interests: string[] = []) => ({ skills, interests, open_to_collaborate: true });
 
@@ -29,9 +29,44 @@ describe("matchScore", () => {
   });
 });
 
+describe("matchScore and languages", () => {
+  // Shares React and one interest with me, so the base score is well under 100
+  const speaks = (languages: string[]) => ({ ...person(["Go", "React"], ["ai", "games"]), languages });
+  const me = { ...person(["React"], ["ai"]), languages: ["Korean", "English"] };
+  const base = matchScore(person(["Go", "React"], ["ai", "games"]), me).score;
+
+  it("adds a bonus for a shared language", () => {
+    expect(base).toBeLessThan(80);
+    expect(matchScore(speaks(["English"]), me).score).toBe(base + SHARED_LANGUAGE_BONUS);
+  });
+
+  it("takes a lot off when you share no language", () => {
+    const them = { ...person(["Go", "Rust", "SQL", "Java"], ["a", "b", "c"]), languages: ["Russian"] };
+    const without = matchScore({ ...them, languages: [] }, me).score;
+    expect(matchScore(them, me).score).toBe(Math.max(15, without - NO_SHARED_LANGUAGE_PENALTY));
+    expect(matchScore(them, me).score).toBeLessThan(without);
+  });
+
+  it("changes nothing when either side hasn't said", () => {
+    expect(matchScore(speaks([]), me).score).toBe(base);
+    expect(matchScore(speaks(["Russian"]), { ...me, languages: [] }).score).toBe(base);
+  });
+
+  it("ranks a speaker of your language above an otherwise equal one who isn't", () => {
+    const shared = matchScore({ ...person(["Python"], ["ai"]), languages: ["Korean"] }, { ...person(["React"], ["ai"]), languages: ["Korean"] }).score;
+    const none = matchScore({ ...person(["Python"], ["ai"]), languages: ["French"] }, { ...person(["React"], ["ai"]), languages: ["Korean"] }).score;
+    expect(shared).toBeGreaterThan(none);
+  });
+});
+
 describe("matchReason", () => {
   it("says nothing until you have skills", () => {
     expect(matchReason(person(["Go"]), person([]))).toBe("");
+  });
+
+  it("says when you have no language in common, ahead of anything else", () => {
+    expect(matchReason({ ...person(["Go"]), languages: ["Russian"] }, { ...person(["React"]), languages: ["Korean"] })).toBe("No language in common");
+    expect(matchReason({ ...person(["Go"]), languages: ["Russian"] }, { ...person(["React"]), languages: [] })).toBe("Has Go — you don't");
   });
 
   it("prefers skills you lack, then shared interests, then shared skills", () => {

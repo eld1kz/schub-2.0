@@ -3,6 +3,7 @@ import { createTeam } from "@/app/actions";
 import { today } from "@/lib/opportunities";
 import { SignInPrompt } from "../../sign-in";
 import { RoleFields } from "./role-fields";
+import { LANGUAGES, WORK_MODES } from "@/lib/languages";
 
 export const instant = false;
 
@@ -38,6 +39,32 @@ export default async function NewTeamPage(props: PageProps<"/teams/new">) {
           <textarea id="description" name="description" rows={4} maxLength={2000} placeholder="One or two lines on the idea and where it's at." className="input resize-none leading-normal" />
         </div>
         <RoleFields />
+        <fieldset>
+          <legend className={label}>Team language <span className="font-normal text-muted">(optional, one or more)</span></legend>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {LANGUAGES.map((l) => (
+              <label
+                key={l}
+                className="flex min-h-10 cursor-pointer items-center justify-center rounded-md border border-line2 px-2 py-2 text-center text-sm text-ink2 transition-colors hover:border-muted has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent"
+              >
+                <input type="checkbox" name="languages" value={l} className="sr-only" />
+                {l}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <div>
+          <label htmlFor="work_mode" className={label}>How you&apos;ll work <span className="font-normal text-muted">(optional)</span></label>
+          <span className="relative block">
+            <select id="work_mode" name="work_mode" defaultValue="" className="input h-11 cursor-pointer appearance-none py-0 pr-9 sm:h-10">
+              <option value="">Not decided</option>
+              {WORK_MODES.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <svg viewBox="0 0 16 16" aria-hidden className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 fill-none stroke-muted" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="m4 6 4 4 4-4" />
+            </svg>
+          </span>
+        </div>
         <div>
           <label htmlFor="opportunity_id" className={label}>For an opportunity <span className="font-normal text-muted">(optional)</span></label>
           <span className="relative block">

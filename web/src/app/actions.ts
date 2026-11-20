@@ -12,6 +12,7 @@ import { AWARD_DESCRIPTION_MAX, AWARD_TEAMMATES_MAX, PLACEMENTS } from "@/lib/aw
 import { knownSkills } from "@/lib/skills";
 import { knownGoals } from "@/lib/goals";
 import { knownRoles, rolesWithNotes } from "@/lib/roles";
+import { HOURS, knownLanguages, oneOf, WORK_MODES } from "@/lib/languages";
 import { LAST_METHOD_COOKIE, enabledMethods, type OAuthProvider } from "@/lib/auth-providers";
 import { localPath } from "@/lib/redirect";
 
@@ -197,6 +198,11 @@ export async function saveHero(formData: FormData): Promise<SaveResult> {
     open_to_collaborate: formData.get("open_to_collaborate") === "on",
     // Only roles from the fixed list (lib/roles.ts)
     wanted_roles: knownRoles(formData.getAll("wanted_roles")),
+    // Work style: fixed lists (lib/languages.ts), and a short city
+    languages: knownLanguages(formData.getAll("languages")),
+    hours_per_week: oneOf(HOURS, formData.get("hours_per_week")),
+    work_mode: oneOf(WORK_MODES, formData.get("work_mode")),
+    city: field(formData, "city").slice(0, 60),
     // Only replace the photo when a new one was chosen
     ...(photo.url ? { avatar_url: photo.url } : {}),
   });
@@ -264,6 +270,8 @@ export async function completeOnboarding(formData: FormData) {
       university,
       skills,
       goals: knownGoals(formData.getAll("goals")),
+      // Optional on the first step
+      languages: knownLanguages(formData.getAll("languages")),
       ...(year >= 2025 && year <= 2030 ? { graduation_year: year } : {}),
     })
     .eq("id", userId);
@@ -588,6 +596,8 @@ export async function createTeam(formData: FormData) {
       description: text("description"),
       roles: unique,
       role_notes: notes,
+      languages: knownLanguages(formData.getAll("languages")),
+      work_mode: oneOf(WORK_MODES, formData.get("work_mode")),
       opportunity_id: text("opportunity_id") || null,
     })
     .select("id")

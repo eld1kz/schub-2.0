@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { openRoles } from "@/lib/teams";
 import { knownSkills } from "@/lib/skills";
+import { workModeLabel } from "@/lib/languages";
 import { applyToTeam, deleteTeam, respondToApplication, withdrawApplication } from "@/app/actions";
 import { Avatar } from "../../avatar";
 import { SignInButton } from "../../sign-in";
@@ -92,6 +93,9 @@ export type Team = {
   roles: string[];
   // Optional notes on open roles, by role
   role_notes: Record<string, string>;
+  // Working languages and work mode; empty when not given
+  languages: string[];
+  work_mode: string;
   owner_id: string;
   owner: { name: string; avatar_url: string; headline: string; open_to_collaborate: boolean } | null;
   opportunity: { id: string; title: string } | null;
@@ -146,6 +150,12 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
           )}
           <h1 className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-4xl sm:tracking-[-0.03em]">{t.title}</h1>
           {t.description && <p className="max-w-[620px] text-[15px] leading-relaxed text-pretty whitespace-pre-wrap sm:text-base">{t.description}</p>}
+          {(t.languages.length > 0 || t.work_mode) && (
+            <p className="flex flex-wrap gap-x-[18px] gap-y-1 text-sm text-ink2">
+              {t.languages.length > 0 && <span><span className="text-muted">Team language:</span> <span className="font-medium text-foreground">{t.languages.join(", ")}</span></span>}
+              {t.work_mode && <span><span className="text-muted">Work mode:</span> <span className="font-medium text-foreground">{workModeLabel(t.work_mode)}</span></span>}
+            </p>
+          )}
           <div className="mt-1 flex items-center gap-2 text-sm text-ink2">
             Started by
             <Link href={`/u/${t.owner_id}`} className="flex items-center gap-2 font-medium text-foreground hover:text-accent">

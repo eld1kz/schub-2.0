@@ -5,6 +5,9 @@ export type TeamSummary = {
   id: string;
   title: string;
   roles: string[];
+  // Working languages and work mode (lib/languages.ts); empty when not given
+  languages: string[];
+  work_mode: string;
   owner_id: string;
   owner: Member | null;
   opportunity: { id: string; title: string; deadline: string | null; starts_at: string | null; ends_at: string | null } | null;
@@ -14,7 +17,7 @@ export type TeamSummary = {
 
 const member = "id, name, avatar_url, university, open_to_collaborate";
 export const teamSummaryColumns =
-  `id, title, roles, owner_id, owner:profiles(${member}), opportunity:opportunities(id, title, deadline, starts_at, ends_at), team_applications(role, status, user_id, person:profiles(${member}))`;
+  `id, title, roles, languages, work_mode, owner_id, owner:profiles(${member}), opportunity:opportunities(id, title, deadline, starts_at, ends_at), team_applications(role, status, user_id, person:profiles(${member}))`;
 
 // A role is open until someone has been accepted for it.
 export function openRoles(team: { roles: string[]; team_applications: { role: string; status: string }[] }) {

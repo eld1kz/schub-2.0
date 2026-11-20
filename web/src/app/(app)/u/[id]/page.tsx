@@ -8,7 +8,7 @@ import { ConnectButton } from "../../connect-button";
 import { ProfileView, type Connection, type ProfileData, type Suggestion } from "./profile-view";
 
 type Opportunity = { id: string; title: string; starts_at: string | null; deadline: string | null } | null;
-type Person = { id: string; name: string; headline: string; avatar_url: string; skills: string[]; interests: string[]; open_to_collaborate: boolean };
+type Person = { id: string; name: string; headline: string; avatar_url: string; skills: string[]; interests: string[]; open_to_collaborate: boolean; languages: string[] };
 
 const suggestionCount = 4;
 // "People you may team up with" picks the best matches from this many recently updated open collaborators
@@ -29,7 +29,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
   const [profile, ideas, myConnections, contacts, projects, experiences, owned, joined, looking, connections, mine, people, ownAwards, tags, opportunities] = await Promise.all([
     supabase
       .from("profiles")
-      .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, goals, open_to_collaborate, wanted_roles, avatar_url, github, linkedin, website")
+      .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, goals, open_to_collaborate, wanted_roles, languages, hours_per_week, work_mode, city, avatar_url, github, linkedin, website")
       .eq("id", id)
       .maybeSingle(),
     supabase.from("ideas").select("id, title, description, skills_needed, stage").eq("author_id", id).order("created_at", { ascending: false }),
@@ -44,10 +44,10 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
     supabase.from("opportunity_participants").select("opportunity:opportunities(id, title, starts_at, deadline)").eq("user_id", id),
     // Accepted connections of this profile (supabase/connections-list.sql)
     supabase.rpc("connections_of", { profile_id: id }),
-    supabase.from("profiles").select("skills, interests, open_to_collaborate").eq("id", userId).maybeSingle(),
+    supabase.from("profiles").select("skills, interests, open_to_collaborate, languages").eq("id", userId).maybeSingle(),
     supabase
       .from("profiles")
-      .select("id, name, headline, avatar_url, skills, interests, open_to_collaborate")
+      .select("id, name, headline, avatar_url, skills, interests, open_to_collaborate, languages")
       .neq("name", "")
       .eq("open_to_collaborate", true)
       .neq("id", userId)

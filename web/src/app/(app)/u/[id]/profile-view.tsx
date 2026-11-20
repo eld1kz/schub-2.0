@@ -4,6 +4,7 @@ import Link from "next/link";
 import { mediaUrl, webLink, type Experience, type Project } from "@/lib/portfolio";
 import { byRank, type Award } from "@/lib/awards";
 import { groupSkills } from "@/lib/skills";
+import { workStyleLine } from "@/lib/languages";
 import { Avatar } from "../../avatar";
 import { ProfileCompletion } from "../../profile/completion";
 import { About } from "./about";
@@ -28,6 +29,11 @@ export type ProfileData = {
   open_to_collaborate: boolean;
   // Roles they'd join a team as (lib/roles.ts); shown while open_to_collaborate is on
   wanted_roles: string[];
+  // Work style (lib/languages.ts); empty when not given
+  languages: string[];
+  hours_per_week: string;
+  work_mode: string;
+  city: string;
   avatar_url: string;
   github: string;
   linkedin: string;
@@ -142,6 +148,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
     { label: "LinkedIn", href: webLink(p.linkedin) },
     { label: "Website", href: webLink(p.website) },
   ].flatMap((l) => (l.href ? [{ ...l, href: l.href }] : []));
+  const workStyle = workStyleLine(p);
   const education = [p.university, p.graduation_year ? `Class of ${p.graduation_year}` : ""].filter(Boolean).join(" · ");
   const skillGroups = groupSkills(p.skills).map((g) => ({ name: g.name, items: g.skills }));
   const interestRows = [
@@ -184,6 +191,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
               {canEdit && p.open_to_collaborate && p.wanted_roles.length === 0 && (
                 <p className="text-sm text-muted">Open to: pick the roles you&apos;d join as in Edit intro</p>
               )}
+              {workStyle && <p className="text-sm text-ink2 sm:text-[15px]">{workStyle}</p>}
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-3 sm:mt-4">
                 {canEdit ? (
                   <OpenToTeamSwitch open={p.open_to_collaborate} />

@@ -3,6 +3,7 @@ import { deleteAward, deleteExperience, deleteProject, saveAbout, saveAward, sav
 import { placementLabel, type Award } from "@/lib/awards";
 import { GOALS } from "@/lib/goals";
 import { ROLES } from "@/lib/roles";
+import { HOURS, LANGUAGES, WORK_MODES, workModeLabel } from "@/lib/languages";
 import { knownSkills } from "@/lib/skills";
 import type { Experience, Project } from "@/lib/portfolio";
 import { Avatar } from "../../avatar";
@@ -80,6 +81,41 @@ export function HeroEdit({ profile: p }: { profile: ProfileData }) {
           <Field label="University"><input name="university" defaultValue={p.university} maxLength={120} className="input" /></Field>
           <Field label="Grad year"><input name="graduation_year" type="number" defaultValue={p.graduation_year || ""} className="input" /></Field>
         </div>
+      </Group>
+      <Group label="Work style">
+        <fieldset>
+          <legend className="label">Languages you work in</legend>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {LANGUAGES.map((l) => (
+              <label key={l} className={chipOption}>
+                <input type="checkbox" name="languages" value={l} defaultChecked={p.languages.includes(l)} className="sr-only" />
+                {l}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Hours a week">
+            <span className="relative block">
+              <select name="hours_per_week" defaultValue={p.hours_per_week} className="input h-10 cursor-pointer appearance-none py-0 pr-9">
+                <option value="">Not set</option>
+                {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
+              </select>
+              <svg viewBox="0 0 16 16" aria-hidden className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 fill-none stroke-muted" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="m4 6 4 4 4-4" /></svg>
+            </span>
+          </Field>
+          <Field label="Work mode">
+            <span className="relative block">
+              <select name="work_mode" defaultValue={p.work_mode} className="input h-10 cursor-pointer appearance-none py-0 pr-9">
+                <option value="">Not set</option>
+                {WORK_MODES.map((m) => <option key={m} value={m}>{workModeLabel(m)}</option>)}
+              </select>
+              <svg viewBox="0 0 16 16" aria-hidden className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 fill-none stroke-muted" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round"><path d="m4 6 4 4 4-4" /></svg>
+            </span>
+          </Field>
+        </div>
+        <Field label="City"><input name="city" defaultValue={p.city} maxLength={60} placeholder="Seoul" className="input" /></Field>
+        <p className="text-[13px] text-ink2">Everyone can see these, signed out too</p>
       </Group>
       <Group label="Open to a team">
         <Toggle name="open_to_collaborate" label="Open to a team" defaultChecked={p.open_to_collaborate} />

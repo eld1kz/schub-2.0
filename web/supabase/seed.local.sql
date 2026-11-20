@@ -85,6 +85,20 @@ from (values
 ) as r(n, roles)
 where p.id = pg_temp.fake_id(r.n);
 
+-- Languages and work style for some of them (languages.sql); the rest leave it unset
+update profiles p set languages = w.languages, hours_per_week = w.hours, work_mode = w.mode, city = w.city
+from (values
+  (1,  '{Korean,English}'::text[], '10-20',   'Either',    'Seoul'),
+  (2,  '{Korean}',                 '5-10',    'In person', 'Seoul'),
+  (3,  '{Korean,English}',         '20+',     'Remote',    ''),
+  (4,  '{English}',                'Under 5', 'Remote',    'Busan'),
+  (7,  '{Russian,English}',        '10-20',   'In person', 'Seoul'),
+  (8,  '{Russian}',                '',        'Remote',    ''),
+  (10, '{Korean,Japanese}',        '5-10',    'Either',    'Seoul'),
+  (15, '{English,Uzbek}',          '20+',     'Remote',    'Daejeon')
+) as w(n, languages, hours, mode, city)
+where p.id = pg_temp.fake_id(w.n);
+
 insert into admins (user_id) values (pg_temp.fake_id(20));
 
 -- Experience and projects -------------------------------------------------------------
@@ -162,6 +176,11 @@ insert into team_applications (team_id, user_id, role, note, status) values
   ('00000000-0000-4000-a000-000000000006', pg_temp.fake_id(17), 'Frontend', '',                   'accepted'),
   ('00000000-0000-4000-a000-000000000006', pg_temp.fake_id(1),  'Backend',  'Learning backend',   'pending'),
   ('00000000-0000-4000-a000-000000000006', pg_temp.fake_id(19), 'ML',       '',                   'pending');
+
+-- Team languages and work mode (languages.sql)
+update teams set languages = '{Korean,English}', work_mode = 'In person' where id = '00000000-0000-4000-a000-000000000001';
+update teams set languages = '{Russian}', work_mode = 'Remote' where id = '00000000-0000-4000-a000-000000000002';
+update teams set languages = '{English}', work_mode = 'Either' where id = '00000000-0000-4000-a000-000000000003';
 
 -- Connections in every state ------------------------------------------------------------------
 -- User A (01) and user B (02) are not connected, so tests can connect them.

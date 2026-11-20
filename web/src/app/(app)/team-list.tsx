@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SOON_DAYS, daysUntil, nextDate, today } from "@/lib/opportunities";
 import { memberSummary, openRoles, teamMembers, universitiesLabel, type TeamSummary } from "@/lib/teams";
 import { storyVersion } from "@/lib/story";
+import { workModeLabel } from "@/lib/languages";
 import { AwardMark } from "./award-mark";
 import { Avatar } from "./avatar";
 import { ShareTeamButton } from "./share-team";
@@ -61,6 +62,9 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
               <p className="text-sm sm:text-[15px]">
                 {open.length > 0 ? <><span className="text-muted">Needs:</span> {open.join(", ")}</> : <span className="text-muted">All roles filled</span>}
               </p>
+              {(t.languages.length > 0 || t.work_mode) && (
+                <p className="text-[13px] text-ink2 sm:text-sm">{[t.languages.join(", "), workModeLabel(t.work_mode)].filter(Boolean).join(" · ")}</p>
+              )}
               {lead && (
                 <div className="mt-1 flex items-center gap-2.5 text-[13px] text-ink2 sm:text-sm">
                   <span className="flex shrink-0 -space-x-1.5">

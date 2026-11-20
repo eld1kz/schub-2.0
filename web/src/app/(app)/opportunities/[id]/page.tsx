@@ -14,10 +14,10 @@ export default async function OpportunityPage(props: PageProps<"/opportunities/[
     supabase.from("opportunities").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("opportunity_participants")
-      .select("user_id, note, person:profiles(id, name, headline, avatar_url, university, skills, interests, open_to_collaborate)")
+      .select("user_id, note, person:profiles(id, name, headline, avatar_url, university, skills, interests, open_to_collaborate, languages)")
       .eq("opportunity_id", id)
       .order("created_at"),
-    supabase.from("profiles").select("skills, interests, open_to_collaborate").eq("id", userId).single(),
+    supabase.from("profiles").select("skills, interests, open_to_collaborate, languages").eq("id", userId).single(),
     supabase.from("connections").select("sender_id, receiver_id, status"),
     supabase.from("opportunity_reports").select("reason").eq("opportunity_id", id).eq("user_id", userId).maybeSingle(),
     supabase.rpc("is_admin"),

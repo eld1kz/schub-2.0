@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { completeOnboarding } from "@/app/actions";
 import { GOALS } from "@/lib/goals";
+import { LANGUAGES } from "@/lib/languages";
 import { SkillPicker } from "@/app/(app)/profile/skill-picker";
 import { Select } from "@/app/(app)/select";
 
@@ -12,19 +13,19 @@ const yearOptions = years.map((y) => ({ value: String(y), label: String(y) }));
 const aboutYou = { title: "About you", note: "Your name and where you study. You can change both later on your profile." };
 const noName = "Add your name to continue.";
 const steps = [
-  { title: "What do you study?", note: "So people know where you are. You can change it later on your profile." },
+  { title: "What do you study?", note: "So people know where you are and which languages you work in. You can change it later on your profile." },
   { title: "What can you build?", note: "These decide who you get matched with. Pick at least one." },
   { title: "What are you looking for?", note: "Pick any that fit. Teams and people use this to find you." },
 ];
 
-type Props = { needsName: boolean; university: string; graduationYear: number; skills: string[]; goals: string[]; error?: string };
+type Props = { needsName: boolean; university: string; graduationYear: number; skills: string[]; goals: string[]; languages: string[]; error?: string };
 
 function FieldMessage({ text }: { text: string }) {
   return text ? <p role="alert" className="mt-1.5 text-[13px] text-red-600 dark:text-red-400">{text}</p> : null;
 }
 
 // One form across three screens: earlier steps are only hidden, so Finish submits everything at once
-export function OnboardingFlow({ needsName, university, graduationYear, skills, goals, error }: Props) {
+export function OnboardingFlow({ needsName, university, graduationYear, skills, goals, languages, error }: Props) {
   const [step, setStep] = useState(0);
   // A step's own check, shown under the field it's about
   const [problem, setProblem] = useState("");
@@ -93,6 +94,22 @@ export function OnboardingFlow({ needsName, university, graduationYear, skills, 
           </label>
           <Select id="graduation_year" name="graduation_year" placeholder="Select a year" value={year} onChange={setYear} options={yearOptions} required={false} />
         </div>
+        <fieldset>
+          <legend className="mb-1.5 block text-sm font-medium">
+            Languages you work in <span className="font-normal text-muted">(optional)</span>
+          </legend>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {LANGUAGES.map((l) => (
+              <label
+                key={l}
+                className="flex min-h-10 cursor-pointer items-center justify-center rounded-md border border-line2 px-2 py-2 text-center text-sm text-ink2 transition-colors hover:border-muted has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent"
+              >
+                <input type="checkbox" name="languages" value={l} defaultChecked={languages.includes(l)} className="sr-only" />
+                {l}
+              </label>
+            ))}
+          </div>
+        </fieldset>
       </div>
 
       <div className={step === 1 ? "[&_input[type=search]]:h-11 sm:[&_input[type=search]]:h-10" : "hidden"}>

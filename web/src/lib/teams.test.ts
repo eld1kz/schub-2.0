@@ -6,6 +6,8 @@ const team = (over: Partial<TeamSummary> = {}): TeamSummary => ({
   id: "t",
   title: "T",
   roles: ["Backend", "Designer"],
+  languages: [],
+  work_mode: "",
   owner_id: "owner",
   owner: person("owner", "Korea University"),
   opportunity: null,

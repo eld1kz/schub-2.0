@@ -7,7 +7,7 @@ test("a new user goes through onboarding and lands on opportunities", async ({ c
 
   // Step 1: university is required. The account already has a name, so there's no name field.
   await expect(page.getByRole("heading", { name: "What do you study?" })).toBeVisible();
-  await expect(page.getByLabel("Name")).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Name", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.getByText("Add your university to continue.")).toBeVisible();
   await page.getByLabel("University").fill("KAIST");
@@ -39,11 +39,11 @@ test("a new user without a name adds one in onboarding", async ({ context, page 
   await page.goto("/onboarding");
 
   await expect(page.getByRole("heading", { name: "About you" })).toBeVisible();
-  await expect(page.getByLabel("Name")).toHaveAttribute("maxlength", "80");
+  await expect(page.getByRole("textbox", { name: "Name", exact: true })).toHaveAttribute("maxlength", "80");
   await page.getByLabel("University").fill("KAIST");
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.getByText("Add your name to continue.")).toBeVisible();
-  await page.getByLabel("Name").fill("Nameless Testcase");
+  await page.getByRole("textbox", { name: "Name", exact: true }).fill("Nameless Testcase");
   await page.getByRole("button", { name: "Next", exact: true }).click();
 
   await page.getByPlaceholder("Search skills").fill("Rust");

@@ -37,7 +37,7 @@ export default async function TeamPage(props: PageProps<"/teams/[id]">) {
   const { id } = await props.params;
   const { supabase, userId, isGuest } = await requireUser();
   const [team, applicationRows, connections] = await Promise.all([
-    supabase.from("teams").select("id, title, description, roles, role_notes, owner_id, owner:profiles(name, avatar_url, headline, open_to_collaborate), opportunity:opportunities(id, title)").eq("id", id).maybeSingle(),
+    supabase.from("teams").select("id, title, description, roles, role_notes, languages, work_mode, owner_id, owner:profiles(name, avatar_url, headline, open_to_collaborate), opportunity:opportunities(id, title)").eq("id", id).maybeSingle(),
     // Row level security returns accepted members, your own application, and everything if you own the team
     supabase.from("team_applications").select("id, user_id, role, note, status, person:profiles(name, headline, university, skills, avatar_url, open_to_collaborate)").eq("team_id", id).order("created_at"),
     myConnections(supabase, userId, isGuest),

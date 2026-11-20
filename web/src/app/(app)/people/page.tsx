@@ -7,6 +7,7 @@ import { ConnectButton } from "../connect-button";
 import { PersonRow } from "./person-row";
 import { PeopleFilters } from "./people-filters";
 import { peopleHref, readPeopleQuery } from "./people-query";
+import { suitedModes, workStyleLine } from "@/lib/languages";
 
 const chipCount = 12;
 const pageSize = 20;
@@ -23,7 +24,7 @@ export default async function PeoplePage(props: PageProps<"/people">) {
   const at = (change: Partial<typeof filters>) => peopleHref({ ...filters, page: 1, ...change });
   const { supabase, userId, isGuest } = await requireUser();
   const [mine, connections, skillCounts, awarded] = await Promise.all([
-    supabase.from("profiles").select("skills, interests, open_to_collaborate").eq("id", userId).maybeSingle(),
+    supabase.from("profiles").select("skills, interests, open_to_collaborate, languages").eq("id", userId).maybeSingle(),
     supabase.from("connections").select("sender_id, receiver_id, status"),
     // How many people have each skill (supabase/people-discover.sql)
     supabase.rpc("skill_counts"),
@@ -38,7 +39,7 @@ export default async function PeoplePage(props: PageProps<"/people">) {
 
   let query = supabase
     .from("profiles")
-    .select("id, name, headline, university, avatar_url, skills, interests, open_to_collaborate, wanted_roles", { count: "exact" })
+    .select("id, name, headline, university, avatar_url, skills, interests, open_to_collaborate, wanted_roles, languages, hours_per_week, work_mode, city", { count: "exact" })
     .neq("name", "")
     .neq("id", userId);
   if (elsewhere.length > 0) query = query.not("id", "in", `(${elsewhere.join(",")})`);
@@ -47,13 +48,15 @@ export default async function PeoplePage(props: PageProps<"/people">) {
   // A role only counts while they're open to a team
   if (filters.open || filters.role) query = query.eq("open_to_collaborate", true);
   if (filters.role) query = query.contains("wanted_roles", [filters.role]);
+  if (filters.lang) query = query.contains("languages", [filters.lang]);
+  if (filters.mode) query = query.in("work_mode", suitedModes(filters.mode));
   const { data: people, count } = await query
     .order("open_to_collaborate", { ascending: false })
     .order("updated_at", { ascending: false })
     .order("id")
     .range((page - 1) * pageSize, page * pageSize - 1);
   const pages = Math.ceil((count ?? 0) / pageSize);
-  const filtered = selected.length > 0 || filters.open || filters.role !== "";
+  const filtered = selected.length > 0 || filters.open || filters.role !== "" || filters.lang !== "" || filters.mode !== "";
 
   // Chips: the 12 skills most people have (listed order breaks ties), plus any already selected
   const counts = new Map<string, number>((skillCounts.data ?? []).map((r: { skill: string; people: number }) => [r.skill, Number(r.people)]));
@@ -114,6 +117,7 @@ export default async function PeoplePage(props: PageProps<"/people">) {
                 }
               >
                 {p.university && <p className="text-[13px] text-muted">{p.university}</p>}
+                {workStyleLine(p) && <p className="text-[13px] text-ink2">{workStyleLine(p)}</p>}
                 {(skills.length > 0 || p.reason) && (
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                     {skills.length > 0 && (
