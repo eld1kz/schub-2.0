@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 # Same order as CLAUDE.md. New migrations go at the end.
 MIGRATIONS=(
   schema opportunities contact teams profile portfolio connections-list auth notifications
-  goals experience-details people-requests opportunity-details awards length-limits public-read people-discover notification-limits participant-notes display-name own-images team-contact google-photos account-photos
+  goals experience-details people-requests opportunity-details awards length-limits public-read people-discover notification-limits participant-notes display-name own-images team-contact google-photos account-photos delete-account
 )
 
 npx supabase start
@@ -36,13 +36,14 @@ eval "$(npx supabase status -o env 2>/dev/null | grep -E '^(API_URL|PUBLISHABLE_
   echo "AUTH_PROVIDERS=google,github,email"
 } > .env.test.local
 
-# `db reset` restarts the API containers, and the REST API answers 503 for a few seconds while it reloads
-# the schema. Tests that started then failed at random (usually the first one), so wait until the REST API
-# serves a function from a late migration, and sign-in answers too.
-run_sql <(echo "notify pgrst, 'reload schema';")
+# `db reset` restarts the API containers before the migrations above run, so the REST API can load its schema
+# partway through them and then miss a function added later (a schema-reload request is handled in the
+# background, so it doesn't help in time). Tests that started then failed at random. Restarting the REST API
+# now makes it load the finished schema; then wait until it, and sign-in, answer.
+docker restart "supabase_rest_$(sed -n 's/^project_id = "\(.*\)"/\1/p' supabase/config.toml)" >/dev/null
 KEY="${PUBLISHABLE_KEY:-$ANON_KEY}"
 ready() {
-  [ "$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API_URL/rest/v1/rpc/skill_counts" -H "apikey: $KEY" -H 'content-type: application/json' -d '{}')" = 200 ] &&
+  [ "$(curl -s -o /dev/null -w '%{http_code}' "$API_URL/rest/v1/teams?select=id&limit=1" -H "apikey: $KEY")" = 200 ] &&
   [ "$(curl -s -o /dev/null -w '%{http_code}' "$API_URL/auth/v1/health" -H "apikey: $KEY")" = 200 ]
 }
 for _ in $(seq 1 60); do ready && break; sleep 1; done

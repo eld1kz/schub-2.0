@@ -49,6 +49,7 @@ web/src/
       people/               tabs: Discover (/people), Requests (/people/requests), Connections (/people/connections)
       u/[id]/               profile: view + in-place editing for the owner (?as=visitor previews)
       profile/              redirects to /u/<you>; holds skill-picker and completion score
+      settings/             your sign-in email and linked accounts, sign out, delete account
       feed/                 posts and ideas; on hold, not linked from the nav
       connect-button.tsx, avatar.tsx, select.tsx, team-list.tsx, global-search.tsx, notifications.tsx
       share-team.tsx        Share button and dialog: Web Share on phones, QR code / copy image on laptops
@@ -71,7 +72,7 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
 `people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read` → `people-discover` →
 `notification-limits` → `participant-notes` → `display-name` →
-`own-images` → `team-contact` → `google-photos` → `account-photos`. `seed_opportunities.sql` and
+`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -127,6 +128,10 @@ Privacy details that are easy to break:
   which lands on `/login`);
   the sign-in buttons put that method first with a "Last used" label.
   After the first sign-in with any method, `/onboarding` collects the basics.
+- Members delete their own account from /settings: `deleteAccount` removes their files from Storage, then
+  calls `delete_my_account()` (`delete-account.sql`), which hands owned teams to the member accepted earliest
+  and deletes the auth user; the rest cascades. The last admin can't. A new table that references a user must
+  cascade or be handled there (`tests/db/delete-account.test.ts` checks every foreign key).
 - Never trust client-sent user IDs; read the user from the server session
   (`requireUser` / `requireMember`).
 - Pages that call `requireUser` export `instant = false` (see the comment in `server.ts`).

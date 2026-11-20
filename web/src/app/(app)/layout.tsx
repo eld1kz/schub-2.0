@@ -7,6 +7,7 @@ import { SignInButton } from "./sign-in";
 import { Notifications, type Notification } from "./notifications";
 import { GlobalSearch } from "./global-search";
 import { NavTabs, TabBar } from "./nav-tabs";
+import { AccountMenu } from "./account-menu";
 
 function Header({ counts = {}, profileHref = "/profile", account }: { counts?: Record<string, number>; profileHref?: string; account?: ReactNode }) {
   return (
@@ -28,6 +29,8 @@ function Header({ counts = {}, profileHref = "/profile", account }: { counts?: R
   );
 }
 
+const menuItem = "block px-4 py-2 text-foreground hover:bg-foreground/5";
+
 // Things waiting on you: connection requests, and applications to your teams. Guests get a sign-in button.
 async function NavWithCounts() {
   const { supabase, userId, isGuest } = await requireUser();
@@ -44,10 +47,11 @@ async function NavWithCounts() {
   const account = (
     <span className="flex items-center gap-4 text-sm">
       <Notifications items={(notifications.data ?? []) as Notification[]} unread={(unread.count ?? 0) > 0} />
-      <Link href={`/u/${userId}`} aria-label="Your profile" className="hover:opacity-80">
-        <Avatar url={me.data?.avatar_url ?? ""} name={name} className="h-8 w-8 text-xs" sizes="32px" />
-      </Link>
-      <form action={signOut}><button className="text-muted hover:text-foreground">Sign out</button></form>
+      <AccountMenu avatar={<Avatar url={me.data?.avatar_url ?? ""} name={name} className="h-8 w-8 text-xs" sizes="32px" />}>
+        <Link href={`/u/${userId}`} className={menuItem}>Your profile</Link>
+        <Link href="/settings" className={menuItem}>Settings</Link>
+        <form action={signOut} className="border-t border-border pt-1 mt-1"><button className={`${menuItem} w-full text-left`}>Sign out</button></form>
+      </AccountMenu>
     </span>
   );
   return <Header counts={{ "/people": requests.count ?? 0, "/teams": applications.count ?? 0 }} profileHref={`/u/${userId}`} account={account} />;

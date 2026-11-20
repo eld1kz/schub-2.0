@@ -25,8 +25,8 @@ const faq = [
 
 const signInTo = (path: string) => `/login?next=${encodeURIComponent(path)}`;
 
-export default async function Home() {
-  const { supabase, userId, isGuest } = await requireUser();
+export default async function Home(props: PageProps<"/">) {
+  const [{ supabase, userId, isGuest }, params] = await Promise.all([requireUser(), props.searchParams]);
   if (!isGuest) redirect("/opportunities");
   const day = today();
 
@@ -72,6 +72,10 @@ export default async function Home() {
       <PublicHeader>
         <Link href="/login" className="text-sm font-semibold hover:text-accent">Sign in</Link>
       </PublicHeader>
+      {/* After deleting an account (deleteAccount in actions.ts) */}
+      {params.deleted !== undefined && (
+        <p role="status" className="border-b border-border bg-chip px-4 py-3 text-center text-[15px] font-medium">Your account was deleted.</p>
+      )}
       <main className="mx-auto max-w-[1176px] px-4 sm:px-6">
         <section className="grid gap-12 pt-10 pb-16 sm:pt-16 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:items-center lg:gap-14 lg:pt-20 lg:pb-24 xl:grid-cols-[minmax(0,1fr)_minmax(0,580px)] xl:gap-20">
           <div className="flex flex-col gap-8">

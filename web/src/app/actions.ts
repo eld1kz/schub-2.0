@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient, requireMember, requireUser } from "@/lib/supabase/server";
@@ -11,7 +11,7 @@ import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, mediaPath, toLink } from 
 import { AWARD_DESCRIPTION_MAX, AWARD_TEAMMATES_MAX, PLACEMENTS } from "@/lib/awards";
 import { knownSkills } from "@/lib/skills";
 import { knownGoals } from "@/lib/goals";
-import { enabledMethods, type OAuthProvider } from "@/lib/auth-providers";
+import { LAST_METHOD_COOKIE, enabledMethods, type OAuthProvider } from "@/lib/auth-providers";
 import { localPath } from "@/lib/redirect";
 
 // Where a provider or an email link sends people back to: /auth/callback, then `next`
@@ -125,6 +125,45 @@ async function uploadImage(supabase: Supabase, userId: string, file: FormDataEnt
 async function removeImage(supabase: Supabase, userId: string, url: string | null | undefined) {
   const path = mediaPath(url);
   if (path?.startsWith(`${userId}/`)) await supabase.storage.from("media").remove([path]);
+}
+
+export type DeleteAccountState = { error?: string };
+
+// Deletes your account for good (supabase/delete-account.sql has what happens to each table), then signs out
+// and forgets the sign-in method, so nothing in this browser points at the account any more.
+// Your photos and project images go first, through Storage: Supabase doesn't let SQL delete stored files.
+export async function deleteAccount(_prev: DeleteAccountState, formData: FormData): Promise<DeleteAccountState> {
+  if (formData.get("confirm") !== "DELETE") return { error: "Type DELETE to confirm." };
+  const { supabase, userId } = await requireMember();
+  // Logged with the step, so a failure in production says where it stopped
+  const fail = (step: string, error: { message: string } | null) => {
+    console.error(`deleteAccount: ${step} failed`, error?.message);
+    return { error: "Couldn't delete your account. Try again." };
+  };
+
+  // Checked before any file is touched, so a refusal leaves everything as it was
+  const { data: blocker, error: checkError } = await supabase.rpc("my_account_deletion_blocker");
+  if (checkError) return fail("check", checkError);
+  if (blocker) return { error: blocker as string };
+
+  const bucket = supabase.storage.from("media");
+  // A page of files at a time, until the folder is empty (bounded, in case a listing never empties)
+  for (let page = 0; page < 50; page++) {
+    const { data: files, error } = await bucket.list(userId, { limit: 100 });
+    if (error) return fail("listing files", error);
+    if (!files?.length) break;
+    const { error: removeError } = await bucket.remove(files.map((f) => `${userId}/${f.name}`));
+    if (removeError) return fail("removing files", removeError);
+  }
+
+  const { error } = await supabase.rpc("delete_my_account");
+  // The function's own refusals are written for people; anything else isn't
+  if (error) return error.code === "P0001" ? { error: error.message } : fail("delete_my_account", error);
+
+  // The account is gone, so only this browser's session is left to clear
+  await supabase.auth.signOut({ scope: "local" });
+  (await cookies()).delete(LAST_METHOD_COOKIE);
+  redirect("/?deleted=1");
 }
 
 // Profile sections are edited one at a time from the profile page. Each action saves only its own

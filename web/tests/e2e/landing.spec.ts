@@ -88,6 +88,7 @@ test("signing out goes to /login with the method used last marked", async ({ con
   await signInAs(context, 5);
   await context.addCookies([{ name: "last_sign_in_method", value: "github", domain: "localhost", path: "/" }]);
   await page.goto("/teams");
+  await page.getByLabel("Account menu").click();
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("button", { name: /Continue with GitHub/ })).toContainText("Last used");

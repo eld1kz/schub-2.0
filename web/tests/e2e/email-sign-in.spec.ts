@@ -55,7 +55,7 @@ test("the email link brings a member back to the page they signed in from", asyn
   await page.goto(await signInLink("student03@schub.test", since));
   await expect(page).toHaveURL(team);
   await expect(page.getByRole("link", { name: "Sign in to apply" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  await expect(page.getByLabel("Account menu")).toBeVisible();
 });
 
 test("after signing out, the method used last is marked and on top", async ({ context, page }) => {
@@ -69,6 +69,7 @@ test("after signing out, the method used last is marked and on top", async ({ co
   expect((await context.cookies()).find((c) => c.name === "last_sign_in_method")?.value).toBe("email");
 
   // Signing out lands on /login
+  await page.getByLabel("Account menu").click();
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByText("Last used")).toHaveCount(1);

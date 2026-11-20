@@ -30,7 +30,7 @@ export type Opportunity = {
   ends_at: string | null;
   description: string;
   status: string;
-  submitted_by: string;
+  submitted_by: string | null;
 };
 
 export type Participant = {
