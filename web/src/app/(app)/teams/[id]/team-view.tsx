@@ -5,6 +5,10 @@ import { workModeLabel } from "@/lib/languages";
 import { answerInvite, applyToTeam, deleteTeam, respondToApplication, withdrawApplication } from "@/app/actions";
 import type { Candidate } from "@/lib/invites";
 import { InvitePanel } from "./invite-panel";
+import type { SharedProject } from "@/lib/shared-projects";
+import type { Award } from "@/lib/awards";
+import { SharedProjectBody } from "../../u/[id]/shared-projects";
+import { SharedProjectEdit } from "./shared-project-edit";
 import { Avatar } from "../../avatar";
 import { SignInButton } from "../../sign-in";
 import { EditDialog } from "../../u/[id]/edit-dialog";
@@ -102,14 +106,27 @@ export type Team = {
   work_mode: string;
   owner_id: string;
   owner: { name: string; avatar_url: string; headline: string; open_to_collaborate: boolean; languages: string[] } | null;
-  opportunity: { id: string; title: string } | null;
+  opportunity: { id: string; title: string; ends_at: string | null; starts_at: string | null; deadline: string | null } | null;
 };
 
 // The team page for whoever is looking: open roles to apply for, the team, and applicants for the owner
 // `connections`: your accepted connections, marked among the members; empty when signed out
 // `shareVersion`: storyVersion of the team, for the share image's address
 // `suggestions`: for the owner, people to invite per open role (lib/invites.ts)
-export function TeamView({ team: t, applications, userId, isGuest, connections, shareVersion, suggestions = {} }: { team: Team; applications: Application[]; userId: string; isGuest: boolean; connections: Set<string>; shareVersion: string; suggestions?: Record<string, Candidate[]> }) {
+// `sharedProject`: what the team built (lib/shared-projects.ts), shown with `award`, the team's best award.
+// `canRecord`: the owner may record it now (the event has ended, or there is none)
+export function TeamView({ team: t, applications, userId, isGuest, connections, shareVersion, suggestions = {}, sharedProject = null, award, canRecord = false }: {
+  team: Team;
+  applications: Application[];
+  userId: string;
+  isGuest: boolean;
+  connections: Set<string>;
+  shareVersion: string;
+  suggestions?: Record<string, Candidate[]>;
+  sharedProject?: SharedProject | null;
+  award?: Award;
+  canRecord?: boolean;
+}) {
   const { owner, opportunity } = t;
   const roles = t.roles;
   const isOwner = t.owner_id === userId;
@@ -220,6 +237,21 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
             <p className="text-[15px] text-ink2">All roles are filled.</p>
           )}
         </Section>
+
+        {(sharedProject || isOwner) && (
+          <Section id="built" title="What we built" owner={isOwner} edit={isOwner && sharedProject && <SharedProjectEdit teamId={t.id} project={sharedProject} trigger="edit" />}>
+            {sharedProject ? (
+              <SharedProjectBody project={sharedProject} award={award} showTeam={false} />
+            ) : canRecord ? (
+              <div className="flex flex-col items-start gap-3">
+                <p className="max-w-[520px] text-[15px] text-ink2">Record what the team built. It goes on the profile of everyone who confirms, with who built it.</p>
+                <SharedProjectEdit teamId={t.id} trigger="button" />
+              </div>
+            ) : (
+              <p className="max-w-[520px] text-[15px] text-ink2">Once {opportunity?.title ?? "the event"} is over, you can record what the team built here.</p>
+            )}
+          </Section>
+        )}
 
         <Section title="Team">
           <div className="flex flex-col">

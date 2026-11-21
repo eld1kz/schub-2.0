@@ -4,6 +4,7 @@ import { today } from "@/lib/opportunities";
 import { matchScore } from "@/lib/match";
 import { experienceColumns, projectColumns, sortExperiences, type Experience, type Project } from "@/lib/portfolio";
 import { awardColumns, type Award } from "@/lib/awards";
+import { sharedProjectColumns, type SharedProject } from "@/lib/shared-projects";
 import { ConnectButton } from "../../connect-button";
 import { ProfileView, type Connection, type ProfileData, type Suggestion } from "./profile-view";
 
@@ -26,7 +27,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
   const canEdit = isSelf && !isGuest;
   // "?as=visitor": the owner sees the page without edit controls, empty sections or contact details
   const preview = canEdit && as === "visitor";
-  const [profile, ideas, myConnections, contacts, projects, experiences, owned, joined, looking, connections, mine, people, ownAwards, tags, opportunities] = await Promise.all([
+  const [profile, ideas, myConnections, contacts, projects, experiences, owned, joined, looking, connections, mine, people, ownAwards, tags, opportunities, shared] = await Promise.all([
     supabase
       .from("profiles")
       .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, goals, open_to_collaborate, wanted_roles, languages, hours_per_week, work_mode, city, avatar_url, github, linkedin, website")
@@ -59,6 +60,8 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
     supabase.from("award_teammates").select(`status, award:awards(${awardColumns})`).eq("user_id", id).in("status", ["confirmed", "pending"]),
     // Events to pick from in the award form
     canEdit && !preview ? supabase.from("opportunities").select("id, title").order("starts_at", { ascending: false, nullsFirst: false }) : { data: [] },
+    // Team projects this profile is on: confirmed ones for everyone, and on your own profile the pending ones too
+    supabase.from("team_project_members").select(`status, hidden, project:team_projects(${sharedProjectColumns})`).eq("user_id", id).in("status", ["confirmed", "pending"]),
   ]);
   const p = profile.data as ProfileData | null;
   if (!p) notFound();
@@ -67,12 +70,18 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
   const tagged = (status: string) => tagRows.flatMap((t) => (t.status === status && t.award ? [t.award] : []));
   const awards = [...((ownAwards.data ?? []) as unknown as Award[]), ...tagged("confirmed")].sort((a, b) => b.awarded_on.localeCompare(a.awarded_on));
   const projectList = (projects.data ?? []) as unknown as Project[];
+  const sharedRows = ((shared.data ?? []) as unknown as { status: string; hidden: boolean; project: SharedProject | null }[]).filter((r) => r.project);
+  // Visitors (and your preview) see what wasn't hidden; on your own page hidden ones show too, to bring back
+  const sharedProjects = sharedRows
+    .filter((r) => r.status === "confirmed" && (!r.hidden || (canEdit && !preview)))
+    .map((r) => ({ project: r.project as SharedProject, hidden: r.hidden }));
+  const builtByTeam = new Map(sharedProjects.filter((s) => !s.hidden).map((s) => [s.project.team_id, s.project.title]));
 
   const teams = [
-    ...(owned.data ?? []).map((t) => ({ id: t.id as string, title: t.title as string, role: "Started it" })),
+    ...(owned.data ?? []).map((t) => ({ id: t.id as string, title: t.title as string, role: "Started it", built: builtByTeam.get(t.id as string) })),
     ...(joined.data ?? []).flatMap((a) => {
       const team = a.team as unknown as { id: string; title: string } | null;
-      return team ? [{ id: team.id, title: team.title, role: a.role as string }] : [];
+      return team ? [{ id: team.id, title: team.title, role: a.role as string, built: builtByTeam.get(team.id) }] : [];
     }),
   ];
   const day = today();
@@ -106,6 +115,8 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
       awards={awards}
       // Only on your own page, and not while previewing it as a visitor
       pendingAwards={canEdit && !preview ? tagged("pending") : []}
+      sharedProjects={sharedProjects}
+      pendingShared={canEdit && !preview ? sharedRows.filter((r) => r.status === "pending").map((r) => r.project as SharedProject) : []}
       awardOptions={{ opportunities: opportunities.data ?? [], projects: projectList.map((x) => ({ id: x.id, title: x.title })) }}
       experiences={sortExperiences((experiences.data ?? []) as unknown as Experience[])}
       teams={teams}

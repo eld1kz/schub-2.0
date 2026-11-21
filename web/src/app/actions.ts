@@ -15,6 +15,7 @@ import { knownRoles, rolesWithNotes } from "@/lib/roles";
 import { HOURS, knownLanguages, oneOf, WORK_MODES } from "@/lib/languages";
 import { LAST_METHOD_COOKIE, enabledMethods, type OAuthProvider } from "@/lib/auth-providers";
 import { localPath } from "@/lib/redirect";
+import { SHARED_PROJECT_PITCH_MAX, SHARED_PROJECT_RESULT_MAX, SHARED_PROJECT_TITLE_MAX } from "@/lib/shared-projects";
 
 // Where a provider or an email link sends people back to: /auth/callback, then `next`
 async function callbackUrl(next: string) {
@@ -148,6 +149,14 @@ export async function deleteAccount(_prev: DeleteAccountState, formData: FormDat
   const { data: blocker, error: checkError } = await supabase.rpc("my_account_deletion_blocker");
   if (checkError) return fail("check", checkError);
   if (blocker) return { error: blocker as string };
+
+  // Projects of teams you own stay with the team when it's handed over, but their images are in your folder
+  // and go below, so they're cleared first instead of left broken (supabase/shared-projects.sql)
+  const { data: owned } = await supabase.from("teams").select("id").eq("owner_id", userId);
+  if (owned?.length) {
+    const { error: clearError } = await supabase.from("team_projects").update({ image_url: "" }).in("team_id", owned.map((t) => t.id)).neq("image_url", "");
+    if (clearError) return fail("clearing project images", clearError);
+  }
 
   const bucket = supabase.storage.from("media");
   // A page of files at a time, until the folder is empty (bounded, in case a listing never empties)
@@ -609,8 +618,11 @@ export async function createTeam(formData: FormData) {
 }
 
 export async function deleteTeam(id: string) {
-  const { supabase } = await requireMember();
-  await supabase.from("teams").delete().eq("id", id);
+  const { supabase, userId } = await requireMember();
+  // What the team built goes with it, and so does its image
+  const { data: project } = await supabase.from("team_projects").select("image_url").eq("team_id", id).maybeSingle();
+  const { data: deleted } = await supabase.from("teams").delete().eq("id", id).select("id");
+  if (deleted?.length) await removeImage(supabase, userId, project?.image_url);
   revalidatePath("/", "layout");
   redirect("/teams");
 }
@@ -680,5 +692,66 @@ export async function answerInvite(inviteId: string, status: "accepted" | "decli
   const { supabase, userId } = await requireMember();
   if (status !== "accepted" && status !== "declined") return;
   await supabase.from("team_applications").update({ status }).eq("id", inviteId).eq("user_id", userId).eq("direction", "invite");
+  revalidatePath("/", "layout");
+}
+
+// The team's owner records what the team built, or edits it (one per team). The database checks it's your team
+// and, for a new one, that the event has ended (supabase/shared-projects.sql). Members are asked to confirm by a
+// trigger; changing the title or the result asks them again.
+export async function saveSharedProject(teamId: string, formData: FormData): Promise<SaveResult> {
+  const { supabase, userId } = await requireMember();
+  const text = (key: string) => field(formData, key);
+  if (!text("title")) return { error: "Add a name.", field: "title" };
+  if (text("title").length > SHARED_PROJECT_TITLE_MAX) return { error: `Keep the name to ${SHARED_PROJECT_TITLE_MAX} characters.`, field: "title" };
+  if (text("pitch").length > SHARED_PROJECT_PITCH_MAX) return { error: `Keep it to ${SHARED_PROJECT_PITCH_MAX} characters.`, field: "pitch" };
+  if (text("result").length > SHARED_PROJECT_RESULT_MAX) return { error: `Keep the result to ${SHARED_PROJECT_RESULT_MAX} characters.`, field: "result" };
+  // Checked before uploading, so nobody else leaves an image behind (an update they can't make changes no rows)
+  const { data: team } = await supabase.from("teams").select("owner_id").eq("id", teamId).maybeSingle();
+  if (team?.owner_id !== userId) return { error: "Only the team's owner can record what it built." };
+
+  const image = await uploadImage(supabase, userId, formData.get("image"));
+  if (image.error) return { error: image.error };
+  const fields = {
+    title: text("title"),
+    pitch: text("pitch"),
+    url: toLink(text("url")),
+    repo_url: toLink(text("repo_url")),
+    result: text("result"),
+    ...(image.url ? { image_url: image.url } : {}),
+  };
+  const { data: before } = await supabase.from("team_projects").select("id, image_url").eq("team_id", teamId).maybeSingle();
+  const { error } = before
+    ? await supabase.from("team_projects").update(fields).eq("id", before.id)
+    : await supabase.from("team_projects").insert({ ...fields, team_id: teamId });
+  // Keep exactly one image: the old one goes once the new one is saved, the new one if saving failed
+  if (image.url) await removeImage(supabase, userId, error ? image.url : before?.image_url);
+  if (error) return { error: error.code === "42501" ? "You can record this once the event has ended." : "Couldn't save it. Check the fields and try again." };
+  revalidatePath("/", "layout");
+  return {};
+}
+
+export async function deleteSharedProject(teamId: string): Promise<SaveResult> {
+  const { supabase, userId } = await requireMember();
+  const { data: deleted, error } = await supabase.from("team_projects").delete().eq("team_id", teamId).select("image_url").maybeSingle();
+  if (error) return { error: "Couldn't delete it. Try again." };
+  // The policy keeps it once another member has confirmed it (supabase/shared-projects.sql)
+  if (!deleted) return { error: "A teammate has already put it on their profile, so it can't be deleted. You can still edit it." };
+  await removeImage(supabase, userId, deleted?.image_url);
+  revalidatePath("/", "layout");
+  return {};
+}
+
+// A member confirms or declines that a team's project goes on their profile
+export async function answerSharedProject(projectId: string, status: "confirmed" | "declined") {
+  const { supabase, userId } = await requireMember();
+  if (status !== "confirmed" && status !== "declined") return;
+  await supabase.from("team_project_members").update({ status }).eq("project_id", projectId).eq("user_id", userId);
+  revalidatePath("/", "layout");
+}
+
+// Hides a confirmed shared project from your own profile, or shows it again
+export async function hideSharedProject(projectId: string, hidden: boolean) {
+  const { supabase, userId } = await requireMember();
+  await supabase.from("team_project_members").update({ hidden: hidden === true }).eq("project_id", projectId).eq("user_id", userId);
   revalidatePath("/", "layout");
 }

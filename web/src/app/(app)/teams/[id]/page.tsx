@@ -4,6 +4,8 @@ import { publicClient, requireUser } from "@/lib/supabase/server";
 import { myConnections } from "@/lib/connections";
 import { openRoles } from "@/lib/teams";
 import { inviteSuggestions, type Candidate } from "@/lib/invites";
+import { sharedProjectColumns, type SharedProject } from "@/lib/shared-projects";
+import { awardColumns, byRank, formedOnSchub, type Award } from "@/lib/awards";
 import { storyLang, storyVersion } from "@/lib/story";
 import { TeamView, type Application, type Team } from "./team-view";
 
@@ -37,11 +39,14 @@ export async function generateMetadata(props: PageProps<"/teams/[id]">): Promise
 export default async function TeamPage(props: PageProps<"/teams/[id]">) {
   const { id } = await props.params;
   const { supabase, userId, isGuest } = await requireUser();
-  const [team, applicationRows, connections] = await Promise.all([
-    supabase.from("teams").select("id, title, description, roles, role_notes, languages, work_mode, owner_id, owner:profiles(name, avatar_url, headline, open_to_collaborate, languages), opportunity:opportunities(id, title)").eq("id", id).maybeSingle(),
+  const [team, applicationRows, connections, project, awards] = await Promise.all([
+    supabase.from("teams").select("id, title, description, roles, role_notes, languages, work_mode, owner_id, owner:profiles(name, avatar_url, headline, open_to_collaborate, languages), opportunity:opportunities(id, title, ends_at, starts_at, deadline)").eq("id", id).maybeSingle(),
     // Row level security returns accepted members, your own application, and everything if you own the team
     supabase.from("team_applications").select("id, user_id, role, note, status, direction, person:profiles(name, headline, university, skills, avatar_url, open_to_collaborate)").eq("team_id", id).order("created_at"),
     myConnections(supabase, userId, isGuest),
+    // What the team built (supabase/shared-projects.sql), and awards for the team, shown together
+    supabase.from("team_projects").select(sharedProjectColumns).eq("team_id", id).maybeSingle(),
+    supabase.from("awards").select(awardColumns).eq("team_id", id),
   ]);
   const t = team.data;
   if (!t) notFound();
@@ -49,7 +54,26 @@ export default async function TeamPage(props: PageProps<"/teams/[id]">) {
   const applications = (applicationRows.data ?? []) as unknown as Application[];
   const version = storyVersion({ ...(t as unknown as Team), team_applications: applications });
   const suggestions = t.owner_id === userId && !isGuest ? await inviteCandidates(supabase, t as unknown as Team, applications, connections) : {};
-  return <TeamView team={t as unknown as Team} applications={applications} userId={userId} isGuest={isGuest} connections={connections} shareVersion={version} suggestions={suggestions} />;
+  const sharedProject = (project.data as unknown as SharedProject | null) ?? null;
+  // Only awards for the team's own event, from people who confirmed the project (anyone on the team could link an award)
+  const confirmed = new Set((sharedProject?.team_project_members ?? []).filter((m) => m.status === "confirmed").map((m) => m.user_id));
+  const award = ((awards.data ?? []) as unknown as Award[]).filter((a) => formedOnSchub(a) && confirmed.has(a.user_id)).sort(byRank)[0];
+  // The database's own rule (supabase/shared-projects.sql): a hidden event can't be read here, but still counts
+  const canRecord = t.owner_id === userId && !sharedProject ? Boolean((await supabase.rpc("team_project_open", { team: id })).data) : false;
+  return (
+    <TeamView
+      team={t as unknown as Team}
+      applications={applications}
+      userId={userId}
+      isGuest={isGuest}
+      connections={connections}
+      shareVersion={version}
+      suggestions={suggestions}
+      sharedProject={sharedProject}
+      award={award}
+      canRecord={canRecord}
+    />
+  );
 }
 
 // How many recently updated people open to a team are considered for "People who fill this role", besides your connections

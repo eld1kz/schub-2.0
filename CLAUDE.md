@@ -59,6 +59,7 @@ web/src/
     roles.ts                the fixed team role list (wanted_roles, new teams' open roles) and role notes
     languages.ts            fixed lists of languages, hours a week and work modes; the work-style line
     invites.ts              "People who fill this role": who to suggest inviting for a team's open role
+    shared-projects.ts      a team's shared project: columns, "Built with", when it can be recorded
     portfolio.ts            project/experience types, period formatting, safe link/image helpers
     opportunities.ts, teams.ts, goals.ts
     connections.ts          your accepted connections (one query per page) and which events they're going to
@@ -75,7 +76,7 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
 `people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read` → `people-discover` →
 `notification-limits` → `participant-notes` → `display-name` →
-`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites`. `seed_opportunities.sql` and
+`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites` → `shared-projects`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -106,6 +107,12 @@ Tables:
   only the tagged person answers; declined rows stay so they can't be tagged again. Only confirmed rows
   are public. Changing an award's placement, prize, event or date sets confirmed teammates back to
   pending and notifies them (trigger in `awards.sql`).
+- `team_projects` — what a team built (one per team): title, pitch, image_url, url, repo_url, result. The owner
+  records it once the team's event has ended (or any time without one) and edits it.
+- `team_project_members` — project_id, user_id, status (pending / confirmed / declined), hidden. Written only by
+  triggers (`shared-projects.sql`): the owner is confirmed, every accepted member is asked; changing the title or
+  result sets confirmed members back to pending. Members answer and hide it from their own profile. Confirmed rows
+  are public; confirmed, not hidden ones show in the member's Projects with "Built with".
 - `notifications` — written only by triggers; the app just reads and marks them read
 - `ideas`, `posts` — used by the on-hold feed
 

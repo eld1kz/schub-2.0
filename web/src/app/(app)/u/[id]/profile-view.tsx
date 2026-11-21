@@ -15,6 +15,8 @@ import { OpenToTeamSwitch } from "./open-to-team-switch";
 import { ChipTable, EmptyPrompt, KeyValue, Section, SideBlock, Timeline, TimelineEntry } from "./profile-parts";
 import { AboutEdit, ContactEdit, ExperienceEdit, HeroEdit, InterestsEdit, LinksEdit, ProjectEdit, SkillsEdit } from "./section-edits";
 import { ToastProvider } from "./toast";
+import type { SharedProject } from "@/lib/shared-projects";
+import { HideButton, PendingSharedProjects, SharedProjectBody, ShowAgainButton } from "./shared-projects";
 
 export type ProfileData = {
   name: string;
@@ -58,8 +60,13 @@ type Props = {
   // Tags waiting on you, on your own page
   pendingAwards: Award[];
   awardOptions: AwardOptions;
+  // Team projects this profile confirmed (lib/shared-projects.ts); `hidden` ones only come on your own page
+  sharedProjects: { project: SharedProject; hidden: boolean }[];
+  // Team projects waiting for your answer, on your own page
+  pendingShared: SharedProject[];
   experiences: Experience[];
-  teams: { id: string; title: string; role: string }[];
+  // `built`: the title of what the team built, when it's on this profile
+  teams: { id: string; title: string; role: string; built?: string }[];
   events: { id: string; title: string }[];
   ideas: { id: string; title: string; description: string; skills_needed: string[]; stage: string }[];
   connections: Connection[];
@@ -142,7 +149,7 @@ function ConnectionStack({ people }: { people: Connection[] }) {
   );
 }
 
-export function ProfileView({ id, profile: p, canEdit, owner, action, contact, projects, awards, pendingAwards, awardOptions, experiences, teams, events, ideas, connections, suggestions }: Props) {
+export function ProfileView({ id, profile: p, canEdit, owner, action, contact, projects, awards, pendingAwards, awardOptions, sharedProjects, pendingShared, experiences, teams, events, ideas, connections, suggestions }: Props) {
   const links = [
     { label: "GitHub", href: webLink(p.github) },
     { label: "LinkedIn", href: webLink(p.linkedin) },
@@ -162,11 +169,14 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
   const ranked = [...awards].sort(byRank);
   // A project shows the best of its owner's awards that link to it
   const projectAward = (projectId: string) => ranked.find((a) => a.user_id === id && a.project_id === projectId);
+  // Your own projects plus the team projects you confirmed
+  const projectCount = projects.length + sharedProjects.length;
 
   return (
     <ToastProvider>
       {owner && <OwnerBanner id={id} preview={owner.preview} />}
       {pendingAwards.length > 0 && <PendingTags awards={pendingAwards} />}
+      {pendingShared.length > 0 && <PendingSharedProjects projects={pendingShared} />}
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_296px] lg:items-start lg:gap-20">
         <div>
           <header className="relative grid grid-cols-[72px_minmax(0,1fr)] items-center gap-x-4 gap-y-3.5 pb-8 sm:grid-cols-[120px_minmax(0,1fr)] sm:grid-rows-[auto_1fr] sm:items-start sm:gap-x-8 sm:gap-y-2.5 sm:pb-10">
@@ -270,18 +280,29 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
             </Section>
           )}
 
-          {(projects.length > 0 || canEdit) && (
+          {(projectCount > 0 || canEdit) && (
             <Section
               title="Projects"
-              count={projects.length || undefined}
-              quiet={projects.length === 0}
+              count={projectCount || undefined}
+              quiet={projectCount === 0}
               owner={canEdit}
-              add={canEdit && projects.length > 0 && <ProjectEdit trigger="link" />}
+              add={canEdit && projectCount > 0 && <ProjectEdit trigger="link" />}
             >
-              {projects.length > 0 ? (
+              {projectCount > 0 ? (
                 <div className="flex flex-col">
                   {projects.map((project) => (
                     <ProjectItem key={project.id} project={project} award={projectAward(project.id)} edit={canEdit && <ProjectEdit project={project} trigger="edit" />} />
+                  ))}
+                  {sharedProjects.map(({ project: s, hidden }) => (
+                    <article key={s.id} id={`shared-${s.id}`} className={`border-b border-border pb-6 sm:pb-7 [&+&]:pt-6 sm:[&+&]:pt-7 ${hidden ? "opacity-60" : ""}`}>
+                      <SharedProjectBody
+                        project={s}
+                        award={ranked.find((a) => a.team_id === s.team_id)}
+                        except={id}
+                        edit={canEdit && (hidden ? <ShowAgainButton projectId={s.id} /> : <HideButton projectId={s.id} />)}
+                      />
+                      {hidden && <p className="mt-2 text-[13px] text-muted">Hidden from your profile</p>}
+                    </article>
                   ))}
                 </div>
               ) : (
@@ -297,7 +318,10 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
               <div className="flex flex-col text-sm sm:text-[15px]">
                 {teams.map((t) => (
                   <Link key={t.id} href={`/teams/${t.id}`} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 first:pt-0 hover:text-accent">
-                    <span className="font-medium">{t.title}</span>
+                    <span>
+                      <span className="font-medium">{t.title}</span>
+                      {t.built && <span className="text-ink2"> · Built {t.built}</span>}
+                    </span>
                     <span className="shrink-0 text-ink2">{t.role}</span>
                   </Link>
                 ))}
