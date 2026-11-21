@@ -14,10 +14,10 @@ const tabs = [
 const isActive = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
 // Counts that open a page of their own: pending connection requests go straight to the Requests tab,
-// applicants to review to Your teams
+// applicants to review and invitations to answer to Your teams
 const countLinks: Record<string, { href: string; label: string }> = {
   "/people": { href: "/people/requests", label: "connection requests" },
-  "/teams": { href: "/teams/mine", label: "applicants to review" },
+  "/teams": { href: "/teams/mine", label: "applications and invitations waiting on you" },
 };
 
 function Count({ n }: { n?: number }) {

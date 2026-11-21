@@ -1,6 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
+import { teamsWaiting } from "@/lib/teams";
 import { signOut } from "@/app/actions";
 import { Avatar } from "./avatar";
 import { SignInButton } from "./sign-in";
@@ -31,14 +32,14 @@ function Header({ counts = {}, profileHref = "/profile", account }: { counts?: R
 
 const menuItem = "block px-4 py-2 text-foreground hover:bg-foreground/5";
 
-// Things waiting on you: connection requests, and applications to your teams. Guests get a sign-in button.
+// Things waiting on you: connection requests, applications to your teams and invitations to you. Guests get a sign-in button.
 async function NavWithCounts() {
   const { supabase, userId, isGuest } = await requireUser();
   if (isGuest) return <Header account={<SignInButton label="Sign in" />} />;
-  const [requests, applications, me, notifications, unread] = await Promise.all([
+  const [requests, teamsCount, me, notifications, unread] = await Promise.all([
     supabase.from("connections").select("id", { count: "exact", head: true }).eq("receiver_id", userId).eq("status", "pending"),
-    // Pending applications you can see that aren't yours are the ones to your own teams
-    supabase.from("team_applications").select("id", { count: "exact", head: true }).eq("status", "pending").neq("user_id", userId),
+    // Applications to your teams and invitations to you (lib/teams.ts)
+    teamsWaiting(supabase, userId),
     supabase.from("profiles").select("name, avatar_url").eq("id", userId).maybeSingle(),
     supabase.from("notifications").select("id, message, read, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("read", false),
@@ -54,7 +55,7 @@ async function NavWithCounts() {
       </AccountMenu>
     </span>
   );
-  return <Header counts={{ "/people": requests.count ?? 0, "/teams": applications.count ?? 0 }} profileHref={`/u/${userId}`} account={account} />;
+  return <Header counts={{ "/people": requests.count ?? 0, "/teams": teamsCount }} profileHref={`/u/${userId}`} account={account} />;
 }
 
 async function ProfileNudge() {

@@ -75,7 +75,8 @@ export async function openNotification(id: string) {
   const { supabase, userId } = await requireMember();
   const { data } = await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", userId).select("type, link").maybeSingle();
   revalidatePath("/", "layout");
-  // New applicants to your team are reviewed from Your teams; the stored link points at the team
+  // New applicants to your team are reviewed from Your teams; the stored link points at the team.
+  // Invitations (team_invite) already link to Your teams.
   redirect(data?.type === "team_application" ? "/teams/mine" : (data?.link ?? "/"));
 }
 
@@ -616,6 +617,8 @@ export async function deleteTeam(id: string) {
 
 export async function applyToTeam(teamId: string, formData: FormData): Promise<SaveResult> {
   const { supabase, userId } = await requireMember();
+  // A declined invitation would block the application (one row per person per team), so it makes way
+  await supabase.from("team_applications").delete().eq("team_id", teamId).eq("user_id", userId).eq("direction", "invite").eq("status", "declined");
   const { error } = await supabase.from("team_applications").insert({
     team_id: teamId,
     user_id: userId,
@@ -641,5 +644,41 @@ export async function respondToApplication(teamId: string, applicationId: string
   const { supabase } = await requireMember();
   if (status !== "accepted" && status !== "declined") return;
   await supabase.from("team_applications").update({ status }).eq("id", applicationId).eq("team_id", teamId);
+  revalidatePath("/", "layout");
+}
+
+// The owner invites someone to one of the team's roles. The database checks it's your team and role, and that
+// they're open to a team or one of your connections (supabase/team-invites.sql); a trigger notifies them.
+export async function inviteToTeam(teamId: string, personId: string, role: string): Promise<SaveResult> {
+  const { supabase, userId } = await requireMember();
+  if (personId === userId) return { error: "You're already on this team." };
+  const { error } = await supabase.from("team_applications").insert({
+    team_id: teamId,
+    user_id: personId,
+    role: String(role),
+    direction: "invite",
+  });
+  if (error) {
+    if (error.code === "23505") return { error: "They've already applied or been invited." };
+    if (error.code === "42501") return { error: "You can only invite people open to a team, or your connections, to a role that's still open." };
+    // The daily cap (supabase/team-invites.sql)
+    return { error: error.message.includes("a day") ? error.message : "Couldn't send the invitation. Try again." };
+  }
+  revalidatePath("/", "layout");
+  return {};
+}
+
+// The owner takes back an invitation that hasn't been answered yet
+export async function withdrawInvite(teamId: string, inviteId: string) {
+  const { supabase } = await requireMember();
+  await supabase.from("team_applications").delete().eq("id", inviteId).eq("team_id", teamId).eq("direction", "invite").eq("status", "pending");
+  revalidatePath("/", "layout");
+}
+
+// The invited person accepts (and joins in that role, like an accepted application) or declines
+export async function answerInvite(inviteId: string, status: "accepted" | "declined") {
+  const { supabase, userId } = await requireMember();
+  if (status !== "accepted" && status !== "declined") return;
+  await supabase.from("team_applications").update({ status }).eq("id", inviteId).eq("user_id", userId).eq("direction", "invite");
   revalidatePath("/", "layout");
 }

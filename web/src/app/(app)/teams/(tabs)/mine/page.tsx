@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
-import { withdrawApplication } from "@/app/actions";
+import { answerInvite, withdrawApplication } from "@/app/actions";
 import { teamSummaryColumns, type TeamSummary } from "@/lib/teams";
 import { awardedIds } from "@/lib/awards";
 import { myConnections } from "@/lib/connections";
@@ -14,6 +14,8 @@ type MyApplication = {
   team_id: string;
   role: string;
   status: "pending" | "accepted" | "declined";
+  // "invite": the team's owner invited you
+  direction: "application" | "invite";
   created_at: string;
   team: { id: string; title: string; owner: { name: string } | null } | null;
 };
@@ -41,14 +43,14 @@ function Row({ teamId, title, children, action }: { teamId: string; title: strin
   );
 }
 
-// Teams you run, teams you're on, and applications still waiting or recently declined
+// Invitations waiting for your answer, teams you run, teams you're on, and applications still waiting or recently declined
 export default async function YourTeamsPage() {
   const { supabase, userId, isGuest } = await requireUser();
   const [owned, applications, declines, awarded, connections] = await Promise.all([
     supabase.from("teams").select(teamSummaryColumns).eq("owner_id", userId).order("created_at", { ascending: false }),
     supabase
       .from("team_applications")
-      .select("id, team_id, role, status, created_at, team:teams(id, title, owner:profiles(name))")
+      .select("id, team_id, role, status, direction, created_at, team:teams(id, title, owner:profiles(name))")
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
     // The decline notification says when an application was declined
@@ -64,12 +66,15 @@ export default async function YourTeamsPage() {
   }
   const now = new Date().getTime();
   const memberOf = mine.filter((a) => a.status === "accepted");
+  const invitations = mine.filter((a) => a.direction === "invite" && a.status === "pending");
   // Declined ones drop off 14 days after the decline (or after applying, if the notification is missing)
   const pendingOrDeclined = mine.filter(
-    (a) => a.status === "pending" || (a.status === "declined" && now - (declinedAt.get(`/teams/${a.team_id}`) ?? Date.parse(a.created_at)) < declinedFor),
+    (a) =>
+      a.direction === "application" &&
+      (a.status === "pending" || (a.status === "declined" && now - (declinedAt.get(`/teams/${a.team_id}`) ?? Date.parse(a.created_at)) < declinedFor)),
   );
 
-  if (running.length === 0 && memberOf.length === 0 && pendingOrDeclined.length === 0) {
+  if (invitations.length === 0 && running.length === 0 && memberOf.length === 0 && pendingOrDeclined.length === 0) {
     return (
       <div className="flex flex-col items-start gap-3 py-2">
         <p className="text-[15px] font-medium">You&apos;re not on any team yet</p>
@@ -83,6 +88,27 @@ export default async function YourTeamsPage() {
 
   return (
     <div className="flex flex-col gap-10">
+      {invitations.length > 0 && (
+        <section>
+          <Heading title="Invitations" count={invitations.length} />
+          {invitations.map((a) => (
+            <Row
+              key={a.id}
+              teamId={a.team_id}
+              title={a.team?.title ?? ""}
+              action={
+                <div className="flex shrink-0 gap-2">
+                  <form action={answerInvite.bind(null, a.id, "accepted")}><button aria-label={`Accept the invitation to ${a.team?.title ?? ""}`} className="btn h-9 px-4">Accept</button></form>
+                  <form action={answerInvite.bind(null, a.id, "declined")}><button aria-label={`Decline the invitation to ${a.team?.title ?? ""}`} className="btn-outline h-9">Decline</button></form>
+                </div>
+              }
+            >
+              <span className="text-foreground">{a.role}</span> · Invited by {a.team?.owner?.name || "Unnamed"}
+            </Row>
+          ))}
+        </section>
+      )}
+
       {running.length > 0 && (
         <section>
           <Heading title="Running" count={running.length} />

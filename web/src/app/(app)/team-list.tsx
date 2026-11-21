@@ -38,7 +38,7 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
         const open = openRoles(t);
         const mine = t.owner_id === userId;
         // Owners see every application to their team; everyone else only sees accepted ones and their own
-        const toReview = mine ? t.team_applications.filter((a) => a.status === "pending").length : 0;
+        const toReview = mine ? t.team_applications.filter((a) => a.status === "pending" && a.direction === "application").length : 0;
         const { lead, connected, others, ordered, universities } = memberSummary(teamMembers(t), connections);
         const next = t.opportunity ? nextDate(t.opportunity, day).date : null;
         const days = next ? daysUntil(next, day) : null;

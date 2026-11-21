@@ -20,12 +20,13 @@ export default async function TeamsPage(props: PageProps<"/teams">) {
   const [{ data }, awarded, mine, looking, connections] = await Promise.all([
     supabase.from("teams").select(teamSummaryColumns).order("created_at", { ascending: false }),
     awardedIds(supabase),
-    supabase.from("team_applications").select("team_id, status").eq("user_id", userId),
+    supabase.from("team_applications").select("team_id, status, direction").eq("user_id", userId),
     supabase.from("opportunity_participants").select("opportunity_id").eq("user_id", userId),
     myConnections(supabase, userId, isGuest),
   ]);
   const memberOf = new Set((mine.data ?? []).filter((a) => a.status === "accepted").map((a) => a.team_id));
-  const applied = new Set((mine.data ?? []).filter((a) => a.status !== "accepted").map((a) => a.team_id));
+  // Invitations to you aren't applications; they wait in Your teams
+  const applied = new Set((mine.data ?? []).filter((a) => a.status !== "accepted" && a.direction === "application").map((a) => a.team_id));
   const lookingFor = new Set((looking.data ?? []).map((p) => p.opportunity_id));
   // Teams you run or are on live in Your teams
   const all = ((data ?? []) as unknown as TeamSummary[]).filter((t) => t.owner_id !== userId && !memberOf.has(t.id));

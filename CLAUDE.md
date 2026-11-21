@@ -58,6 +58,7 @@ web/src/
     skills.ts               the fixed skill list and its groups
     roles.ts                the fixed team role list (wanted_roles, new teams' open roles) and role notes
     languages.ts            fixed lists of languages, hours a week and work modes; the work-style line
+    invites.ts              "People who fill this role": who to suggest inviting for a team's open role
     portfolio.ts            project/experience types, period formatting, safe link/image helpers
     opportunities.ts, teams.ts, goals.ts
     connections.ts          your accepted connections (one query per page) and which events they're going to
@@ -74,7 +75,7 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
 `people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read` → `people-discover` →
 `notification-limits` → `participant-notes` → `display-name` →
-`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages`. `seed_opportunities.sql` and
+`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -93,7 +94,11 @@ Tables:
 - `opportunity_reports` — 3 reports hide an opportunity; `admins` can restore or remove
 - `teams` — owner, optional opportunity, title, description, roles[] (new teams pick from `lib/roles.ts`; old
   ones keep typed-in roles), role_notes (jsonb, role → short note), languages[], work_mode
-- `team_applications` — one per person per team, for one role; the owner accepts or declines
+- `team_applications` — one per person per team, for one role. direction 'application': the person applied and
+  the owner accepts or declines; direction 'invite': the owner invited someone open to a team or a connection
+  (10 a day), the invited person accepts or declines, and the owner can withdraw it while pending
+  (`team-invites.sql`). Either way an accepted row is a member. Anything counting applicants must filter
+  direction = 'application'
 - `awards` — placement, prize_name, event_name (always set; the opportunity's title when linked),
   optional opportunity_id / project_id (own project) / team_id (a team you were on, set by the server
   for the same opportunity), awarded_on (1st of the month), proof_url, description

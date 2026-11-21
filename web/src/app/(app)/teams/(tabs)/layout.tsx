@@ -1,15 +1,14 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
+import { teamsWaiting } from "@/lib/teams";
 import { TeamsTabs } from "./teams-tabs";
 
-// Applicants waiting on you, for the Your teams tab
+// Applicants and invitations waiting on you, for the Your teams tab
 async function TabsWithCount() {
   const { supabase, userId, isGuest } = await requireUser();
   if (isGuest) return <TeamsTabs toReview={0} />;
-  // Pending applications you can see that aren't yours are the ones to your own teams
-  const { count } = await supabase.from("team_applications").select("id", { count: "exact", head: true }).eq("status", "pending").neq("user_id", userId);
-  return <TeamsTabs toReview={count ?? 0} />;
+  return <TeamsTabs toReview={await teamsWaiting(supabase, userId)} />;
 }
 
 export default function TeamsLayout({ children }: LayoutProps<"/teams">) {

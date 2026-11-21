@@ -19,8 +19,8 @@ describe("teamMembers", () => {
   it("is the owner and accepted members, never pending ones", () => {
     const t = team({
       team_applications: [
-        { role: "Backend", status: "accepted", user_id: "a", person: person("a") },
-        { role: "Designer", status: "pending", user_id: "b", person: person("b") },
+        { role: "Backend", status: "accepted", direction: "application", user_id: "a", person: person("a") },
+        { role: "Designer", status: "pending", direction: "application", user_id: "b", person: person("b") },
       ],
     });
     expect(teamMembers(t).map((m) => m.id)).toEqual(["owner", "a"]);
@@ -51,7 +51,7 @@ describe("memberSummary", () => {
 
 describe("teamRank", () => {
   const event = { id: "e", title: "E", deadline: null, starts_at: null, ends_at: null };
-  const withConnection = team({ team_applications: [{ role: "Backend", status: "accepted", user_id: "friend", person: person("friend") }] });
+  const withConnection = team({ team_applications: [{ role: "Backend", status: "accepted", direction: "application", user_id: "friend", person: person("friend") }] });
 
   it("puts events you're looking for a team on first, then teams with a connection, then the rest", () => {
     expect(teamRank(team({ opportunity: event }), new Set(["e"]), new Set())).toBe(0);

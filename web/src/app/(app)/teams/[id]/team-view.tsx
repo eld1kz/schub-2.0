@@ -2,7 +2,9 @@ import Link from "next/link";
 import { openRoles } from "@/lib/teams";
 import { knownSkills } from "@/lib/skills";
 import { workModeLabel } from "@/lib/languages";
-import { applyToTeam, deleteTeam, respondToApplication, withdrawApplication } from "@/app/actions";
+import { answerInvite, applyToTeam, deleteTeam, respondToApplication, withdrawApplication } from "@/app/actions";
+import type { Candidate } from "@/lib/invites";
+import { InvitePanel } from "./invite-panel";
 import { Avatar } from "../../avatar";
 import { SignInButton } from "../../sign-in";
 import { EditDialog } from "../../u/[id]/edit-dialog";
@@ -17,10 +19,12 @@ export type Application = {
   role: string;
   note: string;
   status: "pending" | "accepted" | "declined";
+  // "invite": the owner invited them (supabase/team-invites.sql); otherwise they applied
+  direction: "application" | "invite";
   person: Person;
 };
 
-const row = "flex flex-col gap-3 border-b border-border py-4 first:pt-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6";
+const row = "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6";
 
 function PersonLink({ id, person, you }: { id: string; person: { name: string; avatar_url: string; open_to_collaborate: boolean } | null; you: boolean }) {
   return (
@@ -97,21 +101,28 @@ export type Team = {
   languages: string[];
   work_mode: string;
   owner_id: string;
-  owner: { name: string; avatar_url: string; headline: string; open_to_collaborate: boolean } | null;
+  owner: { name: string; avatar_url: string; headline: string; open_to_collaborate: boolean; languages: string[] } | null;
   opportunity: { id: string; title: string } | null;
 };
 
 // The team page for whoever is looking: open roles to apply for, the team, and applicants for the owner
 // `connections`: your accepted connections, marked among the members; empty when signed out
 // `shareVersion`: storyVersion of the team, for the share image's address
-export function TeamView({ team: t, applications, userId, isGuest, connections, shareVersion }: { team: Team; applications: Application[]; userId: string; isGuest: boolean; connections: Set<string>; shareVersion: string }) {
+// `suggestions`: for the owner, people to invite per open role (lib/invites.ts)
+export function TeamView({ team: t, applications, userId, isGuest, connections, shareVersion, suggestions = {} }: { team: Team; applications: Application[]; userId: string; isGuest: boolean; connections: Set<string>; shareVersion: string; suggestions?: Record<string, Candidate[]> }) {
   const { owner, opportunity } = t;
   const roles = t.roles;
   const isOwner = t.owner_id === userId;
-  const mine = applications.find((a) => a.user_id === userId);
+  // A declined invitation doesn't count: you can still apply (applyToTeam clears it)
+  const mine = applications.find((a) => a.user_id === userId && !(a.direction === "invite" && a.status === "declined"));
   const members = applications.filter((a) => a.status === "accepted");
-  const pending = applications.filter((a) => a.status === "pending" && a.user_id !== userId);
+  const pending = applications.filter((a) => a.status === "pending" && a.direction === "application" && a.user_id !== userId);
+  // The owner's invitations still waiting for an answer
+  const invited = applications.filter((a) => a.status === "pending" && a.direction === "invite" && a.user_id !== userId);
+  const invitedMe = mine?.direction === "invite" && mine.status === "pending";
   const open = openRoles({ roles, team_applications: applications });
+  // Invitations for a role that was filled meanwhile can't be accepted any more; the owner can still withdraw them
+  const stale = invited.filter((i) => !open.includes(i.role));
   // Applicants grouped by the role they applied for, in the team's order
   const byRole = roles.map((role) => ({ role, people: pending.filter((a) => a.role === role) })).filter((g) => g.people.length > 0);
 
@@ -125,6 +136,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
       return <span className="text-sm text-ink2">{waiting > 0 ? `${waiting} ${waiting === 1 ? "applicant" : "applicants"}` : "No applicants yet"}</span>;
     }
     if (isGuest) return <SignInButton label="Sign in to apply" className="btn-outline h-9" />;
+    if (mine?.direction === "invite") return mine.role === role && mine.status === "pending" ? <span className="text-sm font-medium text-accent">You&apos;re invited</span> : null;
     if (mine?.role === role && mine.status === "pending") {
       return (
         <span className="flex items-center gap-4">
@@ -167,6 +179,17 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
           <div className="mt-2">
             <ShareTeamButton teamId={t.id} title={t.title} version={shareVersion} variant={isOwner ? "primary" : "outline"} />
           </div>
+          {invitedMe && (
+            <div className="mt-2 flex flex-col gap-3 border-y border-line2 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[15px]">
+                <span className="font-semibold">{owner?.name || "The owner"} invited you to join as {mine.role}.</span>
+              </p>
+              <div className="flex shrink-0 gap-2">
+                <form action={answerInvite.bind(null, mine.id, "accepted")}><button className="btn h-9 px-4">Accept</button></form>
+                <form action={answerInvite.bind(null, mine.id, "declined")}><button className="btn-outline h-9">Decline</button></form>
+              </div>
+            </div>
+          )}
           {mine?.status === "accepted" && (
             <p className="mt-2 text-sm">
               <span className="font-semibold">You&apos;re on this team as {mine.role}.</span>{" "}
@@ -179,12 +202,17 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
           {open.length > 0 ? (
             <div className="flex flex-col">
               {open.map((role) => (
-                <div key={role} className={row}>
-                  <span className="flex min-w-0 flex-col gap-0.5">
-                    <span className="text-[17px] font-semibold">{role}</span>
-                    {Object.hasOwn(t.role_notes, role) && <span className="text-sm text-ink2">{t.role_notes[role]}</span>}
-                  </span>
-                  {openRoleAction(role)}
+                <div key={role} role="group" aria-label={role} className="flex flex-col gap-3 border-b border-border py-4 first:pt-0">
+                  <div className={row}>
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="text-[17px] font-semibold">{role}</span>
+                      {Object.hasOwn(t.role_notes, role) && <span className="text-sm text-ink2">{t.role_notes[role]}</span>}
+                    </span>
+                    {openRoleAction(role)}
+                  </div>
+                  {isOwner && (
+                    <InvitePanel teamId={teamId} role={role} invites={invited.filter((i) => i.role === role)} suggestions={Object.hasOwn(suggestions, role) ? suggestions[role] : []} />
+                  )}
                 </div>
               ))}
             </div>
@@ -204,6 +232,12 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
 
         {isOwner && (
           <Section id="applications" title="Applications" count={pending.length}>
+            {stale.length > 0 && (
+              <div className="mb-6">
+                <h3 className="border-b border-line2 pb-2 text-sm font-semibold">Invitations for filled roles</h3>
+                <InvitePanel teamId={teamId} role="" invites={stale} suggestions={[]} showRole />
+              </div>
+            )}
             {byRole.length === 0 ? (
               <p className="text-[15px] text-ink2">Nobody has applied yet. People see your open roles on the Teams page.</p>
             ) : (
