@@ -5,7 +5,7 @@ import { formatPeriod, type Experience } from "@/lib/portfolio";
 // with a fixed label column so the structure comes from alignment.
 
 // A main-column section. From sm up the title sits in a 152px column; the owner gets a third column for the pencil.
-export function Section({ id, title, quiet = false, count, add, edit, owner = false, children }: {
+export function Section({ id, title, quiet = false, count, add, edit, editOnHover = false, owner = false, children }: {
   // For links to the section, like "#awards"
   id?: string;
   title: string;
@@ -15,11 +15,13 @@ export function Section({ id, title, quiet = false, count, add, edit, owner = fa
   // "+ Add" under the title
   add?: ReactNode;
   edit?: ReactNode;
+  // The pencil shows on hover or keyboard focus, like Experience's (touch screens always show it)
+  editOnHover?: boolean;
   owner?: boolean;
   children: ReactNode;
 }) {
   return (
-    <section id={id} className={`relative border-t border-line2 py-6 sm:grid sm:gap-8 sm:py-8 ${owner ? "sm:grid-cols-[152px_minmax(0,1fr)_34px]" : "sm:grid-cols-[152px_minmax(0,1fr)]"}`}>
+    <section id={id} className={`group/section relative border-t border-line2 py-6 sm:grid sm:gap-8 sm:py-8 ${owner ? "sm:grid-cols-[152px_minmax(0,1fr)_34px]" : "sm:grid-cols-[152px_minmax(0,1fr)]"}`}>
       <div className="mb-4 flex items-baseline justify-between gap-4 sm:mb-0 sm:flex-col sm:justify-start sm:gap-2.5">
         <h2 className={`text-[15px] font-semibold ${quiet ? "text-ink2" : ""}`}>
           {title}
@@ -29,7 +31,11 @@ export function Section({ id, title, quiet = false, count, add, edit, owner = fa
       </div>
       <div className="min-w-0">{children}</div>
       {/* Phones: the pencil sits at the top right of the section */}
-      {edit && <div className="absolute top-4 right-0 sm:static sm:-mt-1.5">{edit}</div>}
+      {edit && (
+        <div className={`absolute top-4 right-0 sm:static sm:-mt-1.5 ${editOnHover ? "transition-opacity [@media(hover:hover)]:opacity-0 group-focus-within/section:opacity-100 group-hover/section:opacity-100" : ""}`}>
+          {edit}
+        </div>
+      )}
     </section>
   );
 }
@@ -69,16 +75,19 @@ export function KeyValue({ label, children }: { label: string; children: ReactNo
   );
 }
 
-// Rows of chips with a small label column, like the skills table
-export function ChipTable({ rows, mono = false }: { rows: { name: string; items: string[] }[]; mono?: boolean }) {
+// Skills by category, spaced like timeline entries: a mono caps label, then the skills with where each is used
+export function SkillRows({ groups }: { groups: { name: string; skills: { name: string; uses: string; top: boolean }[] }[] }) {
   return (
-    <div className="flex flex-col gap-3 sm:gap-0">
-      {rows.map((r) => (
-        <div key={r.name} className="flex flex-col gap-1.5 sm:grid sm:grid-cols-[104px_minmax(0,1fr)] sm:items-baseline sm:gap-4 sm:border-b sm:border-border sm:py-2.5">
-          <span className="text-[13px] text-muted sm:text-sm">{r.name}</span>
-          <ul className="flex flex-wrap gap-1.5">
-            {r.items.map((item) => (
-              <li key={item} className={mono ? "skill" : "rounded bg-chip px-2 py-0.5 text-[13px]"}>{item}</li>
+    <div className="flex flex-col gap-[22px] sm:gap-8">
+      {groups.map((g) => (
+        <div key={g.name} className="flex flex-col gap-2 sm:gap-2.5">
+          <p className="font-mono text-xs font-medium tracking-wide text-ink2 uppercase sm:text-[13px]">{g.name}</p>
+          <ul className="flex flex-wrap gap-2">
+            {g.skills.map((s) => (
+              <li key={s.name} className={`rounded bg-chip px-2.5 py-1 text-[15px] ${s.top ? "font-medium" : ""}`}>
+                {s.name}
+                {s.uses && <span className="ml-2 text-[13px] font-normal text-muted">{s.uses}</span>}
+              </li>
             ))}
           </ul>
         </div>

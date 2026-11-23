@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { mediaUrl, webLink, type Experience, type Project } from "@/lib/portfolio";
 import { byRank, type Award } from "@/lib/awards";
-import { groupSkills } from "@/lib/skills";
+import { skillEvidence } from "@/lib/skills";
 import { workStyleLine } from "@/lib/languages";
 import { Avatar } from "../../avatar";
 import { ProfileCompletion } from "../../profile/completion";
@@ -12,7 +12,7 @@ import type { AwardOptions } from "./award-fields";
 import { AwardsSection, HeroAward, PendingTags, Placement } from "./awards";
 import { CopyLinkButton } from "./copy-link";
 import { OpenToTeamSwitch } from "./open-to-team-switch";
-import { ChipTable, EmptyPrompt, KeyValue, Section, SideBlock, Timeline, TimelineEntry } from "./profile-parts";
+import { EmptyPrompt, KeyValue, Section, SideBlock, SkillRows, Timeline, TimelineEntry } from "./profile-parts";
 import { AboutEdit, ContactEdit, ExperienceEdit, HeroEdit, InterestsEdit, LinksEdit, ProjectEdit, SkillsEdit } from "./section-edits";
 import { ToastProvider } from "./toast";
 import type { SharedProject } from "@/lib/shared-projects";
@@ -157,12 +157,8 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
   ].flatMap((l) => (l.href ? [{ ...l, href: l.href }] : []));
   const workStyle = workStyleLine(p);
   const education = [p.university, p.graduation_year ? `Class of ${p.graduation_year}` : ""].filter(Boolean).join(" · ");
-  const skillGroups = groupSkills(p.skills).map((g) => ({ name: g.name, items: g.skills }));
-  const interestRows = [
-    { name: "Looking for", items: p.goals },
-    { name: "Interested in", items: p.interests },
-    { name: "Team up with", items: p.looking_for },
-  ].filter((r) => r.items.length > 0);
+  const skillGroups = skillEvidence(p.skills, projects, experiences);
+  const hasInterests = p.interests.length > 0 || p.goals.length > 0 || p.looking_for.length > 0;
   const hasContact = Boolean(contact?.telegram || contact?.email);
   // Experiences arrive with current roles first
   const currentRole = experiences.find((e) => !e.end_date);
@@ -257,9 +253,9 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
           <AwardsSection awards={awards} profileId={id} canEdit={canEdit} options={awardOptions} />
 
           {(skillGroups.length > 0 || canEdit) && (
-            <Section title="Skills" quiet={skillGroups.length === 0} owner={canEdit} edit={canEdit && skillGroups.length > 0 && <SkillsEdit skills={p.skills} trigger="edit" />}>
+            <Section title="Skills" quiet={skillGroups.length === 0} owner={canEdit} editOnHover edit={canEdit && skillGroups.length > 0 && <SkillsEdit skills={p.skills} trigger="edit" />}>
               {skillGroups.length > 0 ? (
-                <ChipTable rows={skillGroups} mono />
+                <SkillRows groups={skillGroups} />
               ) : (
                 <EmptyPrompt title="Add your skills" text="The skills you bring to a team. They decide who you get matched with.">
                   <SkillsEdit skills={[]} trigger="button" />
@@ -268,10 +264,14 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
             </Section>
           )}
 
-          {(interestRows.length > 0 || canEdit) && (
-            <Section title="Interests" quiet={interestRows.length === 0} owner={canEdit} edit={canEdit && interestRows.length > 0 && <InterestsEdit profile={p} trigger="edit" />}>
-              {interestRows.length > 0 ? (
-                <ChipTable rows={interestRows} />
+          {(hasInterests || canEdit) && (
+            <Section title="Interests" quiet={!hasInterests} owner={canEdit} editOnHover edit={canEdit && hasInterests && <InterestsEdit profile={p} trigger="edit" />}>
+              {hasInterests ? (
+                <div className="flex max-w-[620px] flex-col gap-2">
+                  {p.interests.length > 0 && <p className="text-[15px] leading-relaxed text-pretty sm:text-base">{p.interests.join(" · ")}</p>}
+                  {p.goals.length > 0 && <p className="text-sm text-ink2 sm:text-[15px]">Looking for: {p.goals.join(", ")}</p>}
+                  {p.looking_for.length > 0 && <p className="text-sm text-ink2 sm:text-[15px]">Team up with: {p.looking_for.join(", ")}</p>}
+                </div>
               ) : (
                 <EmptyPrompt title="Add interests and goals" text="What you're into, and what you're on Schub for: a hackathon team, a cofounder, a side project.">
                   <InterestsEdit profile={p} trigger="button" />

@@ -26,3 +26,25 @@ export function groupSkills(skills: string[]) {
     .map(([name, list]) => ({ name, skills: [...list.filter((s) => known.has(s)), ...(name === "Other" ? unknown : [])] }))
     .filter((g) => g.skills.length > 0);
 }
+
+type WithSkills = { skills: string[] };
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+// The profile's skill groups with where each skill is used: "3 projects · 1 role", from the skills on their
+// projects and experience entries. In each group, used skills come first, most used first; the top 3 overall are `top`.
+export function skillEvidence(skills: string[], projects: WithSkills[], roles: WithSkills[]) {
+  const uses = (items: WithSkills[], skill: string) =>
+    items.filter((i) => i.skills.some((s) => s.toLowerCase() === skill.toLowerCase())).length;
+  const counted = new Map(skills.map((s) => [s, { projects: uses(projects, s), roles: uses(roles, s) }]));
+  const total = (s: string) => (counted.get(s)?.projects ?? 0) + (counted.get(s)?.roles ?? 0);
+  const top = new Set(skills.filter((s) => total(s) > 0).sort((a, b) => total(b) - total(a)).slice(0, 3));
+  return groupSkills(skills).map((g) => ({
+    name: g.name,
+    skills: [...g.skills].sort((a, b) => total(b) - total(a)).map((s) => {
+      const c = counted.get(s) ?? { projects: 0, roles: 0 };
+      const label = [c.projects && plural(c.projects, "project"), c.roles && plural(c.roles, "role")].filter(Boolean).join(" · ");
+      return { name: s, uses: label, top: top.has(s) };
+    }),
+  }));
+}
