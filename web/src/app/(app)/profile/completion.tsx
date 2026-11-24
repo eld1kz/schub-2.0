@@ -43,14 +43,14 @@ export function ProfileCompletion({ profile }: { profile: Fields }) {
 
   return (
     <div className="space-y-2">
-      <p className="text-right text-[13px] text-muted tabular-nums">{score}% complete</p>
+      <p className="text-right text-meta text-muted tabular-nums">{score}% complete</p>
       <progress
         value={score}
         max={100}
         aria-label="Profile completion"
         className="block h-1.5 w-full appearance-none overflow-hidden rounded-full bg-border [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-accent [&::-webkit-progress-bar]:bg-border [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-accent"
       />
-      <ul className="list-disc space-y-0.5 pl-4 text-[13px] text-ink2">
+      <ul className="list-disc space-y-0.5 pl-4 text-meta text-ink2">
         {missing.map((c) => <li key={c.hint}>{c.hint}</li>)}
       </ul>
     </div>

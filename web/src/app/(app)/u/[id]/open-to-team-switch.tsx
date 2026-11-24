@@ -20,7 +20,7 @@ function SwitchButton({ open }: { open: boolean }) {
 // The owner's one-tap switch in the profile hero: pressed while they're open to a team
 export function OpenToTeamSwitch({ open }: { open: boolean }) {
   return (
-    <form action={setOpenToTeam.bind(null, !open)} className="flex items-center gap-2.5">
+    <form action={setOpenToTeam.bind(null, !open)} className="flex items-center gap-2">
       <SwitchButton open={open} />
       <span className="hidden text-sm text-muted sm:inline">{open ? "On: a green ring on your photo, and teams find you in People" : "Off: turn on so teams can find you"}</span>
     </form>

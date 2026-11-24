@@ -25,9 +25,9 @@ const chipOption = "flex cursor-pointer items-center justify-center rounded-md b
 // A labelled row of fields: the label sits in its own column from sm up
 function Group({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="space-y-3 border-b border-border py-5 last:border-b-0 sm:grid sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-6 sm:space-y-0 sm:py-6">
-      <div className="text-[13px] font-semibold text-ink2 sm:pt-2 sm:text-sm sm:text-foreground">{label}</div>
-      <div className="min-w-0 space-y-3.5">{children}</div>
+    <div className="space-y-3 border-b border-border py-4 last:border-b-0 sm:grid sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-6 sm:space-y-0 sm:py-6">
+      <div className="text-meta font-semibold text-ink2 sm:pt-2 sm:text-sm sm:text-foreground">{label}</div>
+      <div className="min-w-0 space-y-3">{children}</div>
     </div>
   );
 }
@@ -43,7 +43,7 @@ function Field({ label, className = "", children }: { label: string; className?:
 
 function Toggle({ name, label, defaultChecked }: { name: string; label: string; defaultChecked: boolean }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-4 text-[15px]">
+    <label className="flex cursor-pointer items-center justify-between gap-4 text-base">
       {label}
       <input type="checkbox" name={name} defaultChecked={defaultChecked} className="peer sr-only" />
       <span
@@ -59,7 +59,7 @@ function LinkField({ name, label, icon, defaultValue, placeholder }: { name: str
     <label className="relative block">
       <span className="sr-only">{label}</span>
       <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted">{icon}</span>
-      <input name={name} defaultValue={defaultValue} placeholder={placeholder} className="input pl-10" />
+      <input name={name} defaultValue={defaultValue} placeholder={placeholder} className="input pl-8" />
     </label>
   );
 }
@@ -69,8 +69,8 @@ export function HeroEdit({ profile: p }: { profile: ProfileData }) {
     <EditDialog title="Edit intro" trigger="edit" label="Edit intro" save={saveHero}>
       <Group label="Intro">
         <div className="flex gap-4">
-          <PhotoField current={<Avatar url={p.avatar_url} name={p.name} className="h-20 w-20 text-2xl" sizes="80px" square />} />
-          <div className="min-w-0 flex-1 space-y-3.5">
+          <PhotoField current={<Avatar url={p.avatar_url} name={p.name} className="h-20 w-20 text-xl" sizes="80px" square />} />
+          <div className="min-w-0 flex-1 space-y-3">
             <Field label="Name"><input name="name" defaultValue={p.name} required maxLength={80} className="input font-semibold" /></Field>
             <Field label="Headline"><input name="headline" defaultValue={p.headline} maxLength={100} placeholder="CS student building a campus marketplace" className="input" /></Field>
           </div>
@@ -97,7 +97,7 @@ export function HeroEdit({ profile: p }: { profile: ProfileData }) {
         <div className="grid grid-cols-2 gap-3">
           <Field label="Hours a week">
             <span className="relative block">
-              <select name="hours_per_week" defaultValue={p.hours_per_week} className="input h-10 cursor-pointer appearance-none py-0 pr-9">
+              <select name="hours_per_week" defaultValue={p.hours_per_week} className="input h-10 cursor-pointer appearance-none py-0 pr-8">
                 <option value="">Not set</option>
                 {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
               </select>
@@ -106,7 +106,7 @@ export function HeroEdit({ profile: p }: { profile: ProfileData }) {
           </Field>
           <Field label="Work mode">
             <span className="relative block">
-              <select name="work_mode" defaultValue={p.work_mode} className="input h-10 cursor-pointer appearance-none py-0 pr-9">
+              <select name="work_mode" defaultValue={p.work_mode} className="input h-10 cursor-pointer appearance-none py-0 pr-8">
                 <option value="">Not set</option>
                 {WORK_MODES.map((m) => <option key={m} value={m}>{workModeLabel(m)}</option>)}
               </select>
@@ -115,11 +115,11 @@ export function HeroEdit({ profile: p }: { profile: ProfileData }) {
           </Field>
         </div>
         <Field label="City"><input name="city" defaultValue={p.city} maxLength={60} placeholder="Seoul" className="input" /></Field>
-        <p className="text-[13px] text-ink2">Everyone can see these, signed out too</p>
+        <p className="text-meta text-ink2">Everyone can see these, signed out too</p>
       </Group>
       <Group label="Open to a team">
         <Toggle name="open_to_collaborate" label="Open to a team" defaultChecked={p.open_to_collaborate} />
-        <p className="text-[13px] text-ink2">A green ring on your photo, and team owners can find you in People</p>
+        <p className="text-meta text-ink2">A green ring on your photo, and team owners can find you in People</p>
         <fieldset>
           <legend className="label">Roles you&apos;d join as (shown while you&apos;re open to a team)</legend>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

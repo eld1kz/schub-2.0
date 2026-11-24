@@ -17,15 +17,15 @@ export default async function OnboardingPage(props: PageProps<"/onboarding">) {
   return (
     <>
       <header className="border-b border-border">
-        <div className="mx-auto flex h-[60px] max-w-[1440px] items-center px-4 sm:px-12">
-          <span className="flex items-center gap-2 text-xl font-bold tracking-[-0.03em]">
-            <span aria-hidden className="h-3 w-3 rounded-[2px] bg-accent" />
+        <div className="mx-auto flex h-[60px] max-w-wide items-center px-4 sm:px-12">
+          <span className="flex items-center gap-2 text-xl font-bold tracking-tighter">
+            <span aria-hidden className="h-3 w-3 rounded-sm bg-accent" />
             schub
           </span>
         </div>
       </header>
       {/* Room at the bottom on phones for the pinned buttons */}
-      <main className="mx-auto w-full max-w-[560px] px-4 pt-10 pb-32 sm:pt-16 sm:pb-16">
+      <main className="mx-auto w-full max-w-form px-4 pt-8 pb-bar sm:pt-16 sm:pb-16">
         <OnboardingFlow
           // Email sign-ups (and providers without a display name) arrive with no name
           needsName={!p?.name.trim()}

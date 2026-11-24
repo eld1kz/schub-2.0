@@ -10,7 +10,7 @@ export type OpportunityRowData = { id: string; title: string; url: string; type:
 // The column labels above the rows, from lg up
 export function OpportunityHeader() {
   return (
-    <div className={`hidden border-b border-border py-3 text-xs font-semibold tracking-[0.04em] text-muted ${columns}`}>
+    <div className={`hidden border-b border-border py-3 text-xs font-semibold tracking-wide text-muted ${columns}`}>
       <span>TYPE</span>
       <span>OPPORTUNITY</span>
       <span>WHERE</span>
@@ -27,11 +27,11 @@ export function OpportunityRow({ o, day, going, actions }: { o: OpportunityRowDa
   const looking = (o.opportunity_participants as { count: number }[])[0]?.count ?? 0;
   const days = next.date ? daysUntil(next.date, day) : null;
   const urgent = days !== null && days <= SOON_DAYS;
-  const left = days !== null && <span className={`text-[13px] ${urgent ? "font-semibold text-accent" : "text-muted"}`}>{daysLabel(days)}</span>;
+  const left = days !== null && <span className={`text-meta ${urgent ? "font-semibold text-accent" : "text-muted"}`}>{daysLabel(days)}</span>;
   return (
-    <article className={`group relative flex flex-col gap-1 border-b border-border py-4 lg:py-[18px] ${columns}`}>
+    <article className={`group relative flex flex-col gap-1 border-b border-border py-4 ${columns}`}>
       <span className="flex items-center justify-between gap-2">
-        <span className="font-mono text-[11px] font-medium tracking-[0.02em] text-ink2 uppercase lg:text-xs">
+        <span className="font-mono text-xs font-medium tracking-wide text-ink2 uppercase">
           {opportunityTypes[o.type]}
           {o.featured && <span className="block text-accent">Featured</span>}
         </span>
@@ -40,7 +40,7 @@ export function OpportunityRow({ o, day, going, actions }: { o: OpportunityRowDa
       <span className="flex min-w-0 flex-col gap-0.5">
         <Link href={`/opportunities/${o.id}`} className="text-base leading-snug font-semibold group-hover:text-accent after:absolute after:inset-0">{o.title}</Link>
         {/* Phones: organizer, place and date on one line under the title */}
-        <span className="text-[13px] text-ink2 lg:text-sm">
+        <span className="text-meta text-ink2 lg:text-sm">
           <span className="lg:hidden">{[o.organizer, placeLabel(o), next.label].filter(Boolean).join(" · ")}</span>
           <span className="hidden lg:inline">{o.organizer}</span>
         </span>
@@ -50,7 +50,7 @@ export function OpportunityRow({ o, day, going, actions }: { o: OpportunityRowDa
         <span className="text-sm tabular-nums">{next.label}</span>
         {left}
       </span>
-      <span className="mt-0.5 flex flex-col items-start gap-0.5 text-[13px] lg:mt-0 lg:text-sm">
+      <span className="mt-0.5 flex flex-col items-start gap-0.5 text-meta lg:mt-0 lg:text-sm">
         <span><span className="font-semibold">{looking}</span> <span className="text-ink2">looking for a team</span></span>
         {going && (
           <Link href={`/opportunities/${o.id}#${going.onTeam ? "teams" : "looking"}`} className="relative z-10 font-medium text-accent hover:underline">

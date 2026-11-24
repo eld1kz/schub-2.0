@@ -25,7 +25,7 @@ export function Select({ label, placeholder, value, onChange, options, selectRef
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
-        className={`input cursor-pointer appearance-none py-0 pr-9 ${small ? "h-9 text-sm" : "h-11 sm:h-10"} ${value ? "" : "text-muted"}`}
+        className={`input cursor-pointer appearance-none py-0 pr-8 ${small ? "h-9 text-sm" : "h-11 sm:h-10"} ${value ? "" : "text-muted"}`}
       >
         <option value="" disabled={required}>{placeholder}</option>
         {options.map((o) => <option key={o.value} value={o.value} className="text-foreground">{o.label}</option>)}

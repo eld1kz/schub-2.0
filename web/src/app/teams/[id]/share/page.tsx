@@ -18,7 +18,7 @@ export default async function ShareTeamPage(props: PageProps<"/teams/[id]/share"
   const team = withCurrentEvent(data as unknown as Omit<Parameters<typeof storyVersion>[0], "opportunity"> & { id: string; team_entries: Entry[] }, today());
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-[480px] flex-col gap-5 px-4 py-6">
+    <main className="mx-auto flex min-h-dvh max-w-phone flex-col gap-4 px-4 py-6">
       <h1 className="text-center text-lg font-semibold">{team.title}</h1>
       <ShareOnPhone teamId={team.id} title={team.title} version={storyVersion(team)} initialTheme={params.theme === "dark" ? "dark" : "light"} />
     </main>

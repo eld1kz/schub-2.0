@@ -13,7 +13,7 @@ const sent = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month:
 
 function Heading({ title, count }: { title: string; count: number }) {
   return (
-    <h2 className="mb-4 text-[15px] font-semibold">
+    <h2 className="mb-4 text-base font-semibold">
       {title} <span className="font-normal text-muted">{count}</span>
     </h2>
   );
@@ -37,14 +37,14 @@ export default async function RequestsPage() {
   if (pending.length === 0) {
     return (
       <div className="flex flex-col items-start gap-2 py-2">
-        <p className="text-[15px] font-medium">No pending requests</p>
+        <p className="text-base font-medium">No pending requests</p>
         <Link href="/people" className="text-sm font-semibold text-accent hover:underline">Find people on Discover</Link>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       <section>
         <Heading title="Received" count={received.length} />
         {received.length === 0 ? (
@@ -66,7 +66,7 @@ export default async function RequestsPage() {
                 </>
               }
             >
-              <p className="text-[13px] text-muted">Sent {sent(c.created_at)}</p>
+              <p className="text-meta text-muted">Sent {sent(c.created_at)}</p>
             </PersonRow>
           ))
         )}
@@ -88,7 +88,7 @@ export default async function RequestsPage() {
               awarded={awarded.has(c.receiver_id)}
               actions={<form action={withdrawRequest.bind(null, c.id)}><button className="h-9 text-sm text-ink2 hover:text-foreground">Withdraw</button></form>}
             >
-              <p className="text-[13px] text-muted">Sent {sent(c.created_at)} · waiting for a reply</p>
+              <p className="text-meta text-muted">Sent {sent(c.created_at)} · waiting for a reply</p>
             </PersonRow>
           ))
         )}

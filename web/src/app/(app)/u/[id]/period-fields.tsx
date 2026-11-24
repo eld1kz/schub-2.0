@@ -44,7 +44,7 @@ export function PeriodFields({ start, end, current }: { start?: string; end?: st
 
   return (
     <>
-      <label className="flex h-11 w-fit cursor-pointer items-center gap-2.5 text-[15px] sm:h-auto">
+      <label className="flex h-11 w-fit cursor-pointer items-center gap-2 text-base sm:h-auto">
         <input type="checkbox" name="current" checked={isCurrent} onChange={(e) => setCurrent(e.target.checked)} className="h-[18px] w-[18px] accent-[var(--accent)]" />
         I currently work here
       </label>
@@ -68,7 +68,7 @@ export function PeriodFields({ start, end, current }: { start?: string; end?: st
           <FieldError field="end" message={endsTooEarly ? "The end can't be before the start." : ""} />
         </fieldset>
       )}
-      {length && <p className="-mt-2 text-[13px] text-muted tabular-nums">{length}</p>}
+      {length && <p className="-mt-2 text-meta text-muted tabular-nums">{length}</p>}
     </>
   );
 }

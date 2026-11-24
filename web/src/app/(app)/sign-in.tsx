@@ -14,7 +14,7 @@ export function SignInButton({ label = "Sign in", className = "btn" }: { label?:
 // Shown in place of a form guests can't use
 export function SignInPrompt({ text }: { text: string }) {
   return (
-    <div className="max-w-md space-y-3 rounded-md border border-border p-4">
+    <div className="max-w-phone space-y-3 rounded-md border border-border p-4">
       <p className="text-sm">{text}</p>
       <SignInButton />
     </div>

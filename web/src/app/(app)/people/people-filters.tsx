@@ -16,7 +16,7 @@ const modeOptions = ["In person", "Remote"].map((m) => ({ value: m, label: m }))
 export function PeopleFilters({ query }: { query: PeopleQuery }) {
   const router = useRouter();
   return (
-    <div className="flex flex-wrap items-center gap-2.5">
+    <div className="flex flex-wrap items-center gap-2">
       <Link
         // Turning it off clears the role too, since a role only counts for people who are open
         href={peopleHref({ ...query, open: !query.open, role: query.open ? "" : query.role, page: 1 })}

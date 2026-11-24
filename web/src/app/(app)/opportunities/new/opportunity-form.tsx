@@ -49,13 +49,13 @@ export function OpportunityForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} onInput={() => setError(null)} className="max-w-[560px]">
+    <form onSubmit={onSubmit} onInput={() => setError(null)} className="max-w-form">
       <div className="flex flex-col gap-1.5 border-b border-line2 pb-6">
-        <h1 className="text-[28px] font-semibold tracking-[-0.02em] sm:text-4xl sm:tracking-[-0.03em]">Add an opportunity</h1>
-        <p className="text-[15px] text-ink2 sm:text-base">It goes live right away. Real, upcoming events only.</p>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl sm:tracking-tighter">Add an opportunity</h1>
+        <p className="text-base text-ink2">It goes live right away. Real, upcoming events only.</p>
       </div>
 
-      <div className="space-y-5 py-6">
+      <div className="space-y-4 py-6">
         <Field id="title" label="Title" required>
           <input id="title" name="title" required minLength={3} maxLength={200} placeholder="Microsoft Imagine Cup 2027" className={input} />
           <FieldError field="title" message={serverError("title")} />
@@ -67,7 +67,7 @@ export function OpportunityForm() {
 
         <Field id="url" label="Link" required>
           <input id="url" name="url" type="url" required placeholder="https://" className={input} />
-          <p className="mt-1.5 text-[13px] text-muted">The official page. We check that it opens.</p>
+          <p className="mt-1.5 text-meta text-muted">The official page. We check that it opens.</p>
           <FieldError field="url" message={serverError("url")} />
         </Field>
 
@@ -98,9 +98,9 @@ export function OpportunityForm() {
         </Field>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row-reverse sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row-reverse sm:items-center sm:justify-between">
         <button disabled={saving} className="btn h-11 w-full sm:h-[38px] sm:w-auto">{saving ? "Checking the link..." : "Add opportunity"}</button>
-        {error && !error.field && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error.message}</p>}
+        {error && !error.field && <p role="alert" className="text-sm text-danger ">{error.message}</p>}
       </div>
     </form>
   );

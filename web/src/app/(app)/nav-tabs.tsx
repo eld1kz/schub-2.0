@@ -39,7 +39,7 @@ function CountLink({ tab, n }: { tab: string; n?: number }) {
 export function NavTabs({ counts = {} }: { counts?: Counts }) {
   const pathname = usePathname();
   return (
-    <nav className="hidden h-[60px] gap-7 text-sm font-medium text-ink2 sm:flex">
+    <nav className="hidden h-[60px] gap-6 text-sm font-medium text-ink2 sm:flex">
       {tabs.map((t) => (
         <span key={t.href} className="flex items-center">
           <Link

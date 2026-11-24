@@ -23,13 +23,13 @@ export default async function NewTeamPage(props: PageProps<"/teams/new">) {
     .order("title");
 
   return (
-    <form action={createTeam} className="max-w-[560px]">
+    <form action={createTeam} className="max-w-form">
       <div className="flex flex-col gap-1.5 border-b border-line2 pb-6">
-        <h1 className="text-[28px] font-semibold tracking-[-0.02em] sm:text-4xl sm:tracking-[-0.03em]">Post a team</h1>
-        <p className="text-[15px] text-ink2 sm:text-base">Say what you&apos;re building and which roles you still need. People apply; you accept or decline.</p>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl sm:tracking-tighter">Post a team</h1>
+        <p className="text-base text-ink2">Say what you&apos;re building and which roles you still need. People apply; you accept or decline.</p>
       </div>
 
-      <div className="space-y-5 py-6">
+      <div className="space-y-4 py-6">
         <div>
           <label htmlFor="title" className={label}>What are you building?{required}</label>
           <input id="title" name="title" required minLength={3} maxLength={120} placeholder="AI study buddy for university students" className="input h-11 sm:h-10" />
@@ -56,7 +56,7 @@ export default async function NewTeamPage(props: PageProps<"/teams/new">) {
         <div>
           <label htmlFor="work_mode" className={label}>How you&apos;ll work <span className="font-normal text-muted">(optional)</span></label>
           <span className="relative block">
-            <select id="work_mode" name="work_mode" defaultValue="" className="input h-11 cursor-pointer appearance-none py-0 pr-9 sm:h-10">
+            <select id="work_mode" name="work_mode" defaultValue="" className="input h-11 cursor-pointer appearance-none py-0 pr-8 sm:h-10">
               <option value="">Not decided</option>
               {WORK_MODES.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
@@ -68,7 +68,7 @@ export default async function NewTeamPage(props: PageProps<"/teams/new">) {
         <div>
           <label htmlFor="opportunity_id" className={label}>For an opportunity <span className="font-normal text-muted">(optional)</span></label>
           <span className="relative block">
-            <select id="opportunity_id" name="opportunity_id" defaultValue={typeof opportunity === "string" ? opportunity : ""} className="input h-11 cursor-pointer appearance-none py-0 pr-9 sm:h-10">
+            <select id="opportunity_id" name="opportunity_id" defaultValue={typeof opportunity === "string" ? opportunity : ""} className="input h-11 cursor-pointer appearance-none py-0 pr-8 sm:h-10">
               <option value="">Not tied to one</option>
               {(opportunities ?? []).map((o) => <option key={o.id} value={o.id}>{o.title}</option>)}
             </select>
@@ -79,9 +79,9 @@ export default async function NewTeamPage(props: PageProps<"/teams/new">) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row-reverse sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row-reverse sm:items-center sm:justify-between">
         <button className="btn h-11 w-full sm:h-[38px] sm:w-auto">Post team</button>
-        {typeof error === "string" && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {typeof error === "string" && <p role="alert" className="text-sm text-danger ">{error}</p>}
       </div>
     </form>
   );

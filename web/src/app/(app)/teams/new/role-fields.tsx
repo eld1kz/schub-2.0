@@ -38,13 +38,13 @@ export function RoleFields() {
         })}
       </div>
       {picked.length === 0 ? (
-        <p className="mt-2.5 text-[13px] text-muted">Pick the roles you still need, up to {maxRoles}.</p>
+        <p className="mt-2 text-meta text-muted">Pick the roles you still need, up to {maxRoles}.</p>
       ) : (
         <div className="mt-4 flex flex-col border-t border-border">
           {picked.map((role) => (
             <div key={role} className="flex flex-col gap-1.5 border-b border-border py-3 sm:grid sm:grid-cols-[120px_minmax(0,1fr)] sm:items-center sm:gap-4">
               <input type="hidden" name="roles" value={role} />
-              <span className="text-[15px] font-semibold">{role}</span>
+              <span className="text-base font-semibold">{role}</span>
               <input
                 name="role_notes"
                 aria-label={`Note for ${role}`}

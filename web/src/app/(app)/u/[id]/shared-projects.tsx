@@ -15,13 +15,13 @@ export function BuiltWith({ project, except }: { project: SharedProject; except?
   const people = builtWith(project, except);
   if (people.length === 0) return null;
   return (
-    <div className="flex items-center gap-2.5 text-[13px] text-ink2 sm:text-sm">
+    <div className="flex items-center gap-2 text-meta text-ink2 sm:text-sm">
       <span>Built with</span>
       <ul className="flex">
         {people.map((p) => (
           <li key={p.id} className="-mr-1.5">
             <Link href={`/u/${p.id}`} title={p.name || "Unnamed"} aria-label={p.name || "Unnamed"} className="block rounded-full border-2 border-background hover:opacity-80">
-              <Avatar url={p.avatar_url} name={p.name} className="h-7 w-7 text-[10px]" sizes="28px" />
+              <Avatar url={p.avatar_url} name={p.name} className="h-7 w-7 text-xs" sizes="28px" />
             </Link>
           </li>
         ))}
@@ -40,15 +40,15 @@ export function SharedProjectBody({ project: p, award, except, edit, showTeam = 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-4">
-        <h3 className="min-w-0 text-[17px] font-semibold tracking-[-0.01em] break-words sm:text-[19px]">{p.title}</h3>
+        <h3 className="min-w-0 text-lg font-semibold tracking-snug break-words">{p.title}</h3>
         <div className="flex shrink-0 items-center gap-2">
-          {award ? <Placement placement={award.placement} /> : p.result && <span className="text-right text-[13px] font-semibold text-accent sm:text-sm">{p.result}</span>}
+          {award ? <Placement placement={award.placement} /> : p.result && <span className="text-right text-meta font-semibold text-accent sm:text-sm">{p.result}</span>}
           {edit && <span className="-my-2">{edit}</span>}
         </div>
       </div>
-      {p.pitch && <p className="max-w-[600px] text-sm leading-normal sm:text-[15px]">{p.pitch}</p>}
+      {p.pitch && <p className="max-w-prose text-sm leading-normal sm:text-base">{p.pitch}</p>}
       {showTeam && p.team && (
-        <p className="text-[13px] text-ink2 sm:text-sm">
+        <p className="text-meta text-ink2 sm:text-sm">
           Team <Link href={`/teams/${p.team.id}`} className="font-medium text-foreground hover:text-accent">{p.team.title}</Link>
           {award && ` · ${award.opportunity?.title ?? award.event_name}`}
         </p>
@@ -75,7 +75,7 @@ export function SharedProjectBody({ project: p, award, except, edit, showTeam = 
 export function HideButton({ projectId }: { projectId: string }) {
   return (
     <form action={hideSharedProject.bind(null, projectId, true)}>
-      <button className="h-9 text-[13px] text-ink2 hover:text-foreground">Hide from my profile</button>
+      <button className="h-9 text-meta text-ink2 hover:text-foreground">Hide from my profile</button>
     </form>
   );
 }
@@ -84,7 +84,7 @@ export function HideButton({ projectId }: { projectId: string }) {
 export function ShowAgainButton({ projectId }: { projectId: string }) {
   return (
     <form action={hideSharedProject.bind(null, projectId, false)}>
-      <button className="text-[13px] font-medium text-accent hover:underline">Show on my profile</button>
+      <button className="text-meta font-medium text-accent hover:underline">Show on my profile</button>
     </form>
   );
 }
@@ -95,7 +95,7 @@ export function PendingSharedProjects({ projects }: { projects: SharedProject[] 
     <section aria-label="Projects to confirm" className="mb-8 flex flex-col border-b border-line2 sm:mb-12">
       {projects.map((p) => (
         <div key={p.id} className="flex flex-col gap-3 border-t border-border py-4 first:border-t-0 first:pt-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-          <p className="text-[15px] leading-normal">
+          <p className="text-base leading-normal">
             Your team <Link href={`/teams/${p.team_id}`} className="font-semibold hover:text-accent">{p.team?.title ?? ""}</Link> recorded what you built:{" "}
             <span className="font-semibold">{p.title}</span>. Show it on your profile?
           </p>

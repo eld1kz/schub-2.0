@@ -27,7 +27,7 @@ export function SharedProjectEdit({ teamId, project: p, trigger }: { teamId: str
       submit={p ? "Save" : "Record"}
       done={p ? "Saved" : "Recorded. Your teammates are asked to confirm."}
     >
-      <div className="space-y-4 py-5 sm:py-6">
+      <div className="space-y-4 py-4 sm:py-6">
         <Field label="Name" name="title"><input name="title" defaultValue={p?.title} required maxLength={SHARED_PROJECT_TITLE_MAX} className="input" /></Field>
         <Field label="One line about it" name="pitch"><input name="pitch" defaultValue={p?.pitch} maxLength={SHARED_PROJECT_PITCH_MAX} placeholder="Swap used textbooks with students on your campus" className="input" /></Field>
         <Field label={p?.image_url ? "Image (choose a file to replace the current one)" : "Image"} name="image"><input name="image" type="file" accept="image/jpeg,image/png,image/webp" className="input" /></Field>
@@ -36,7 +36,7 @@ export function SharedProjectEdit({ teamId, project: p, trigger }: { teamId: str
           <Field label="Link to the code" name="repo_url"><input name="repo_url" defaultValue={p?.repo_url} placeholder="https://github.com/..." className="input" /></Field>
         </div>
         <Field label="Result (optional)" name="result"><input name="result" defaultValue={p?.result} maxLength={SHARED_PROJECT_RESULT_MAX} placeholder="2nd place" className="input" /></Field>
-        {p && <p className="text-[13px] text-ink2">Changing the name or the result asks everyone who confirmed to confirm again.</p>}
+        {p && <p className="text-meta text-ink2">Changing the name or the result asks everyone who confirmed to confirm again.</p>}
       </div>
     </EditDialog>
   );

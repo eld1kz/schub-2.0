@@ -20,7 +20,7 @@ export default async function FeedPage() {
   ].sort((a, b) => b.created_at.localeCompare(a.created_at));
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <section className="grid gap-6 sm:grid-cols-2">
         <form action={createPost} className="space-y-2">
           <h2 className="text-sm font-medium">Post an update</h2>
@@ -46,7 +46,7 @@ export default async function FeedPage() {
       <section className="divide-y divide-border border-t border-border">
         {items.length === 0 && <p className="py-6 text-sm text-muted">Nothing here yet.</p>}
         {items.map((item) => (
-          <article key={item.kind + item.id} className="py-5">
+          <article key={item.kind + item.id} className="py-4">
             <p className="text-sm">
               <Link href={`/u/${item.author?.id}`} className="font-medium hover:underline">{item.author?.name || "Unnamed"}</Link>
               <span className="text-muted"> · {item.author?.university || "—"} · {new Date(item.created_at).toLocaleDateString()}</span>

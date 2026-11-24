@@ -19,11 +19,11 @@ export function InviteButton({ teamId, personId, personName, role }: { teamId: s
             setError(result.error ?? "");
           })
         }
-        className="h-9 rounded-md border border-accent px-3 text-[13px] font-semibold whitespace-nowrap text-accent hover:bg-accent-soft disabled:opacity-50"
+        className="h-9 rounded-md border border-accent px-3 text-meta font-semibold whitespace-nowrap text-accent hover:bg-accent-soft disabled:opacity-50"
       >
         {sending ? "Inviting..." : "Invite"}
       </button>
-      {error && <span role="alert" className="max-w-[220px] text-right text-[13px] text-red-600 dark:text-red-400">{error}</span>}
+      {error && <span role="alert" className="max-w-note text-right text-meta text-danger ">{error}</span>}
     </span>
   );
 }

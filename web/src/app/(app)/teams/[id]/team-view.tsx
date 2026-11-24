@@ -35,9 +35,9 @@ const row = "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between 
 
 function PersonLink({ id, person, you }: { id: string; person: { name: string; avatar_url: string; open_to_collaborate: boolean } | null; you: boolean }) {
   return (
-    <Link href={`/u/${id}`} className="flex min-w-0 items-center gap-2.5 hover:text-accent">
-      <Avatar url={person?.avatar_url ?? ""} name={person?.name ?? ""} className="h-8 w-8 text-[11px]" sizes="32px" open={person?.open_to_collaborate} />
-      <span className="truncate text-[15px] font-medium">{you ? "You" : person?.name || "Unnamed"}</span>
+    <Link href={`/u/${id}`} className="flex min-w-0 items-center gap-2 hover:text-accent">
+      <Avatar url={person?.avatar_url ?? ""} name={person?.name ?? ""} className="h-8 w-8 text-xs" sizes="32px" open={person?.open_to_collaborate} />
+      <span className="truncate text-base font-medium">{you ? "You" : person?.name || "Unnamed"}</span>
     </Link>
   );
 }
@@ -46,7 +46,7 @@ function PersonLink({ id, person, you }: { id: string; person: { name: string; a
 // other people open to a team get the green one.
 function Member({ id, person, role, you, connection }: { id: string; person: { name: string; headline: string; avatar_url: string; open_to_collaborate: boolean } | null; role: string; you: boolean; connection: boolean }) {
   return (
-    <article className="flex items-start gap-3.5 border-b border-border py-4 first:pt-0">
+    <article className="flex items-start gap-3 border-b border-border py-4 first:pt-0">
       <Link href={`/u/${id}`} aria-hidden tabIndex={-1} className="shrink-0">
         <Avatar
           url={person?.avatar_url ?? ""}
@@ -57,9 +57,9 @@ function Member({ id, person, role, you, connection }: { id: string; person: { n
         />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <Link href={`/u/${id}`} className="text-base font-semibold hover:text-accent">{you ? "You" : person?.name || "Unnamed"}</Link>
-          {connection && <span className="text-[13px] font-medium text-accent">Your connection</span>}
+          {connection && <span className="text-meta font-medium text-accent">Your connection</span>}
         </div>
         {person?.headline && <p className="text-sm leading-snug text-ink2">{person.headline}</p>}
       </div>
@@ -80,9 +80,9 @@ function ApplyButton({ teamId, teamTitle, role }: { teamId: string; teamTitle: s
       save={applyToTeam.bind(null, teamId)}
       tall
     >
-      <div className="space-y-5 py-6">
+      <div className="space-y-4 py-6">
         <input type="hidden" name="role" value={role} />
-        <p className="text-[15px] text-ink2">
+        <p className="text-base text-ink2">
           You&apos;re applying to <span className="font-semibold text-foreground">{teamTitle}</span> as <span className="font-semibold text-foreground">{role}</span>. The owner sees your profile and this note.
         </p>
         <div>
@@ -90,7 +90,7 @@ function ApplyButton({ teamId, teamTitle, role }: { teamId: string; teamTitle: s
             Why you <span className="font-normal text-muted">(optional)</span>
           </label>
           <textarea id={`note-${role}`} name="note" rows={4} maxLength={300} placeholder="Built two React apps, free every evening" className="input resize-none leading-normal" />
-          <p className="mt-1 text-[13px] text-muted">Up to 300 characters</p>
+          <p className="mt-1 text-meta text-muted">Up to 300 characters</p>
         </div>
       </div>
     </EditDialog>
@@ -185,17 +185,17 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
 
   return (
     <ToastProvider>
-      <div className="max-w-[752px]">
-        <header className="flex flex-col gap-3 pb-8 sm:pb-10">
+      <div className="max-w-column">
+        <header className="flex flex-col gap-3 pb-8">
           {opportunity && (
             <p className="text-sm text-ink2">
               For <Link href={`/opportunities/${opportunity.id}`} className="font-medium text-accent hover:underline">{opportunity.title}</Link>
             </p>
           )}
-          <h1 className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-4xl sm:tracking-[-0.03em]">{t.title}</h1>
-          {t.description && <p className="max-w-[620px] text-[15px] leading-relaxed text-pretty whitespace-pre-wrap sm:text-base">{t.description}</p>}
+          <h1 className="text-2xl leading-tight font-semibold tracking-tight sm:text-3xl sm:tracking-tighter">{t.title}</h1>
+          {t.description && <p className="max-w-prose text-base leading-relaxed text-pretty whitespace-pre-wrap">{t.description}</p>}
           {(t.languages.length > 0 || t.work_mode) && (
-            <p className="flex flex-wrap gap-x-[18px] gap-y-1 text-sm text-ink2">
+            <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink2">
               {t.languages.length > 0 && <span><span className="text-muted">Team language:</span> <span className="font-medium text-foreground">{t.languages.join(", ")}</span></span>}
               {t.work_mode && <span><span className="text-muted">Work mode:</span> <span className="font-medium text-foreground">{workModeLabel(t.work_mode)}</span></span>}
             </p>
@@ -203,7 +203,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
           <div className="mt-1 flex items-center gap-2 text-sm text-ink2">
             Started by
             <Link href={`/u/${t.owner_id}`} className="flex items-center gap-2 font-medium text-foreground hover:text-accent">
-              <Avatar url={owner?.avatar_url ?? ""} name={owner?.name ?? ""} className="h-6 w-6 text-[10px]" sizes="24px" open={owner?.open_to_collaborate} />
+              <Avatar url={owner?.avatar_url ?? ""} name={owner?.name ?? ""} className="h-6 w-6 text-xs" sizes="24px" open={owner?.open_to_collaborate} />
               {isOwner ? "you" : owner?.name || "Unnamed"}
             </Link>
           </div>
@@ -213,7 +213,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
           </div>
           {invitedMe && (
             <div className="mt-2 flex flex-col gap-3 border-y border-line2 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[15px]">
+              <p className="text-base">
                 <span className="font-semibold">{owner?.name || "The owner"} invited you to join as {mine.role}.</span>
               </p>
               <div className="flex shrink-0 gap-2">
@@ -237,7 +237,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
                 <div key={role} role="group" aria-label={role} className="flex flex-col gap-3 border-b border-border py-4 first:pt-0">
                   <div className={row}>
                     <span className="flex min-w-0 flex-col gap-0.5">
-                      <span className="text-[17px] font-semibold">{role}</span>
+                      <span className="text-lg font-semibold">{role}</span>
                       {Object.hasOwn(t.role_notes, role) && <span className="text-sm text-ink2">{t.role_notes[role]}</span>}
                     </span>
                     {openRoleAction(role)}
@@ -249,11 +249,11 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
               ))}
             </div>
           ) : over && open.length > 0 ? (
-            <p className="max-w-[520px] text-[15px] text-ink2">
+            <p className="max-w-measure text-base text-ink2">
               {opportunity.title} is over, so the open roles aren&apos;t shown.{isOwner && " Enter the team in another event to recruit again."}
             </p>
           ) : (
-            <p className="text-[15px] text-ink2">All roles are filled.</p>
+            <p className="text-base text-ink2">All roles are filled.</p>
           )}
         </Section>
 
@@ -268,7 +268,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
                   return (
                     <div key={o.id} role="group" aria-label={o.title} className="flex flex-col gap-3 border-b border-border py-4 first:pt-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
                       <div className="flex min-w-0 flex-col gap-0.5">
-                        <Link href={`/opportunities/${o.id}`} className="w-fit text-[17px] font-semibold hover:text-accent">{o.title}</Link>
+                        <Link href={`/opportunities/${o.id}`} className="w-fit text-lg font-semibold hover:text-accent">{o.title}</Link>
                         <p className="text-sm text-ink2 tabular-nums">{when}</p>
                         {result && <Placement placement={result.placement} className="mt-1" />}
                       </div>
@@ -282,7 +282,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
                 })}
               </div>
             ) : (
-              <p className="max-w-[520px] text-[15px] text-ink2">Not in any event yet. Open an event and choose Enter your team.</p>
+              <p className="max-w-measure text-base text-ink2">Not in any event yet. Open an event and choose Enter your team.</p>
             )}
           </Section>
         )}
@@ -293,11 +293,11 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
               <SharedProjectBody project={sharedProject} award={award} showTeam={false} />
             ) : canRecord ? (
               <div className="flex flex-col items-start gap-3">
-                <p className="max-w-[520px] text-[15px] text-ink2">Record what the team built. It goes on the profile of everyone who confirms, with who built it.</p>
+                <p className="max-w-measure text-base text-ink2">Record what the team built. It goes on the profile of everyone who confirms, with who built it.</p>
                 <SharedProjectEdit teamId={t.id} trigger="button" />
               </div>
             ) : (
-              <p className="max-w-[520px] text-[15px] text-ink2">Once {opportunity?.title ?? "the event"} is over, you can record what the team built here.</p>
+              <p className="max-w-measure text-base text-ink2">Once {opportunity?.title ?? "the event"} is over, you can record what the team built here.</p>
             )}
           </Section>
         )}
@@ -320,7 +320,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
               </div>
             )}
             {byRole.length === 0 ? (
-              <p className="text-[15px] text-ink2">Nobody has applied yet. People see your open roles on the Teams page.</p>
+              <p className="text-base text-ink2">Nobody has applied yet. People see your open roles on the Teams page.</p>
             ) : (
               <div className="flex flex-col gap-8">
                 {byRole.map((g) => (
@@ -331,11 +331,11 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
                     {g.people.map((a) => (
                       <article key={a.id} className="flex flex-col gap-3 border-b border-border py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
                         <div className="flex min-w-0 flex-col gap-1.5">
-                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <PersonLink id={a.user_id} person={a.person} you={false} />
                             {a.person?.university && <span className="text-sm text-ink2">{a.person.university}</span>}
                           </div>
-                          {a.note && <p className="max-w-[520px] text-[15px] leading-normal">{a.note}</p>}
+                          {a.note && <p className="max-w-measure text-base leading-normal">{a.note}</p>}
                           {knownSkills(a.person?.skills ?? []).length > 0 && (
                             <ul className="flex flex-wrap gap-1.5">
                               {knownSkills(a.person?.skills ?? []).slice(0, 6).map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
@@ -357,7 +357,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
 
         {isOwner && (
           <form action={deleteTeam.bind(null, t.id)} className="border-t border-line2 pt-6">
-            <button className="text-sm text-ink2 hover:text-red-600 dark:hover:text-red-400">Delete team</button>
+            <button className="text-sm text-ink2 hover:text-danger ">Delete team</button>
           </form>
         )}
       </div>

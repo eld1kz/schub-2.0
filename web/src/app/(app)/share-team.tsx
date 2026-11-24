@@ -54,7 +54,7 @@ function ThemeToggle({ theme, onChange }: { theme: StoryTheme; onChange: (t: Sto
           type="button"
           aria-pressed={theme === t}
           onClick={() => onChange(t)}
-          className={`h-8 rounded px-3.5 text-sm font-medium capitalize ${theme === t ? "bg-chip text-foreground" : "text-ink2 hover:text-foreground"}`}
+          className={`h-8 rounded-sm px-3 text-sm font-medium capitalize ${theme === t ? "bg-chip text-foreground" : "text-ink2 hover:text-foreground"}`}
         >
           {t}
         </button>
@@ -71,7 +71,7 @@ function Preview({ team, theme, className }: { team: Team; theme: StoryTheme; cl
       width={1080}
       height={1920}
       unoptimized
-      className={`rounded-lg border border-border bg-chip ${className}`}
+      className={`rounded-md border border-border bg-chip ${className}`}
     />
   );
 }
@@ -170,40 +170,40 @@ export function ShareTeamButton({ variant, ...team }: Team & { variant: "primary
         onClick={(e) => {
           if (pressedOutside.current && e.target === dialog.current) dialog.current?.close();
         }}
-        className="m-0 mt-auto max-h-[94dvh] w-full max-w-none overflow-y-auto rounded-t-2xl bg-background p-0 text-foreground backdrop:bg-[rgba(20,20,24,0.45)] sm:mx-auto sm:mt-16 sm:mb-auto sm:max-h-[calc(100dvh-8rem)] sm:max-w-[680px] sm:rounded-[10px] sm:border sm:border-line2 sm:shadow-[0_24px_60px_rgba(0,0,0,0.22)] dark:backdrop:bg-black/60"
+        className="m-0 mt-auto max-h-[94dvh] w-full max-w-none overflow-y-auto rounded-t-lg bg-background p-0 text-foreground backdrop:bg-[rgba(20,20,24,0.45)] sm:mx-auto sm:mt-16 sm:mb-auto sm:max-h-[calc(100dvh-8rem)] sm:max-w-dialog sm:rounded-lg sm:border sm:border-line2 sm:shadow-modal "
       >
         {open && (
           <div data-layout={layout} className="flex flex-col">
             <div aria-hidden className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-line2 sm:hidden" />
-            <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-3 sm:px-7 sm:py-5">
-              <h2 className="text-base font-semibold sm:text-xl sm:tracking-[-0.01em]">Share this team</h2>
+            <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 sm:px-6 sm:py-4">
+              <h2 className="text-base font-semibold sm:text-xl sm:tracking-snug">Share this team</h2>
               <button type="button" onClick={() => dialog.current?.close()} aria-label="Close" className={iconButton}>
                 <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 fill-none stroke-current" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
               </button>
             </div>
-            <div className="flex flex-col gap-5 px-5 py-5 sm:grid sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-7 sm:px-7 sm:py-6">
+            <div className="flex flex-col gap-4 px-4 py-4 sm:grid sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-6 sm:px-6 sm:py-6">
               <Preview team={team} theme={theme} className="mx-auto h-[min(44dvh,391px)] w-auto sm:h-auto sm:w-full" />
-              <div className="flex min-w-0 flex-col gap-5">
+              <div className="flex min-w-0 flex-col gap-4">
                 <p className="text-sm text-ink2">A story image with the open roles and a QR code to the team.</p>
                 <ThemeToggle theme={theme} onChange={setTheme} />
                 {layout === "phone" ? (
-                  <div className="flex flex-col gap-2.5">
-                    <button type="button" onClick={actions.share} disabled={!blob} className="btn h-11 gap-2 text-[15px] disabled:opacity-50"><ShareIcon />Share</button>
-                    <div className="grid grid-cols-2 gap-2.5">
+                  <div className="flex flex-col gap-2">
+                    <button type="button" onClick={actions.share} disabled={!blob} className="btn h-11 gap-2 text-base disabled:opacity-50"><ShareIcon />Share</button>
+                    <div className="grid grid-cols-2 gap-2">
                       <button type="button" onClick={actions.copyLink} className="btn-outline h-11">Copy link</button>
                       <a {...actions.download} className="btn-outline h-11">Download image</a>
                     </div>
                   </div>
                 ) : (
                   <>
-                    <section aria-label="Post to your story from your phone" className="flex items-center gap-4 rounded-lg border border-border p-4">
+                    <section aria-label="Post to your story from your phone" className="flex items-center gap-4 rounded-md border border-border p-4">
                       <QrCode text={`${origin}/teams/${team.teamId}/share?theme=${theme}`} />
                       <div className="flex flex-col gap-1">
-                        <h3 className="text-[15px] font-semibold">Post to your story from your phone</h3>
+                        <h3 className="text-base font-semibold">Post to your story from your phone</h3>
                         <p className="text-sm text-ink2">Scan with your phone&apos;s camera, then tap Share to send it to Instagram, Kakao or Telegram.</p>
                       </div>
                     </section>
-                    <div className="flex flex-wrap gap-2.5">
+                    <div className="flex flex-wrap gap-2">
                       {copyImage && <button type="button" onClick={actions.copyImage} disabled={!blob} className="btn-outline disabled:opacity-50">Copy image</button>}
                       {shareFiles && <button type="button" onClick={actions.share} disabled={!blob} className="btn-outline gap-2 disabled:opacity-50"><ShareIcon />Share</button>}
                       <button type="button" onClick={actions.copyLink} className="btn-outline">Copy link</button>
@@ -224,8 +224,8 @@ export function ShareTeamButton({ variant, ...team }: Team & { variant: "primary
 function QrCode({ text }: { text: string }) {
   const { size, d } = qrPath(text);
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} role="img" aria-label="QR code to the share page" shapeRendering="crispEdges" className="h-[112px] w-[112px] shrink-0 rounded bg-white">
-      <path d={d} className="fill-[#141416]" />
+    <svg viewBox={`0 0 ${size} ${size}`} role="img" aria-label="QR code to the share page" shapeRendering="crispEdges" className="h-[112px] w-[112px] shrink-0 rounded-sm bg-qr-paper">
+      <path d={d} className="fill-qr-ink" />
     </svg>
   );
 }
@@ -241,10 +241,10 @@ export function ShareOnPhone({ initialTheme, ...team }: Team & { initialTheme: S
   const actions = useActions(team, theme, blob);
 
   return (
-    <div className="flex flex-col items-center gap-5">
+    <div className="flex flex-col items-center gap-4">
       <Preview team={team} theme={theme} className="h-[min(58dvh,560px)] w-auto" />
       <ThemeToggle theme={theme} onChange={setTheme} />
-      <div className="flex w-full max-w-[360px] flex-col gap-2.5">
+      <div className="flex w-full max-w-narrow flex-col gap-2">
         {canShare !== false && <button type="button" onClick={actions.share} disabled={!blob || !canShare} className="btn h-12 gap-2 text-base disabled:opacity-50"><ShareIcon />Share</button>}
         {canShare === false && <p className="text-center text-sm text-ink2">This browser can&apos;t share images. Download it, then post it from your gallery.</p>}
         <a {...actions.download} className={`${canShare === false ? "btn" : "btn-outline"} h-11`}>Download image</a>

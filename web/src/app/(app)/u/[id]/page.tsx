@@ -14,7 +14,7 @@ type Person = { id: string; name: string; headline: string; avatar_url: string; 
 const suggestionCount = 4;
 // "People you may team up with" picks the best matches from this many recently updated open collaborators
 const suggestionPool = 50;
-const suggestionButton = "h-[30px] rounded-md border border-accent px-3 text-[13px] font-semibold whitespace-nowrap text-accent hover:bg-accent-soft";
+const suggestionButton = "h-[30px] rounded-md border border-accent px-3 text-meta font-semibold whitespace-nowrap text-accent hover:bg-accent-soft";
 
 export const instant = false;
 

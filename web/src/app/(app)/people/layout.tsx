@@ -13,7 +13,7 @@ async function TabsWithCount() {
 export default function PeopleLayout({ children }: LayoutProps<"/people">) {
   return (
     <div>
-      <h1 className="pb-4 text-[28px] font-semibold tracking-[-0.02em] sm:pb-6 sm:text-4xl sm:tracking-[-0.03em]">People</h1>
+      <h1 className="pb-4 text-2xl font-semibold tracking-tight sm:pb-6 sm:text-3xl sm:tracking-tighter">People</h1>
       <Suspense fallback={<PeopleTabs requests={0} />}>
         <TabsWithCount />
       </Suspense>

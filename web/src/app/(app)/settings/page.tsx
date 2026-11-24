@@ -19,8 +19,8 @@ export default async function SettingsPage() {
   const linked = new Set((auth.user?.identities ?? []).map((i) => i.provider));
 
   return (
-    <div className="max-w-[752px]">
-      <h1 className="pb-8 text-[28px] font-semibold tracking-[-0.02em] sm:pb-10 sm:text-4xl sm:tracking-[-0.03em]">Settings</h1>
+    <div className="max-w-column">
+      <h1 className="pb-8 text-2xl font-semibold tracking-tight sm:text-3xl sm:tracking-tighter">Settings</h1>
 
       <Section title="Account">
         <div className="flex flex-col gap-3">
@@ -38,7 +38,7 @@ export default async function SettingsPage() {
 
       <Section title="Danger zone">
         <div className="flex flex-col gap-2">
-          <p className="text-[15px] text-ink2">Delete your account and everything on it. Teams you own go to a teammate.</p>
+          <p className="text-base text-ink2">Delete your account and everything on it. Teams you own go to a teammate.</p>
           <DeleteAccount blocked={(blocked as string | null) ?? ""} />
         </div>
       </Section>

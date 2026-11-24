@@ -66,8 +66,8 @@ const sampleExperience = {
 };
 
 // Looks like a piece of a screenshot: a light border and a soft shadow
-const frame = "rounded-lg border border-border bg-background shadow-lg shadow-black/[0.06] dark:shadow-black/40";
-const label = "font-mono text-[11px] font-medium tracking-[0.04em] text-muted uppercase";
+const frame = "rounded-md border border-border bg-background shadow-lg ";
+const label = "font-mono text-xs font-medium tracking-wide text-muted uppercase";
 
 function Sample({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div data-sample inert className={className}>{children}</div>;
@@ -77,16 +77,16 @@ function Sample({ children, className = "" }: { children: ReactNode; className?:
 export function HeroPreview() {
   return (
     <figure className="flex flex-col gap-3">
-      <Sample className="flex flex-col rounded-xl bg-chip/60 p-3 sm:p-6">
-        <div className={`relative z-10 px-4 sm:mr-10 sm:px-5 lg:mr-4 xl:mr-10 [&_article]:border-b-0 ${frame}`}>
+      <Sample className="flex flex-col rounded-lg bg-chip/60 p-3 sm:p-6">
+        <div className={`relative z-10 px-4 sm:mr-8 lg:mr-4 xl:mr-8 [&_article]:border-b-0 ${frame}`}>
           <TeamList teams={[sampleTeam()]} userId="" awarded={new Set([alex.id])} connections={new Set([alex.id])} empty="" />
         </div>
-        <div className={`-mt-4 ml-3 flex flex-col gap-5 px-4 pt-9 pb-5 sm:ml-10 sm:px-6 ${frame}`}>
+        <div className={`-mt-4 ml-3 flex flex-col gap-4 px-4 pt-8 pb-4 sm:ml-8 sm:px-6 ${frame}`}>
           <div className="flex items-center gap-3">
             <Avatar url="" name={alex.name} className="h-10 w-10 text-sm" sizes="40px" />
             <div className="flex flex-col">
               <p className="text-base font-semibold">{alex.name}</p>
-              <p className="text-[13px] text-ink2">Backend developer · {alex.university}</p>
+              <p className="text-meta text-ink2">Backend developer · {alex.university}</p>
             </div>
           </div>
           <div className="flex flex-col gap-3">
@@ -99,7 +99,7 @@ export function HeroPreview() {
           </div>
         </div>
       </Sample>
-      <figcaption className="font-mono text-[11px] text-muted">Preview with sample data, not real people</figcaption>
+      <figcaption className="font-mono text-xs text-muted">Preview with sample data, not real people</figcaption>
     </figure>
   );
 }
@@ -107,18 +107,18 @@ export function HeroPreview() {
 // "Looking for a team": an event with the time left, your connections going, and its open roles
 export function LookingPreview() {
   return (
-    <Sample className={`flex flex-col gap-3 p-4 sm:p-5 ${frame}`}>
+    <Sample className={`flex flex-col gap-3 p-4 ${frame}`}>
       <div className="flex flex-col gap-1">
-        <p className="font-mono text-[11px] font-medium tracking-[0.04em] text-ink2 uppercase">
+        <p className="font-mono text-xs font-medium tracking-wide text-ink2 uppercase">
           Sample Hack Seoul · <span className="font-semibold text-accent">5 days left</span>
         </p>
         <p className="text-sm font-medium text-accent">{goingLabel(2)}</p>
       </div>
       <div className="flex flex-col">
         {["iOS developer", "Designer"].map((role) => (
-          <div key={role} className="flex items-center justify-between gap-4 border-t border-border py-2.5 last:pb-0">
-            <span className="text-[15px] font-semibold">{role}</span>
-            <span className="btn-outline h-8 text-[13px]">Ask to join</span>
+          <div key={role} className="flex items-center justify-between gap-4 border-t border-border py-2 last:pb-0">
+            <span className="text-base font-semibold">{role}</span>
+            <span className="btn-outline h-8 text-meta">Ask to join</span>
           </div>
         ))}
       </div>
@@ -129,24 +129,24 @@ export function LookingPreview() {
 // "Building a team": one application waiting for the owner, as the team page shows it
 export function BuildingPreview() {
   return (
-    <Sample className={`flex flex-col gap-3 p-4 sm:p-5 ${frame}`}>
+    <Sample className={`flex flex-col gap-3 p-4 ${frame}`}>
       <p className="border-b border-line2 pb-2 text-sm font-semibold">iOS developer <span className="font-normal text-muted">1</span></p>
       <div className="flex flex-col gap-1.5">
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <span className="flex items-center gap-2.5">
-            <Avatar url="" name={jordan.name} className="h-8 w-8 text-[11px]" sizes="32px" />
-            <span className="text-[15px] font-medium">{jordan.name}</span>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="flex items-center gap-2">
+            <Avatar url="" name={jordan.name} className="h-8 w-8 text-xs" sizes="32px" />
+            <span className="text-base font-medium">{jordan.name}</span>
           </span>
           <span className="text-sm text-ink2">{jordan.university}</span>
         </div>
-        <p className="text-[15px] leading-normal">Built two iOS apps in SwiftUI, free every evening.</p>
+        <p className="text-base leading-normal">Built two iOS apps in SwiftUI, free every evening.</p>
         <ul className="flex flex-wrap gap-1.5">
           {["Swift", "SwiftUI", "Figma"].map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
         </ul>
       </div>
       <div className="flex gap-2">
-        <span className="btn h-8 px-4 text-[13px]">Accept</span>
-        <span className="btn-outline h-8 text-[13px]">Decline</span>
+        <span className="btn h-8 px-4 text-meta">Accept</span>
+        <span className="btn-outline h-8 text-meta">Decline</span>
       </div>
     </Sample>
   );
@@ -156,7 +156,7 @@ export function BuildingPreview() {
 export function EventMark() {
   return (
     <Sample>
-      <p className="font-mono text-[11px] font-medium tracking-[0.04em] text-ink2 uppercase">
+      <p className="font-mono text-xs font-medium tracking-wide text-ink2 uppercase">
         Sample Hack Seoul · <span className="font-semibold text-accent">5 days left</span>
       </p>
     </Sample>
@@ -170,5 +170,5 @@ export function ConfirmedMark() {
 // matchReason's own words for someone with Swift and Figma, seen by someone who knows React
 export function MatchMark() {
   const reason = matchReason({ skills: ["Swift", "Figma"], interests: [], open_to_collaborate: true }, { skills: ["React"], interests: [], open_to_collaborate: true });
-  return <Sample><p className="text-[13px] font-medium text-accent">{reason}</p></Sample>;
+  return <Sample><p className="text-meta font-medium text-accent">{reason}</p></Sample>;
 }

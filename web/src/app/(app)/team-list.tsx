@@ -48,10 +48,10 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
         const days = next ? daysUntil(next, day) : null;
         const leadName = lead ? (lead.id === userId ? "You" : lead.name || "Unnamed") : "";
         return (
-          <article key={t.id} className="flex items-start justify-between gap-6 border-b border-border py-5 sm:py-6">
+          <article key={t.id} className="flex items-start justify-between gap-6 border-b border-border py-4 sm:py-6">
             <div className="flex min-w-0 flex-col gap-1.5">
               {status && <EntryStatusLabel status={status} />}
-              {!event && <p className="font-mono text-[11px] font-medium tracking-[0.04em] text-ink2 uppercase sm:text-xs">
+              {!event && <p className="font-mono text-xs font-medium tracking-wide text-ink2 uppercase">
                 {t.opportunity ? (
                   <>
                     <Link href={`/opportunities/${t.opportunity.id}`} className="hover:text-accent">{t.opportunity.title}</Link>
@@ -61,10 +61,10 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
                   "Own project"
                 )}
               </p>}
-              <h3 className="text-[17px] leading-snug font-semibold text-pretty sm:text-lg">
+              <h3 className="text-lg leading-snug font-semibold text-pretty">
                 <Link href={`/teams/${t.id}`} className="hover:text-accent">{t.title}</Link>
               </h3>
-              <p className="text-sm sm:text-[15px]">
+              <p className="text-sm sm:text-base">
                 {open.length > 0 ? (
                   <><span className="text-muted">Needs:</span> {open.join(", ")}</>
                 ) : (
@@ -73,17 +73,17 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
                 )}
               </p>
               {(t.languages.length > 0 || t.work_mode) && (
-                <p className="text-[13px] text-ink2 sm:text-sm">{[t.languages.join(", "), workModeLabel(t.work_mode)].filter(Boolean).join(" · ")}</p>
+                <p className="text-meta text-ink2 sm:text-sm">{[t.languages.join(", "), workModeLabel(t.work_mode)].filter(Boolean).join(" · ")}</p>
               )}
               {lead && (
-                <div className="mt-1 flex items-center gap-2.5 text-[13px] text-ink2 sm:text-sm">
+                <div className="mt-1 flex items-center gap-2 text-meta text-ink2 sm:text-sm">
                   <span className="flex shrink-0 -space-x-1.5">
                     {ordered.slice(0, 4).map((m, i) => (
                       <Avatar
                         key={m.id}
                         url={m.avatar_url}
                         name={m.name}
-                        className={`h-6 w-6 text-[9px] ring-2 ${stack[i]} ${connections.has(m.id) ? "ring-accent" : m.open_to_collaborate ? "ring-open" : "ring-background"}`}
+                        className={`h-6 w-6 text-xs ring-2 ${stack[i]} ${connections.has(m.id) ? "ring-accent" : m.open_to_collaborate ? "ring-open" : "ring-background"}`}
                         sizes="24px"
                       />
                     ))}

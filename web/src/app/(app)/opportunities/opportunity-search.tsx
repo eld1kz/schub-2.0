@@ -9,8 +9,8 @@ export function OpportunitySearch({ rows, header, empty }: { rows: { id: string;
   const shown = q ? rows.filter((r) => r.title.toLowerCase().includes(q)) : rows;
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="relative max-w-[320px]">
+    <div className="flex flex-col gap-4">
+      <div className="relative max-w-search">
         <svg viewBox="0 0 24 24" aria-hidden className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 fill-none stroke-muted" strokeWidth={2} strokeLinecap="round">
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
@@ -21,7 +21,7 @@ export function OpportunitySearch({ rows, header, empty }: { rows: { id: string;
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search opportunities"
           aria-label="Search opportunities by title"
-          className="input h-10 pr-9 pl-9 text-sm"
+          className="input h-10 pr-8 pl-8 text-sm"
         />
         {query && (
           <button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="absolute inset-y-0 right-0 px-3 text-muted hover:text-foreground">
@@ -31,8 +31,8 @@ export function OpportunitySearch({ rows, header, empty }: { rows: { id: string;
           </button>
         )}
       </div>
-      {rows.length === 0 && <p className="py-4 text-[15px] text-ink2">{empty}</p>}
-      {rows.length > 0 && shown.length === 0 && <p className="py-4 text-[15px] text-ink2">No opportunities match &ldquo;{query.trim()}&rdquo;.</p>}
+      {rows.length === 0 && <p className="py-4 text-base text-ink2">{empty}</p>}
+      {rows.length > 0 && shown.length === 0 && <p className="py-4 text-base text-ink2">No opportunities match &ldquo;{query.trim()}&rdquo;.</p>}
       {shown.length > 0 && (
         <div>
           {header}

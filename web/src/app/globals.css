@@ -14,6 +14,12 @@
   --on-accent: #ffffff;
   /* The ring around people who are open to a team */
   --open: oklch(0.62 0.17 150);
+  /* Errors and destructive actions */
+  --danger: #dc2626;
+  /* Behind modals and sheets */
+  --scrim: rgb(20 20 24 / 0.45);
+  /* Soft shadow under the landing page's sample frames */
+  --frame-shadow: rgb(0 0 0 / 0.06);
   /* Native controls (date pickers, scrollbars) follow the theme */
   color-scheme: light dark;
 }
@@ -30,8 +36,83 @@
   --color-accent-soft: var(--accent-soft);
   --color-on-accent: var(--on-accent);
   --color-open: var(--open);
+  --color-danger: var(--danger);
+  --color-scrim: var(--scrim);
+  /* A QR code stays black on white in both themes, so phones can scan it */
+  --color-qr-ink: #141416;
+  --color-qr-paper: #ffffff;
+  --shadow-modal: 0 24px 60px rgb(0 0 0 / 0.22);
+  --shadow-frame: 0 10px 15px -3px var(--frame-shadow), 0 4px 6px -4px var(--frame-shadow);
   --font-sans: var(--font-instrument-sans);
   --font-mono: var(--font-plex-mono);
+}
+
+/* The fixed scales (DESIGN.md). Anything not listed here doesn't exist: Tailwind's own sizes are cleared. */
+@theme {
+  /* Type: 8 sizes and a display size for the landing page. Line height and letter spacing come with each. */
+  --text-*: initial;
+  --text-xs: 12px;
+  --text-xs--line-height: calc(16 / 12);
+  --text-meta: 13px;
+  --text-meta--line-height: 1.5;
+  --text-sm: 14px;
+  --text-sm--line-height: calc(20 / 14);
+  --text-base: 15px;
+  --text-base--line-height: 1.5;
+  --text-lg: 17px;
+  --text-lg--line-height: 1.5;
+  --text-xl: 20px;
+  --text-xl--line-height: 1.4;
+  --text-xl--letter-spacing: -0.01em;
+  --text-2xl: 28px;
+  --text-2xl--line-height: 1.1;
+  --text-2xl--letter-spacing: -0.02em;
+  --text-3xl: 36px;
+  --text-3xl--line-height: 1.1;
+  --text-3xl--letter-spacing: -0.03em;
+  --text-display: 56px;
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.03em;
+
+  --leading-*: initial;
+  --leading-tight: 1.1;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  --tracking-*: initial;
+  --tracking-tighter: -0.03em;
+  --tracking-tight: -0.02em;
+  --tracking-snug: -0.01em;
+  --tracking-normal: 0em;
+  /* Small uppercase mono labels */
+  --tracking-wide: 0.04em;
+
+  /* Radius: chips, controls, modals and sheets (plus rounded-full for avatars and dots) */
+  --radius-*: initial;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+
+  /* Spacing steps are Tailwind's 0.5, 1, 1.5, 2, 3, 4, 6, 8 (2 to 32px) and 12, 16, 20 for layout (48, 64, 80px);
+     the lint rule (eslint-rules/design-tokens.mjs) allows only those. `bar` is the room kept under a page on
+     phones for a bar pinned to the bottom of the screen. */
+  --spacing-bar: 7rem;
+
+  /* Widths: max-w-<name> */
+  --container-*: initial;
+  --container-note: 224px; /* a short line under a button */
+  --container-search: 320px;
+  --container-narrow: 360px; /* sign-in buttons, the share card */
+  --container-phone: 480px;
+  --container-measure: 520px; /* a paragraph beside a label column */
+  --container-form: 560px;
+  --container-prose: 600px;
+  --container-dialog: 680px;
+  --container-column: 752px; /* a page's single column */
+  --container-statement: 820px;
+  --container-page: 1176px;
+  --container-wide: 1440px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -47,6 +128,9 @@
     --accent-soft: oklch(0.31 0.07 275);
     --on-accent: #111114;
     --open: oklch(0.72 0.17 150);
+    --danger: #f87171;
+    --scrim: rgb(0 0 0 / 0.6);
+    --frame-shadow: rgb(0 0 0 / 0.4);
   }
 }
 
@@ -57,7 +141,7 @@ body {
 
 @layer components {
   .input {
-    @apply w-full rounded-md border border-line2 bg-transparent px-3 py-2 text-[15px] outline-none focus:border-accent focus:ring-1 focus:ring-accent;
+    @apply w-full rounded-md border border-line2 bg-transparent px-3 py-2 text-base outline-none focus:border-accent focus:ring-1 focus:ring-accent;
   }
   .btn {
     @apply inline-flex h-[38px] items-center justify-center rounded-md bg-accent px-5 text-sm font-semibold whitespace-nowrap text-on-accent hover:opacity-90 disabled:opacity-50;
@@ -67,9 +151,9 @@ body {
   }
   /* A skill: mono text on a flat chip */
   .skill {
-    @apply rounded bg-chip px-2 py-0.5 font-mono text-[13px];
+    @apply rounded-sm bg-chip px-2 py-0.5 font-mono text-meta;
   }
   .label {
-    @apply mb-1.5 block text-[13px] text-ink2;
+    @apply mb-1.5 block text-meta text-ink2;
   }
 }

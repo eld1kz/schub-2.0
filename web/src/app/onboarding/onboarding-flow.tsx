@@ -21,7 +21,7 @@ const steps = [
 type Props = { needsName: boolean; university: string; graduationYear: number; skills: string[]; goals: string[]; languages: string[]; error?: string };
 
 function FieldMessage({ text }: { text: string }) {
-  return text ? <p role="alert" className="mt-1.5 text-[13px] text-red-600 dark:text-red-400">{text}</p> : null;
+  return text ? <p role="alert" className="mt-1.5 text-meta text-danger ">{text}</p> : null;
 }
 
 // One form across three screens: earlier steps are only hidden, so Finish submits everything at once
@@ -66,12 +66,12 @@ export function OnboardingFlow({ needsName, university, graduationYear, skills, 
         <div className="flex gap-1.5" aria-hidden>
           {steps.map((s, i) => <span key={s.title} className={`h-1 flex-1 rounded-full ${i <= step ? "bg-accent" : "bg-line2"}`} />)}
         </div>
-        <p className="font-mono text-xs font-medium tracking-[0.04em] text-muted">STEP {step + 1} OF {steps.length}</p>
-        <h1 className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-4xl sm:tracking-[-0.03em]">{current.title}</h1>
-        <p className="text-[15px] text-ink2 sm:text-base">{current.note}</p>
+        <p className="font-mono text-xs font-medium tracking-wide text-muted">STEP {step + 1} OF {steps.length}</p>
+        <h1 className="text-2xl leading-tight font-semibold tracking-tight sm:text-3xl sm:tracking-tighter">{current.title}</h1>
+        <p className="text-base text-ink2">{current.note}</p>
       </div>
 
-      <div className={step === 0 ? "space-y-5" : "hidden"}>
+      <div className={step === 0 ? "space-y-4" : "hidden"}>
         {needsName && (
           <div>
             <label htmlFor="name" className="mb-1.5 block text-sm font-medium">
@@ -120,12 +120,12 @@ export function OnboardingFlow({ needsName, university, graduationYear, skills, 
         {step === 1 && <FieldMessage text={problem} />}
       </div>
 
-      <fieldset className={step === 2 ? "flex flex-col gap-2.5" : "hidden"}>
+      <fieldset className={step === 2 ? "flex flex-col gap-2" : "hidden"}>
         <legend className="sr-only">What you&apos;re looking for</legend>
         {GOALS.map((g) => (
           <label
             key={g}
-            className="flex min-h-12 cursor-pointer items-center gap-3 rounded-md border border-line2 px-4 py-3 text-[15px] transition-colors hover:border-muted has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent"
+            className="flex min-h-12 cursor-pointer items-center gap-3 rounded-md border border-line2 px-4 py-3 text-base transition-colors hover:border-muted has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent"
           >
             <input type="checkbox" name="goals" value={g} defaultChecked={goals.includes(g)} className="h-[18px] w-[18px] shrink-0 accent-[var(--accent)]" />
             {g}
@@ -133,11 +133,11 @@ export function OnboardingFlow({ needsName, university, graduationYear, skills, 
         ))}
       </fieldset>
 
-      {error && <p role="alert" className="pt-5 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p role="alert" className="pt-4 text-sm text-danger ">{error}</p>}
 
       {/* Phones: pinned to the bottom with a full-width main button */}
-      <div className="fixed inset-x-0 bottom-0 flex items-center gap-4 border-t border-border bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:static sm:mt-8 sm:px-0 sm:pb-0 sm:pt-5">
-        {step > 0 && <button type="button" onClick={back} className="text-[15px] text-ink2 hover:text-foreground">Back</button>}
+      <div className="fixed inset-x-0 bottom-0 flex items-center gap-4 border-t border-border bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:static sm:mt-8 sm:px-0 sm:pb-0 sm:pt-4">
+        {step > 0 && <button type="button" onClick={back} className="text-base text-ink2 hover:text-foreground">Back</button>}
         {last ? (
           <button className="btn ml-auto h-11 flex-1 sm:h-[38px] sm:flex-none">Finish</button>
         ) : (

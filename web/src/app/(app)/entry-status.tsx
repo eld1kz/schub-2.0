@@ -10,7 +10,7 @@ const options = Object.entries(ENTRY_STATUSES).map(([value, label]) => ({ value,
 
 // How far a team got in an event, as a small label: on team rows for that event, and for anyone but the owner
 export function EntryStatusLabel({ status }: { status: EntryStatus }) {
-  return <span className="font-mono text-xs font-medium tracking-[0.04em] text-ink2 uppercase">{ENTRY_STATUSES[status]}</span>;
+  return <span className="font-mono text-xs font-medium tracking-wide text-ink2 uppercase">{ENTRY_STATUSES[status]}</span>;
 }
 
 // The owner moves the entry along: Going, Registered, Submitted, Placed. While it's going or registered, the official
@@ -49,7 +49,7 @@ export function EntryStatusControl({ teamId, teamTitle, event, status, userId }:
           <Link href={`/u/${userId}#awards`} className="text-sm font-semibold text-accent hover:underline">Add the award to your profile</Link>
         )}
       </div>
-      {error && <p role="alert" className="text-[13px] text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p role="alert" className="text-meta text-danger ">{error}</p>}
     </div>
   );
 }

@@ -27,7 +27,7 @@ export function FindTeamButton({ opportunityId, onPage }: { opportunityId: strin
   return (
     <span className="flex flex-col gap-1">
       <button type="button" onClick={onClick} disabled={saving} className="btn h-9 px-4">{saving ? "Adding you..." : "Find a team"}</button>
-      {error && <span role="alert" className="text-[13px] text-red-600 dark:text-red-400">{error}</span>}
+      {error && <span role="alert" className="text-meta text-danger ">{error}</span>}
     </span>
   );
 }
@@ -36,7 +36,7 @@ export function FindTeamButton({ opportunityId, onPage }: { opportunityId: strin
 export function LookingNote({ opportunityId, note }: { opportunityId: string; note: string }) {
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-      <p className="flex items-center gap-2 text-[15px] font-semibold">
+      <p className="flex items-center gap-2 text-base font-semibold">
         <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-accent" />
         You&apos;re looking for a team
       </p>
@@ -44,7 +44,7 @@ export function LookingNote({ opportunityId, note }: { opportunityId: string; no
         <div className="space-y-2 py-6">
           <label htmlFor="looking-note" className="mb-1.5 block text-sm font-medium">What you&apos;d bring to a team</label>
           <input id="looking-note" name="note" defaultValue={note} maxLength={noteMax} placeholder="Frontend dev, want to do the AI track" className="input h-11 bg-background sm:h-10" />
-          <p className="text-[13px] text-muted">Up to {noteMax} characters. Shown to others looking and to teams.</p>
+          <p className="text-meta text-muted">Up to {noteMax} characters. Shown to others looking and to teams.</p>
         </div>
       </EditDialog>
       <form action={stopLooking.bind(null, opportunityId)}>

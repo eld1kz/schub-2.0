@@ -85,14 +85,14 @@ export default async function Home(props: PageProps<"/">) {
       </PublicHeader>
       {/* After deleting an account (deleteAccount in actions.ts) */}
       {params.deleted !== undefined && (
-        <p role="status" className="border-b border-border bg-chip px-4 py-3 text-center text-[15px] font-medium">Your account was deleted.</p>
+        <p role="status" className="border-b border-border bg-chip px-4 py-3 text-center text-base font-medium">Your account was deleted.</p>
       )}
-      <main className="mx-auto max-w-[1176px] px-4 sm:px-6">
-        <section className="grid gap-12 pt-10 pb-16 sm:pt-16 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:items-center lg:gap-14 lg:pt-20 lg:pb-24 xl:grid-cols-[minmax(0,1fr)_minmax(0,580px)] xl:gap-20">
+      <main className="mx-auto max-w-page px-4 sm:px-6">
+        <section className="grid gap-12 pt-8 pb-16 sm:pt-16 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:items-center lg:gap-12 lg:pt-20 lg:pb-20 xl:grid-cols-[minmax(0,1fr)_minmax(0,580px)] xl:gap-20">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-4">
-              <h1 className="text-[34px] leading-[1.1] font-semibold tracking-[-0.03em] sm:text-5xl xl:text-[56px]">Find teammates for hackathons and projects.</h1>
-              <p className="max-w-[560px] text-[17px] leading-normal text-ink2 sm:text-lg">Join a team with open roles or post your own, and keep a profile of what you&apos;ve built.</p>
+              <h1 className="text-2xl leading-tight font-semibold tracking-tighter sm:text-display xl:text-display">Find teammates for hackathons and projects.</h1>
+              <p className="max-w-form text-lg leading-normal text-ink2">Join a team with open roles or post your own, and keep a profile of what you&apos;ve built.</p>
             </div>
             <SignInOptions />
           </div>
@@ -100,7 +100,7 @@ export default async function Home(props: PageProps<"/">) {
         </section>
 
         <Part title="How it works">
-          <div className="grid gap-12 md:grid-cols-2 md:gap-10 lg:gap-16">
+          <div className="grid gap-12 md:grid-cols-2 md:gap-8 lg:gap-16">
             <Path
               title="Looking for a team"
               points={["Browse teams by event", "See where your connections are going", "Ask to join the role that fits you"]}
@@ -134,7 +134,7 @@ export default async function Home(props: PageProps<"/">) {
 
         {universities.length >= 2 && (
           <Part title="Built for students">
-            <p className="max-w-[820px] text-lg leading-snug text-pretty sm:text-xl">Students from {namesLine(universities)} have profiles on Schub.</p>
+            <p className="max-w-statement text-lg leading-snug text-pretty sm:text-xl">Students from {namesLine(universities)} have profiles on Schub.</p>
           </Part>
         )}
 
@@ -143,22 +143,22 @@ export default async function Home(props: PageProps<"/">) {
             {faq.map(([q, a]) => (
               <div key={q} className="border-t border-border py-4">
                 <dt className="text-base font-semibold">{q}</dt>
-                <dd className="mt-1 text-[15px] leading-normal text-ink2">{a}</dd>
+                <dd className="mt-1 text-base leading-normal text-ink2">{a}</dd>
               </div>
             ))}
           </dl>
         </Part>
 
         <section className="flex flex-col gap-6 border-t border-line2 py-12 sm:py-16 lg:flex-row lg:items-start lg:justify-between lg:gap-16">
-          <div className="flex max-w-[560px] flex-col gap-2">
-            <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-4xl">Find your team for the next one.</h2>
-            <p className="text-[15px] leading-normal text-ink2 sm:text-base">Sign in to post a team, ask to join one, and meet people whose skills complement yours.</p>
+          <div className="flex max-w-form flex-col gap-2">
+            <h2 className="text-2xl leading-tight font-semibold tracking-tight sm:text-3xl">Find your team for the next one.</h2>
+            <p className="text-base leading-normal text-ink2">Sign in to post a team, ask to join one, and meet people whose skills complement yours.</p>
           </div>
           <SignInOptions />
         </section>
       </main>
       <footer className="border-t border-border">
-        <nav aria-label="Browse" className="mx-auto flex max-w-[1176px] gap-6 px-4 py-6 text-sm text-ink2 sm:px-6">
+        <nav aria-label="Browse" className="mx-auto flex max-w-page gap-6 px-4 py-6 text-sm text-ink2 sm:px-6">
           <Link href="/opportunities" className="hover:text-foreground">Opportunities</Link>
           <Link href="/teams" className="hover:text-foreground">Teams</Link>
           <Link href="/people" className="hover:text-foreground">People</Link>
@@ -191,8 +191,8 @@ function namesLine(names: string[]) {
 // A landing section: the title as on the profile, generous space around it, tight inside
 function Part({ title, label, children }: { title: ReactNode; label?: string; children: ReactNode }) {
   return (
-    <section aria-label={label ?? (typeof title === "string" ? title : undefined)} className="flex flex-col gap-6 border-t border-line2 py-14 sm:gap-8 sm:py-20">
-      <h2 className="flex items-center gap-2 text-[15px] font-semibold">{title}</h2>
+    <section aria-label={label ?? (typeof title === "string" ? title : undefined)} className="flex flex-col gap-6 border-t border-line2 py-12 sm:gap-8 sm:py-20">
+      <h2 className="flex items-center gap-2 text-base font-semibold">{title}</h2>
       {children}
     </section>
   );
@@ -211,12 +211,12 @@ function LiveDot() {
 // One way to use Schub: what you do, how it looks, and where to start
 function Path({ title, points, preview, action }: { title: string; points: string[]; preview: ReactNode; action: ReactNode }) {
   return (
-    <div className="flex flex-col gap-5">
-      <h3 className="text-2xl font-semibold tracking-[-0.02em] sm:text-[28px]">{title}</h3>
+    <div className="flex flex-col gap-4">
+      <h3 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h3>
       <ol className="flex flex-col gap-1.5">
         {points.map((p, i) => (
-          <li key={p} className="flex gap-3 text-[15px] text-ink2 sm:text-base">
-            <span className="font-mono text-[13px] text-muted tabular-nums sm:pt-px">{String(i + 1).padStart(2, "0")}</span>
+          <li key={p} className="flex gap-3 text-base text-ink2">
+            <span className="font-mono text-meta text-muted tabular-nums sm:pt-0">{String(i + 1).padStart(2, "0")}</span>
             {p}
           </li>
         ))}
@@ -231,8 +231,8 @@ function Point({ mark, title, text }: { mark: ReactNode; title: string; text: st
   return (
     <div className="flex flex-col gap-2 border-t border-border pt-4">
       {mark}
-      <h3 className="mt-1 text-[17px] font-semibold">{title}</h3>
-      <p className="text-[15px] leading-normal text-ink2">{text}</p>
+      <h3 className="mt-1 text-lg font-semibold">{title}</h3>
+      <p className="text-base leading-normal text-ink2">{text}</p>
     </div>
   );
 }
@@ -253,7 +253,7 @@ function Block({ title, href, more, children }: { title: string; href: string; m
   return (
     <section aria-label={title} className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-4">
-        <h3 className="text-lg font-semibold tracking-[-0.01em] sm:text-xl">{title}</h3>
+        <h3 className="text-lg font-semibold tracking-snug sm:text-xl">{title}</h3>
         <Link href={href} className="text-sm font-semibold text-accent hover:underline">{more}</Link>
       </div>
       <div>{children}</div>

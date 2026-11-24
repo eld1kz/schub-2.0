@@ -47,17 +47,17 @@ export async function SignInOptions({ next = "/", error = false }: { next?: stri
   const buttons = oauth.map((p) => (
     <form key={p} action={signIn.bind(null, p, next)}>
       {/* The label takes its room at the right and the rest centers beside it, so they never overlap on narrow phones */}
-      <button className="btn-outline h-11 w-full gap-2 text-[15px]">
-        <span className="flex flex-1 items-center justify-center gap-2.5">
+      <button className="btn-outline h-11 w-full gap-2 text-base">
+        <span className="flex flex-1 items-center justify-center gap-2">
           {providers[p].icon}
           Continue with {providers[p].name}
         </span>
-        {lastUsed === p && <span className="font-mono text-[11px] font-normal text-muted">Last used</span>}
+        {lastUsed === p && <span className="font-mono text-xs font-normal text-muted">Last used</span>}
       </button>
     </form>
   ));
   const divider = oauth.length > 0 && email && (
-    <div className="flex items-center gap-3 text-[13px] text-muted">
+    <div className="flex items-center gap-3 text-meta text-muted">
       <span aria-hidden className="h-px flex-1 bg-border" />
       or
       <span aria-hidden className="h-px flex-1 bg-border" />
@@ -66,9 +66,9 @@ export async function SignInOptions({ next = "/", error = false }: { next?: stri
   const form = email && <EmailSignIn action={sendSignInLink.bind(null, next)} lastUsed={lastUsed === "email"} />;
 
   return (
-    <div className="flex w-full max-w-[360px] flex-col gap-3">
+    <div className="flex w-full max-w-narrow flex-col gap-3">
       {error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="text-sm text-danger ">
           Sign-in didn&apos;t work. Try again or use another option.
         </p>
       )}

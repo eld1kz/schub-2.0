@@ -25,7 +25,7 @@ const declinedFor = 14 * 24 * 60 * 60 * 1000;
 
 function Heading({ title, count }: { title: string; count: number }) {
   return (
-    <h2 className="mb-4 text-[15px] font-semibold">
+    <h2 className="mb-4 text-base font-semibold">
       {title} <span className="font-normal text-muted">{count}</span>
     </h2>
   );
@@ -78,7 +78,7 @@ export default async function YourTeamsPage() {
   if (invitations.length === 0 && running.length === 0 && memberOf.length === 0 && pendingOrDeclined.length === 0) {
     return (
       <div className="flex flex-col items-start gap-3 py-2">
-        <p className="text-[15px] font-medium">You&apos;re not on any team yet</p>
+        <p className="text-base font-medium">You&apos;re not on any team yet</p>
         <div className="flex flex-wrap gap-2">
           <Link href="/teams/new" className="btn">Post a team</Link>
           <Link href="/teams" className="btn-outline">Find teams</Link>
@@ -88,7 +88,7 @@ export default async function YourTeamsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       {invitations.length > 0 && (
         <section>
           <Heading title="Invitations" count={invitations.length} />

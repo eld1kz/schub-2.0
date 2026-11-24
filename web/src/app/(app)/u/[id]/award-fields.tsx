@@ -16,7 +16,7 @@ type Teammate = { id: string; name: string; avatar_url: string; status?: "pendin
 const input = "input h-11 sm:h-10";
 const placementOptions = PLACEMENTS.map((p) => ({ value: p, label: placementLabel(p) }));
 const shownMatches = 6;
-const option = "block w-full truncate px-3 py-2.5 text-left text-[15px] hover:bg-chip focus-visible:bg-chip focus-visible:outline-none";
+const option = "block w-full truncate px-3 py-2 text-left text-base hover:bg-chip focus-visible:bg-chip focus-visible:outline-none";
 
 // Enter in a search box picks its first option instead of moving on
 function pickOnEnter(e: KeyboardEvent<HTMLInputElement>, pick: () => void) {
@@ -91,15 +91,15 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
   }
 
   return (
-    <div ref={root} onKeyDown={nextOnEnter} className="space-y-5 py-6">
+    <div ref={root} onKeyDown={nextOnEnter} className="space-y-4 py-6">
       <Field id="award-event" label="Event" required>
         {event ? (
           <div className="flex h-11 items-center justify-between gap-3 rounded-md border border-line2 px-3 sm:h-10">
             <input type="hidden" name="opportunity_id" value={event.id} />
             <input type="hidden" name="event_name" value={event.title} />
-            <span className="min-w-0 truncate text-[15px]">{event.title}</span>
+            <span className="min-w-0 truncate text-base">{event.title}</span>
             <span className="flex shrink-0 items-center gap-3">
-              <span className="hidden text-[13px] text-muted sm:inline">{event.id ? "On Schub" : "Typed in"}</span>
+              <span className="hidden text-meta text-muted sm:inline">{event.id ? "On Schub" : "Typed in"}</span>
               <button
                 type="button"
                 onClick={() => {
@@ -175,12 +175,12 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
             {teammates.map((t) => (
               <li key={t.id} className="flex items-center justify-between gap-3 border-b border-border py-2">
                 <input type="hidden" name="teammates" value={t.id} />
-                <span className="flex min-w-0 items-center gap-2.5">
-                  <Avatar url={t.avatar_url} name={t.name} className="h-7 w-7 text-[10px]" sizes="28px" />
-                  <span className="truncate text-[15px]">{t.name || "Unnamed"}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  <Avatar url={t.avatar_url} name={t.name} className="h-7 w-7 text-xs" sizes="28px" />
+                  <span className="truncate text-base">{t.name || "Unnamed"}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-4">
-                  {t.status && <span className="text-[13px] text-muted">{t.status === "confirmed" ? "Confirmed" : "Not confirmed yet"}</span>}
+                  {t.status && <span className="text-meta text-muted">{t.status === "confirmed" ? "Confirmed" : "Not confirmed yet"}</span>}
                   <button type="button" onClick={() => setTeammates(teammates.filter((x) => x.id !== t.id))} aria-label={`Remove ${t.name || "teammate"}`} className="text-sm text-ink2 hover:text-foreground">
                     Remove
                   </button>
@@ -205,11 +205,11 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
             />
             {people && (
               <ul className="mt-1.5 divide-y divide-border overflow-hidden rounded-md border border-line2">
-                {found.length === 0 && <li className="px-3 py-2.5 text-sm text-muted">None of your connections or teammates has that name.</li>}
+                {found.length === 0 && <li className="px-3 py-2 text-sm text-muted">None of your connections or teammates has that name.</li>}
                 {found.map((p) => (
                   <li key={p.id}>
-                    <button type="button" onClick={() => addTeammate(p)} className={`${option} flex items-center gap-2.5`}>
-                      <Avatar url={p.avatar_url} name={p.name} className="h-7 w-7 text-[10px]" sizes="28px" />
+                    <button type="button" onClick={() => addTeammate(p)} className={`${option} flex items-center gap-2`}>
+                      <Avatar url={p.avatar_url} name={p.name} className="h-7 w-7 text-xs" sizes="28px" />
                       <span className="min-w-0 truncate">
                         {p.name}
                         {p.headline && <span className="text-muted"> · {p.headline}</span>}
@@ -221,7 +221,7 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
             )}
           </>
         )}
-        <p className="mt-1.5 text-[13px] text-muted">They get a notification, and the award shows on their profile once they confirm.</p>
+        <p className="mt-1.5 text-meta text-muted">They get a notification, and the award shows on their profile once they confirm.</p>
         <FieldError field="teammates" />
       </div>
 
@@ -242,7 +242,7 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
         />
         <div className="mt-1 flex justify-between gap-4">
           <FieldError field="description" />
-          <span className="ml-auto text-[13px] text-muted tabular-nums">{description.length}/{AWARD_DESCRIPTION_MAX}</span>
+          <span className="ml-auto text-meta text-muted tabular-nums">{description.length}/{AWARD_DESCRIPTION_MAX}</span>
         </div>
       </Field>
     </div>

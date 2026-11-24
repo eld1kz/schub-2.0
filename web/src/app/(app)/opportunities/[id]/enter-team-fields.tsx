@@ -27,7 +27,7 @@ export function EnterTeamFields({ teams }: { teams: EnterableTeam[] }) {
             <label key={t.id} className="flex cursor-pointer items-center gap-3 border-b border-border py-3">
               <input type="radio" name="team_id" value={t.id} required checked={chosen === t.id} onChange={() => setChosen(t.id)} className="h-4 w-4 shrink-0 accent-[var(--accent)]" />
               <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-[15px] font-semibold">{t.title}</span>
+                <span className="text-base font-semibold">{t.title}</span>
                 <span className="text-sm text-ink2">{t.open.length > 0 ? `Needs: ${t.open.join(", ")}` : "All roles filled"}</span>
               </span>
             </label>
@@ -59,9 +59,9 @@ export function EnterTeamFields({ teams }: { teams: EnterableTeam[] }) {
               );
             })}
           </div>
-          {team.filled.length > 0 && <p className="mt-2.5 text-[13px] text-muted">Filled, so they stay: {team.filled.join(", ")}</p>}
+          {team.filled.length > 0 && <p className="mt-2 text-meta text-muted">Filled, so they stay: {team.filled.join(", ")}</p>}
           <FieldError field="roles" />
-          <p className="mt-4 text-[13px] text-ink2">Everyone on the team gets a notification that it entered.</p>
+          <p className="mt-4 text-meta text-ink2">Everyone on the team gets a notification that it entered.</p>
         </fieldset>
       )}
     </div>

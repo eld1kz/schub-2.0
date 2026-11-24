@@ -13,7 +13,7 @@ export function ConnectButton({ profileId, status, isGuest, className = "btn-out
   return (
     <form action={action} className="flex flex-col items-start gap-1.5">
       <button disabled={pending} className={`${className} disabled:opacity-60`}>Connect</button>
-      {result.error && <p role="alert" className="max-w-56 text-[13px] text-red-600 dark:text-red-400">{result.error}</p>}
+      {result.error && <p role="alert" className="max-w-note text-meta text-danger ">{result.error}</p>}
     </form>
   );
 }

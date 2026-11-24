@@ -23,7 +23,7 @@ export function Notifications({ items, unread }: { items: Notification[]; unread
             <li key={n.id}>
               <form action={openNotification.bind(null, n.id)}>
                 <button className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-foreground/5">
-                  <span aria-hidden className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "" : "bg-red-500"}`} />
+                  <span aria-hidden className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "" : "bg-danger"}`} />
                   <span className="flex-1">
                     <span className={n.read ? "text-muted" : "text-foreground"}>{n.message}</span>
                     <span className="mt-0.5 block text-xs text-muted">{day(n.created_at)}</span>

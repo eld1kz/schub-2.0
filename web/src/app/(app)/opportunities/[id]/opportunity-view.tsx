@@ -82,14 +82,14 @@ function SectionHeader({ title, count, action }: { title: string; count?: number
 function PlacedAward({ award: a }: { award: Award }) {
   const details = [a.prize_name, formatMonth(a.awarded_on)].filter(Boolean).join(" · ");
   return (
-    <article className="flex flex-col gap-2 border-b border-border py-5 first:pt-0 sm:grid sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-6">
+    <article className="flex flex-col gap-2 border-b border-border py-4 first:pt-0 sm:grid sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-6">
       <Placement placement={a.placement} className="sm:pt-1" />
       <div className="flex min-w-0 flex-col gap-1.5">
-        <ul className="flex flex-wrap gap-x-5 gap-y-2">
+        <ul className="flex flex-wrap gap-x-4 gap-y-2">
           {awardPeople(a).map((p) => (
             <li key={p.id}>
-              <Link href={`/u/${p.id}`} className="flex items-center gap-2 text-[15px] font-medium hover:text-accent">
-                <Avatar url={p.avatar_url} name={p.name} className="h-6 w-6 text-[10px]" sizes="24px" />
+              <Link href={`/u/${p.id}`} className="flex items-center gap-2 text-base font-medium hover:text-accent">
+                <Avatar url={p.avatar_url} name={p.name} className="h-6 w-6 text-xs" sizes="24px" />
                 {p.name || "Unnamed"}
               </Link>
             </li>
@@ -133,13 +133,13 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
     <ToastProvider>
       <header className="flex flex-col gap-6 pb-8 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex min-w-0 flex-col gap-2">
-          <span className="font-mono text-xs font-medium tracking-[0.04em] text-ink2 uppercase">
+          <span className="font-mono text-xs font-medium tracking-wide text-ink2 uppercase">
             {opportunityTypes[o.type]}
             {o.featured && <span className="text-accent"> · Featured</span>}
           </span>
-          <h1 className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] text-balance sm:text-[40px] sm:tracking-[-0.03em]">{o.title}</h1>
-          {o.organizer && <p className="text-[17px] text-ink2">{o.organizer}</p>}
-          <p className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-[15px]">
+          <h1 className="text-2xl leading-tight font-semibold tracking-tight text-balance sm:text-3xl sm:tracking-tighter">{o.title}</h1>
+          {o.organizer && <p className="text-lg text-ink2">{o.organizer}</p>}
+          <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-base">
             {place && <span>{place}</span>}
             {dates && <span className="tabular-nums">{dates}</span>}
             {o.deadline && (
@@ -154,7 +154,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
             )}
           </p>
           {going && (
-            <a href={going.onTeam ? "#teams" : "#looking"} className="mt-1 w-fit text-[15px] font-medium text-accent hover:underline">
+            <a href={going.onTeam ? "#teams" : "#looking"} className="mt-1 w-fit text-base font-medium text-accent hover:underline">
               {goingLabel(going.people.size)}
             </a>
           )}
@@ -180,7 +180,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
           {placed.length === 0 ? (
             <p className="py-8 text-sm text-ink2">No results added yet. Placed here? Add it to the Awards section of your profile.</p>
           ) : (
-            <div className="flex flex-col pt-5">
+            <div className="flex flex-col pt-4">
               {placed.map((a) => <PlacedAward key={a.id} award={a} />)}
             </div>
           )}
@@ -204,7 +204,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
         {others.length === 0 ? (
           <p className="py-8 text-sm text-ink2">{mine ? "Nobody else yet. You're the first." : "Nobody yet. Be the first."}</p>
         ) : (
-          <div className="flex flex-col pt-5">
+          <div className="flex flex-col pt-4">
             {others.map((p) => (
               <PersonRow
                 key={p.user_id}
@@ -216,13 +216,13 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
                 open={p.person.open_to_collaborate}
                 actions={
                   <>
-                    <span className="text-[13px] text-muted tabular-nums">{p.score}% match</span>
+                    <span className="text-meta text-muted tabular-nums">{p.score}% match</span>
                     <ConnectButton profileId={p.user_id} status={statusWith[p.user_id]} isGuest={isGuest} className="btn-outline h-9" />
                   </>
                 }
               >
-                {connections.has(p.user_id) && <p className="text-[13px] font-medium text-accent">Your connection</p>}
-                {p.note && <p className="mt-1 max-w-[560px] text-[15px] leading-normal">&ldquo;{p.note}&rdquo;</p>}
+                {connections.has(p.user_id) && <p className="text-meta font-medium text-accent">Your connection</p>}
+                {p.note && <p className="mt-1 max-w-form text-base leading-normal">&ldquo;{p.note}&rdquo;</p>}
                 {knownSkills(p.person.skills).length > 0 && (
                   <ul className="mt-1.5 flex flex-wrap gap-1.5">
                     {knownSkills(p.person.skills).slice(0, 4).map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
@@ -237,13 +237,13 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
       {o.description && (
         <section className="mt-12">
           <SectionHeader title="About" />
-          <p className="max-w-[680px] pt-5 text-[15px] leading-relaxed whitespace-pre-wrap sm:text-base">{o.description}</p>
+          <p className="max-w-dialog pt-4 text-base leading-relaxed whitespace-pre-wrap">{o.description}</p>
           <a href={o.url} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-semibold text-accent hover:underline">Full details on the official page ↗</a>
         </section>
       )}
 
       {(canReport || canDelete || isAdmin) && (
-      <footer className="mt-12 flex flex-wrap items-start gap-x-6 gap-y-3 border-t border-line2 pt-5 text-sm text-ink2">
+      <footer className="mt-12 flex flex-wrap items-start gap-x-6 gap-y-3 border-t border-line2 pt-4 text-sm text-ink2">
         {canReport &&
           (myReport ? (
             <p>You reported this as {myReport}.</p>
@@ -252,7 +252,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
               <summary className="cursor-pointer list-none hover:text-foreground [&::-webkit-details-marker]:hidden">Report this listing</summary>
               <form action={reportOpportunity.bind(null, o.id)} className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="relative">
-                  <select name="reason" aria-label="What's wrong" className="input h-9 cursor-pointer appearance-none py-0 pr-9 text-sm">
+                  <select name="reason" aria-label="What's wrong" className="input h-9 cursor-pointer appearance-none py-0 pr-8 text-sm">
                     <option value="fake">Fake or spam</option>
                     <option value="duplicate">Duplicate</option>
                     <option value="expired">Expired</option>
@@ -273,7 +273,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
         )}
         {canDelete && (
           <form action={deleteOpportunity.bind(null, o.id)}>
-            <button className="hover:text-red-600 dark:hover:text-red-400">Delete this listing</button>
+            <button className="hover:text-danger ">Delete this listing</button>
           </form>
         )}
       </footer>

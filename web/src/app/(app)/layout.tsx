@@ -14,9 +14,9 @@ function Header({ counts = {}, profileHref = "/profile", account }: { counts?: R
   return (
     <>
       <header className="border-b border-border">
-        <div className="mx-auto flex h-[60px] max-w-[1440px] items-center gap-4 px-4 sm:gap-11 sm:px-12">
-          <Link href="/opportunities" className="flex items-center gap-2 text-xl font-bold tracking-[-0.03em]">
-            <span aria-hidden className="h-3 w-3 rounded-[2px] bg-accent" />
+        <div className="mx-auto flex h-[60px] max-w-wide items-center gap-4 px-4 sm:gap-12 sm:px-12">
+          <Link href="/opportunities" className="flex items-center gap-2 text-xl font-bold tracking-tighter">
+            <span aria-hidden className="h-3 w-3 rounded-sm bg-accent" />
             schub
           </Link>
           <NavTabs counts={counts} />
@@ -75,10 +75,10 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <Suspense fallback={<Header />}><NavWithCounts /></Suspense>
-      <div className="mx-auto max-w-[1176px] px-4 sm:px-6">
+      <div className="mx-auto max-w-page px-4 sm:px-6">
         <Suspense><ProfileNudge /></Suspense>
         {/* Room at the bottom for the phone tab bar */}
-        <main className="pt-8 pb-28 sm:pt-12 sm:pb-24">{children}</main>
+        <main className="pt-8 pb-bar sm:pt-12 sm:pb-20">{children}</main>
       </div>
     </>
   );

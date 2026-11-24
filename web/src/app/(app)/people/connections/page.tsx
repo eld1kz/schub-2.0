@@ -36,7 +36,7 @@ export default async function ConnectionsPage() {
   if (people.length === 0) {
     return (
       <div className="flex flex-col items-start gap-2 py-2">
-        <p className="text-[15px] font-medium">No connections yet</p>
+        <p className="text-base font-medium">No connections yet</p>
         <Link href="/people" className="text-sm font-semibold text-accent hover:underline">Find people on Discover</Link>
       </div>
     );

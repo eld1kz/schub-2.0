@@ -40,7 +40,7 @@ export function useFieldError(field: string) {
 export function FieldError({ field, message }: { field: string; message?: string }) {
   const saved = useFieldError(field);
   const text = message || saved;
-  return text ? <p role="alert" className="mt-1.5 text-[13px] text-red-600 dark:text-red-400">{text}</p> : null;
+  return text ? <p role="alert" className="mt-1.5 text-meta text-danger ">{text}</p> : null;
 }
 
 const iconButton = "grid h-[34px] w-[34px] shrink-0 place-items-center rounded-md text-ink2 hover:bg-chip hover:text-foreground";
@@ -116,7 +116,7 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
       </button>
     ),
     button: (
-      <button type="button" onClick={() => setOpen(true)} className="h-11 w-full rounded-md border border-accent px-4 text-[15px] font-semibold text-accent hover:bg-accent-soft sm:h-9 sm:w-auto sm:text-sm">
+      <button type="button" onClick={() => setOpen(true)} className="h-11 w-full rounded-md border border-accent px-4 text-base font-semibold text-accent hover:bg-accent-soft sm:h-9 sm:w-auto sm:text-sm">
         + {cta}
       </button>
     ),
@@ -144,7 +144,7 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
         onClick={(e) => {
           if (pressedOutside.current && e.target === dialog.current) close();
         }}
-        className={`m-0 mt-auto w-full max-w-none overflow-hidden bg-background ${tall ? "h-dvh max-h-dvh sm:h-fit" : "max-h-[92dvh] rounded-t-2xl"} p-0 text-foreground backdrop:bg-[rgba(20,20,24,0.45)] sm:mx-auto sm:mt-16 sm:mb-auto sm:max-h-[calc(100dvh-8rem)] sm:max-w-[680px] sm:rounded-[10px] sm:border sm:border-line2 sm:shadow-[0_24px_60px_rgba(0,0,0,0.22)] dark:backdrop:bg-black/60`}
+        className={`m-0 mt-auto w-full max-w-none overflow-hidden bg-background ${tall ? "h-dvh max-h-dvh sm:h-fit" : "max-h-[92dvh] rounded-t-lg"} p-0 text-foreground backdrop:bg-[rgba(20,20,24,0.45)] sm:mx-auto sm:mt-16 sm:mb-auto sm:max-h-[calc(100dvh-8rem)] sm:max-w-dialog sm:rounded-lg sm:border sm:border-line2 sm:shadow-modal `}
       >
         {open && (
           <form
@@ -160,13 +160,13 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
           >
             {!tall && <div aria-hidden className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-line2 sm:hidden" />}
             {/* Phones: Cancel, title and Save across the top (Save moves to the bottom when tall). From sm up: title and a close button. */}
-            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-5 pt-3 pb-3.5 sm:px-7 sm:py-5">
-              <button type="button" onClick={close} className="text-[15px] text-ink2 sm:hidden">Cancel</button>
-              <h2 className="text-base font-semibold sm:text-xl sm:tracking-[-0.01em]">{title}</h2>
+            <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-4 pt-3 pb-3 sm:px-6 sm:py-4">
+              <button type="button" onClick={close} className="text-base text-ink2 sm:hidden">Cancel</button>
+              <h2 className="text-base font-semibold sm:text-xl sm:tracking-snug">{title}</h2>
               {tall ? (
                 <span aria-hidden className="w-12 sm:hidden" />
               ) : (
-                <button disabled={saving || !valid} className="text-[15px] font-semibold text-accent disabled:opacity-40 sm:hidden">
+                <button disabled={saving || !valid} className="text-base font-semibold text-accent disabled:opacity-40 sm:hidden">
                   {saving ? "Saving..." : submit}
                 </button>
               )}
@@ -176,18 +176,18 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
                 </svg>
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4 sm:px-7 sm:pb-0">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-0">
               <FieldErrorContext value={error}>{children}</FieldErrorContext>
-              {error && !error.field && <p role="alert" className="pb-4 text-sm text-red-600 dark:text-red-400">{error.message}</p>}
+              {error && !error.field && <p role="alert" className="pb-4 text-sm text-danger ">{error.message}</p>}
             </div>
-            <div className={`${tall || note || remove ? "flex" : "hidden sm:flex"} shrink-0 items-center gap-4 border-t border-border px-5 py-4 sm:px-7`}>
-              {note && <p className="text-[13px] text-ink2">{note}</p>}
+            <div className={`${tall || note || remove ? "flex" : "hidden sm:flex"} shrink-0 items-center gap-4 border-t border-border px-4 py-4 sm:px-6`}>
+              {note && <p className="text-meta text-ink2">{note}</p>}
               {remove && (
-                <button type="button" onClick={onDelete} disabled={deleting} className={`text-sm text-ink2 hover:text-red-600 disabled:opacity-60 dark:hover:text-red-400 ${tall ? "" : "ml-auto sm:ml-0"}`}>
+                <button type="button" onClick={onDelete} disabled={deleting} className={`text-sm text-ink2 hover:text-danger disabled:opacity-60 ${tall ? "" : "ml-auto sm:ml-0"}`}>
                   {deleting ? "Deleting..." : `Delete ${noun}`}
                 </button>
               )}
-              <div className={`${tall ? "flex flex-1 justify-end" : "hidden sm:flex"} ml-auto gap-2.5`}>
+              <div className={`${tall ? "flex flex-1 justify-end" : "hidden sm:flex"} ml-auto gap-2`}>
                 <button type="button" onClick={close} className="btn-outline hidden sm:inline-flex">Cancel</button>
                 <button disabled={saving || !valid} className={`btn disabled:opacity-40 ${tall ? `h-11 sm:h-[38px] ${remove ? "" : "w-full sm:w-auto"}` : ""}`}>
                   {saving ? "Saving..." : submit}

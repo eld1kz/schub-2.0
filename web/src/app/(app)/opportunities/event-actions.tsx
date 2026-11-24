@@ -54,7 +54,7 @@ export function EventActions({ event, userId, isGuest, looking, entered, enterab
 
   const yourTeam = entered && (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-      <p className="text-[15px]">
+      <p className="text-base">
         <span className="text-ink2">Your team:</span>{" "}
         <Link href={`/teams/${entered.teamId}`} className="font-semibold hover:text-accent">{entered.title}</Link>
         {(compact || !entered.owner) && <> · <EntryStatusLabel status={entered.status} /></>}
@@ -67,7 +67,7 @@ export function EventActions({ event, userId, isGuest, looking, entered, enterab
   return (
     <section
       aria-label={`What you can do about ${event.title}`}
-      className={compact ? "relative z-10 flex flex-wrap items-center gap-x-2 gap-y-3" : "flex flex-col gap-4 border-y border-line2 py-5"}
+      className={compact ? "relative z-10 flex flex-wrap items-center gap-x-2 gap-y-3" : "flex flex-col gap-4 border-y border-line2 py-4"}
     >
       {!ended && note && <LookingNote opportunityId={event.id} note={looking.note} />}
       {!ended && (

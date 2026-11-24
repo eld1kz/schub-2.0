@@ -96,23 +96,23 @@ function ProjectItem({ project: p, award, edit }: { project: Project; award?: Aw
   const code = webLink(p.repo_url);
   const where = [p.role, p.built_at && `Built at ${p.built_at}`, p.year].filter(Boolean).join(" · ");
   return (
-    <article id={`project-${p.id}`} className="flex flex-col gap-2 border-b border-border pb-6 sm:pb-7 [&+&]:pt-6 sm:[&+&]:pt-7">
+    <article id={`project-${p.id}`} className="flex flex-col gap-2 border-b border-border pb-6 [&+&]:pt-6 sm:[&+&]:pt-6">
       <div className="flex items-baseline justify-between gap-4">
-        <h3 className="text-[17px] font-semibold tracking-[-0.01em] sm:text-[19px]">{p.title}</h3>
+        <h3 className="text-lg font-semibold tracking-snug">{p.title}</h3>
         <div className="flex shrink-0 items-center gap-2">
           {award ? (
             <a href={`#award-${award.id}`} title={award.opportunity?.title ?? award.event_name} className="hover:opacity-80">
               <Placement placement={award.placement} />
             </a>
           ) : (
-            p.result && <span className="text-right text-[13px] font-semibold text-accent sm:text-sm">{p.result}</span>
+            p.result && <span className="text-right text-meta font-semibold text-accent sm:text-sm">{p.result}</span>
           )}
           {edit && <span className="-my-2">{edit}</span>}
         </div>
       </div>
-      {p.tagline && <p className="max-w-[600px] text-sm leading-normal sm:text-[15px]">{p.tagline}</p>}
-      {where && <p className="text-[13px] text-ink2 sm:text-sm">{where}</p>}
-      {p.description && <p className="line-clamp-3 max-w-[600px] text-sm leading-normal whitespace-pre-wrap text-ink2">{p.description}</p>}
+      {p.tagline && <p className="max-w-prose text-sm leading-normal sm:text-base">{p.tagline}</p>}
+      {where && <p className="text-meta text-ink2 sm:text-sm">{where}</p>}
+      {p.description && <p className="line-clamp-3 max-w-prose text-sm leading-normal whitespace-pre-wrap text-ink2">{p.description}</p>}
       {image && (
         <div className="relative mt-1 aspect-[3/2] w-60 overflow-hidden rounded-md border border-border">
           <Image src={image} alt="" fill sizes="240px" className="object-cover" />
@@ -141,7 +141,7 @@ function ConnectionStack({ people }: { people: Connection[] }) {
       {people.map((c) => (
         <li key={c.id} className="-mr-1.5">
           <Link href={`/u/${c.id}`} title={c.name || "Unnamed"} className="block rounded-full border-2 border-background hover:opacity-80">
-            <Avatar url={c.avatar_url} name={c.name} className="h-8 w-8 text-[11px]" sizes="32px" />
+            <Avatar url={c.avatar_url} name={c.name} className="h-8 w-8 text-xs" sizes="32px" />
           </Link>
         </li>
       ))}
@@ -175,29 +175,29 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
       {pendingShared.length > 0 && <PendingSharedProjects projects={pendingShared} />}
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_296px] lg:items-start lg:gap-20">
         <div>
-          <header className="relative grid grid-cols-[72px_minmax(0,1fr)] items-center gap-x-4 gap-y-3.5 pb-8 sm:grid-cols-[120px_minmax(0,1fr)] sm:grid-rows-[auto_1fr] sm:items-start sm:gap-x-8 sm:gap-y-2.5 sm:pb-10">
-            <Avatar url={p.avatar_url} name={p.name} className="h-[72px] w-[72px] border border-border text-xl sm:row-span-2 sm:h-[120px] sm:w-[120px] sm:text-3xl" sizes="(min-width: 640px) 120px, 72px" priority square open={p.open_to_collaborate} />
-            <h1 className={`text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-[44px] sm:leading-[1.05] sm:tracking-[-0.03em] ${canEdit ? "pr-10" : ""}`}>
+          <header className="relative grid grid-cols-[72px_minmax(0,1fr)] items-center gap-x-4 gap-y-3 pb-8 sm:grid-cols-[120px_minmax(0,1fr)] sm:grid-rows-[auto_1fr] sm:items-start sm:gap-x-8 sm:gap-y-2">
+            <Avatar url={p.avatar_url} name={p.name} className="h-[72px] w-[72px] border border-border text-xl sm:row-span-2 sm:h-[120px] sm:w-[120px] sm:text-2xl" sizes="(min-width: 640px) 120px, 72px" priority square open={p.open_to_collaborate} />
+            <h1 className={`text-2xl leading-tight font-semibold tracking-tight sm:text-3xl sm:tracking-tighter ${canEdit ? "pr-8" : ""}`}>
               {p.name || "Unnamed"}
             </h1>
-            <div className="col-span-2 flex flex-col gap-2.5 sm:col-span-1 sm:col-start-2">
-              {p.headline && <p className="text-[17px] leading-[1.4] text-pretty text-ink2 sm:text-xl">{p.headline}</p>}
+            <div className="col-span-2 flex flex-col gap-2 sm:col-span-1 sm:col-start-2">
+              {p.headline && <p className="text-lg leading-snug text-pretty text-ink2 sm:text-xl">{p.headline}</p>}
               {ranked[0] && <HeroAward award={ranked[0]} />}
               {(currentRole || education) && (
-                <p className="flex flex-wrap gap-x-[18px] gap-y-1.5 text-sm text-ink2 sm:mt-1 sm:text-[15px]">
+                <p className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-ink2 sm:mt-1 sm:text-base">
                   {currentRole && <span className="font-semibold text-foreground">{currentRole.role} at {currentRole.company}</span>}
                   {education && <span>{education}</span>}
                 </p>
               )}
               {p.open_to_collaborate && p.wanted_roles.length > 0 && (
-                <p className="text-sm sm:text-[15px]">
+                <p className="text-sm sm:text-base">
                   <span className="text-muted">Open to:</span> <span className="font-medium">{p.wanted_roles.join(", ")}</span>
                 </p>
               )}
               {canEdit && p.open_to_collaborate && p.wanted_roles.length === 0 && (
                 <p className="text-sm text-muted">Open to: pick the roles you&apos;d join as in Edit intro</p>
               )}
-              {workStyle && <p className="text-sm text-ink2 sm:text-[15px]">{workStyle}</p>}
+              {workStyle && <p className="text-sm text-ink2 sm:text-base">{workStyle}</p>}
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-3 sm:mt-4">
                 {canEdit ? (
                   <OpenToTeamSwitch open={p.open_to_collaborate} />
@@ -225,7 +225,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
           {(p.bio || canEdit) && (
             <Section title="About" quiet={!p.bio} owner={canEdit} edit={canEdit && p.bio && <AboutEdit bio={p.bio} trigger="edit" />}>
               {p.bio ? (
-                <div className="max-w-[620px] text-[15px] leading-relaxed text-pretty sm:text-base sm:leading-[1.65]"><About text={p.bio} /></div>
+                <div className="max-w-prose text-base leading-relaxed text-pretty"><About text={p.bio} /></div>
               ) : (
                 <EmptyPrompt title="Write a few lines about you" text="What you like building, what you're good at, and what kind of team you want to join.">
                   <AboutEdit bio="" trigger="button" />
@@ -267,10 +267,10 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
           {(hasInterests || canEdit) && (
             <Section title="Interests" quiet={!hasInterests} owner={canEdit} editOnHover edit={canEdit && hasInterests && <InterestsEdit profile={p} trigger="edit" />}>
               {hasInterests ? (
-                <div className="flex max-w-[620px] flex-col gap-2">
-                  {p.interests.length > 0 && <p className="text-[15px] leading-relaxed text-pretty sm:text-base">{p.interests.join(" · ")}</p>}
-                  {p.goals.length > 0 && <p className="text-sm text-ink2 sm:text-[15px]">Looking for: {p.goals.join(", ")}</p>}
-                  {p.looking_for.length > 0 && <p className="text-sm text-ink2 sm:text-[15px]">Team up with: {p.looking_for.join(", ")}</p>}
+                <div className="flex max-w-prose flex-col gap-2">
+                  {p.interests.length > 0 && <p className="text-base leading-relaxed text-pretty">{p.interests.join(" · ")}</p>}
+                  {p.goals.length > 0 && <p className="text-sm text-ink2 sm:text-base">Looking for: {p.goals.join(", ")}</p>}
+                  {p.looking_for.length > 0 && <p className="text-sm text-ink2 sm:text-base">Team up with: {p.looking_for.join(", ")}</p>}
                 </div>
               ) : (
                 <EmptyPrompt title="Add interests and goals" text="What you're into, and what you're on Schub for: a hackathon team, a cofounder, a side project.">
@@ -294,14 +294,14 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                     <ProjectItem key={project.id} project={project} award={projectAward(project.id)} edit={canEdit && <ProjectEdit project={project} trigger="edit" />} />
                   ))}
                   {sharedProjects.map(({ project: s, hidden }) => (
-                    <article key={s.id} id={`shared-${s.id}`} className={`border-b border-border pb-6 sm:pb-7 [&+&]:pt-6 sm:[&+&]:pt-7 ${hidden ? "opacity-60" : ""}`}>
+                    <article key={s.id} id={`shared-${s.id}`} className={`border-b border-border pb-6 [&+&]:pt-6 sm:[&+&]:pt-6 ${hidden ? "opacity-60" : ""}`}>
                       <SharedProjectBody
                         project={s}
                         award={ranked.find((a) => a.team_id === s.team_id)}
                         except={id}
                         edit={canEdit && (hidden ? <ShowAgainButton projectId={s.id} /> : <HideButton projectId={s.id} />)}
                       />
-                      {hidden && <p className="mt-2 text-[13px] text-muted">Hidden from your profile</p>}
+                      {hidden && <p className="mt-2 text-meta text-muted">Hidden from your profile</p>}
                     </article>
                   ))}
                 </div>
@@ -315,9 +315,9 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
 
           {(teams.length > 0 || events.length > 0) && (
             <Section title="On Schub" owner={canEdit}>
-              <div className="flex flex-col text-sm sm:text-[15px]">
+              <div className="flex flex-col text-sm sm:text-base">
                 {teams.map((t) => (
-                  <Link key={t.id} href={`/teams/${t.id}`} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 first:pt-0 hover:text-accent">
+                  <Link key={t.id} href={`/teams/${t.id}`} className="flex items-baseline justify-between gap-4 border-b border-border py-2 first:pt-0 hover:text-accent">
                     <span>
                       <span className="font-medium">{t.title}</span>
                       {t.built && <span className="text-ink2"> · Built {t.built}</span>}
@@ -326,7 +326,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                   </Link>
                 ))}
                 {events.map((e) => (
-                  <Link key={e.id} href={`/opportunities/${e.id}`} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 first:pt-0 hover:text-accent">
+                  <Link key={e.id} href={`/opportunities/${e.id}`} className="flex items-baseline justify-between gap-4 border-b border-border py-2 first:pt-0 hover:text-accent">
                     <span className="font-medium">{e.title}</span>
                     <span className="shrink-0 text-ink2">Looking for a team</span>
                   </Link>
@@ -340,11 +340,11 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
               <div className="flex flex-col gap-6">
                 {ideas.map((idea) => (
                   <article key={idea.id} className="flex flex-col gap-1.5">
-                    <div className="flex flex-wrap items-baseline gap-x-2.5">
-                      <h3 className="text-[17px] font-semibold">{idea.title}</h3>
-                      <span className="font-mono text-[11px] font-medium text-muted uppercase">{idea.stage}</span>
+                    <div className="flex flex-wrap items-baseline gap-x-2">
+                      <h3 className="text-lg font-semibold">{idea.title}</h3>
+                      <span className="font-mono text-xs font-medium text-muted uppercase">{idea.stage}</span>
                     </div>
-                    {idea.description && <p className="max-w-[600px] text-sm leading-normal whitespace-pre-wrap sm:text-[15px]">{idea.description}</p>}
+                    {idea.description && <p className="max-w-prose text-sm leading-normal whitespace-pre-wrap sm:text-base">{idea.description}</p>}
                     {idea.skills_needed.length > 0 && <p className="text-sm text-ink2">Needs {idea.skills_needed.join(", ")}</p>}
                   </article>
                 ))}
@@ -386,7 +386,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
           ) : (
             contact && (
               <SideBlock title="Contact" edit={canEdit && <ContactEdit contact={contact} trigger="edit" />}>
-                {canEdit && <p className="-mt-1.5 text-[13px] text-muted">Only visible to your connections</p>}
+                {canEdit && <p className="-mt-1.5 text-meta text-muted">Only visible to your connections</p>}
                 {!hasContact && <p className="text-sm text-ink2">No contact details added yet.</p>}
                 {contact.telegram && (
                   <KeyValue label="Telegram">
@@ -430,10 +430,10 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                   <li key={s.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                     <Link href={`/u/${s.id}`} className="flex min-w-0 items-center gap-3 hover:opacity-80">
                       {/* Suggestions are all open to a team */}
-                      <Avatar url={s.avatar_url} name={s.name} className="h-10 w-10 text-[13px]" sizes="40px" open />
+                      <Avatar url={s.avatar_url} name={s.name} className="h-10 w-10 text-meta" sizes="40px" open />
                       <span className="min-w-0">
-                        <span className="block truncate text-[15px] font-semibold">{s.name}</span>
-                        {s.headline && <span className="block truncate text-[13px] text-ink2">{s.headline}</span>}
+                        <span className="block truncate text-base font-semibold">{s.name}</span>
+                        {s.headline && <span className="block truncate text-meta text-ink2">{s.headline}</span>}
                       </span>
                     </Link>
                     {s.connect}

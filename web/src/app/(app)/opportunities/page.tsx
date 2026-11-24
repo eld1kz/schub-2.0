@@ -73,7 +73,7 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
       key={t ?? "all"}
       href={t ? `/opportunities?type=${t}` : "/opportunities"}
       aria-current={type === t ? "page" : undefined}
-      className="shrink-0 py-2.5 whitespace-nowrap hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:shadow-[inset_0_-2px_0_var(--accent)]"
+      className="shrink-0 py-2 whitespace-nowrap hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:shadow-[inset_0_-2px_0_var(--accent)]"
     >
       {label} <span className="text-muted tabular-nums">{count(t)}</span>
     </Link>
@@ -84,16 +84,16 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between gap-6">
         <div className="flex flex-col gap-1.5">
-          <h1 className="text-[28px] font-semibold tracking-[-0.02em] sm:text-4xl sm:tracking-[-0.03em]">Opportunities</h1>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl sm:tracking-tighter">Opportunities</h1>
           <p className="hidden text-base text-ink2 sm:block">Hackathons, competitions, grants and internships open to students. Soonest date first.</p>
         </div>
         <Link href="/opportunities/new" className="btn-outline hidden sm:inline-flex">Add opportunity</Link>
-        <Link href="/opportunities/new" className="pb-1.5 text-[15px] font-semibold text-accent sm:hidden">+ Add</Link>
+        <Link href="/opportunities/new" className="pb-1.5 text-base font-semibold text-accent sm:hidden">+ Add</Link>
       </div>
 
       {admin && (hidden ?? []).length > 0 && (
         <section className="border-y border-line2 py-4">
-          <h2 className="mb-2 text-[15px] font-semibold">Hidden after reports</h2>
+          <h2 className="mb-2 text-base font-semibold">Hidden after reports</h2>
           {(hidden ?? []).map((o) => (
             <div key={o.id} className="flex flex-col gap-2 border-b border-border py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm">
@@ -110,7 +110,7 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
       )}
 
       {/* Underlined type tabs; on phones they scroll sideways in one row */}
-      <nav aria-label="Opportunity types" className="-mx-4 flex gap-6 overflow-x-auto border-b border-line2 px-4 text-[15px] font-medium text-ink2 sm:mx-0 sm:gap-7 sm:px-0">
+      <nav aria-label="Opportunity types" className="-mx-4 flex gap-6 overflow-x-auto border-b border-line2 px-4 text-base font-medium text-ink2 sm:mx-0 sm:px-0">
         {tab(null, "All")}
         {types.map((t) => tab(t, tabLabel(t)))}
       </nav>

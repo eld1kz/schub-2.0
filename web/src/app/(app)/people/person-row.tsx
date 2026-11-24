@@ -17,7 +17,7 @@ export function PersonRow({ id, name, headline, avatarUrl, awarded = false, open
   actions?: ReactNode;
 }) {
   return (
-    <article className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-4 gap-y-3 border-b border-border py-5 first:pt-0 sm:grid-cols-[44px_minmax(0,1fr)_auto] sm:items-start">
+    <article className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-4 gap-y-3 border-b border-border py-4 first:pt-0 sm:grid-cols-[44px_minmax(0,1fr)_auto] sm:items-start">
       <Link href={`/u/${id}`} aria-hidden tabIndex={-1}>
         <Avatar url={avatarUrl} name={name} className="h-11 w-11 text-sm" sizes="44px" open={open} />
       </Link>

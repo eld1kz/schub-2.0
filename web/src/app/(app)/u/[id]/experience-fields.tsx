@@ -44,7 +44,7 @@ export function ExperienceFields({ experience: e }: { experience?: Experience })
   }, [tooLong]);
 
   return (
-    <div onKeyDown={nextOnEnter} className="space-y-5 py-6">
+    <div onKeyDown={nextOnEnter} className="space-y-4 py-6">
       <Field id="experience-role" label="Title" required>
         <input id="experience-role" name="role" defaultValue={e?.role} required maxLength={80} placeholder="Backend developer" className={input} />
         <FieldError field="role" />
@@ -89,7 +89,7 @@ export function ExperienceFields({ experience: e }: { experience?: Experience })
         />
         <div className="mt-1 flex justify-between gap-4">
           <FieldError field="description" message={tooLong ? `Keep it to ${EXPERIENCE_DESCRIPTION_MAX} characters or fewer.` : ""} />
-          <span className={`ml-auto text-[13px] tabular-nums ${tooLong ? "text-red-600 dark:text-red-400" : "text-muted"}`}>
+          <span className={`ml-auto text-meta tabular-nums ${tooLong ? "text-danger " : "text-muted"}`}>
             {description.length}/{EXPERIENCE_DESCRIPTION_MAX}
           </span>
         </div>

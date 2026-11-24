@@ -15,9 +15,9 @@ export default function TeamsLayout({ children }: LayoutProps<"/teams">) {
   return (
     <div>
       <div className="flex items-end justify-between gap-6 pb-4 sm:pb-6">
-        <h1 className="text-[28px] font-semibold tracking-[-0.02em] sm:text-4xl sm:tracking-[-0.03em]">Teams</h1>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl sm:tracking-tighter">Teams</h1>
         <Link href="/teams/new" className="btn hidden sm:inline-flex">Post a team</Link>
-        <Link href="/teams/new" className="pb-1.5 text-[15px] font-semibold text-accent sm:hidden">+ Post</Link>
+        <Link href="/teams/new" className="pb-1.5 text-base font-semibold text-accent sm:hidden">+ Post</Link>
       </div>
       <Suspense fallback={<TeamsTabs toReview={0} />}>
         <TabsWithCount />

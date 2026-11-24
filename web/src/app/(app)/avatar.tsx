@@ -11,7 +11,7 @@ export function Avatar({ url, name, className, sizes, priority = false, square =
   const photo = photoUrl(url);
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
   return (
-    <div className={`relative grid shrink-0 place-items-center overflow-hidden bg-chip font-semibold text-ink2 ${square ? "rounded-lg" : "rounded-full"} ${open ? openRing : ""} ${className}`}>
+    <div className={`relative grid shrink-0 place-items-center overflow-hidden bg-chip font-semibold text-ink2 ${square ? "rounded-md" : "rounded-full"} ${open ? openRing : ""} ${className}`}>
       {photo ? <Image src={photo} alt="" fill sizes={sizes} className="object-cover" priority={priority} /> : initials}
     </div>
   );

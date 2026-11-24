@@ -30,7 +30,7 @@ function RoleChip({ label, active, to }: { label: string; active: boolean; to: s
     <Link
       href={to}
       aria-current={active ? "true" : undefined}
-      className={`shrink-0 rounded px-2.5 py-1 text-sm whitespace-nowrap ${active ? "bg-foreground font-medium text-background" : "border border-line2 hover:border-muted"}`}
+      className={`shrink-0 rounded-sm px-2 py-1 text-sm whitespace-nowrap ${active ? "bg-foreground font-medium text-background" : "border border-line2 hover:border-muted"}`}
     >
       {label}
     </Link>
@@ -43,7 +43,7 @@ export function TeamFilters({ roles, filters }: { roles: string[]; filters: Filt
   const router = useRouter();
   const { role, status } = filters;
   return (
-    <div className="flex flex-col gap-3 border-b border-border py-3.5 sm:border-t sm:border-t-line2 lg:flex-row lg:items-center lg:gap-7">
+    <div className="flex flex-col gap-3 border-b border-border py-3 sm:border-t sm:border-t-line2 lg:flex-row lg:items-center lg:gap-6">
       <div className="flex min-w-0 flex-1 items-center gap-4">
         <span className="hidden text-sm text-muted sm:inline">Role</span>
         <nav aria-label="Filter by open role" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">

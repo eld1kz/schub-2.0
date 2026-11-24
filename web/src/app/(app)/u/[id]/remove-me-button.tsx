@@ -8,7 +8,7 @@ export function RemoveMeButton({ action }: { action: () => Promise<void> }) {
         onClick={(e) => {
           if (!confirm("Remove yourself from this award? It won't show on your profile any more.")) e.preventDefault();
         }}
-        className="h-[34px] text-sm text-ink2 hover:text-red-600 dark:hover:text-red-400"
+        className="h-[34px] text-sm text-ink2 hover:text-danger "
       >
         Remove me
       </button>
