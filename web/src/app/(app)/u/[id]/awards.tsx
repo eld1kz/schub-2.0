@@ -3,17 +3,16 @@ import Link from "next/link";
 import { answerAwardTag } from "@/app/actions";
 import { confirmedTeammates, formedOnSchub, placementLabel, type Award, type AwardPerson } from "@/lib/awards";
 import { formatMonth, webLink } from "@/lib/portfolio";
-import { Avatar } from "../../avatar";
 import type { AwardOptions } from "./award-fields";
-import { EmptyPrompt, Section } from "./profile-parts";
 import { RemoveMeButton } from "./remove-me-button";
 import { AwardEdit } from "./section-edits";
+import { Avatar, EmptyState, MonoLabel, Section, buttonClass } from "@/components/ui";
 
 const outLink = "font-medium text-accent hover:underline";
 
 // "1ST PLACE", in mono caps and the accent color
 export function Placement({ placement, className = "" }: { placement: string; className?: string }) {
-  return <span className={`font-mono text-xs font-medium tracking-wide text-accent uppercase ${className}`}>{placementLabel(placement)}</span>;
+  return <MonoLabel tone="accent" className={className}>{placementLabel(placement)}</MonoLabel>;
 }
 
 // The event's name, linked when it's a Schub opportunity
@@ -51,7 +50,7 @@ function PeopleStack({ people }: { people: AwardPerson[] }) {
       {people.map((p) => (
         <li key={p.id} className="-mr-1.5">
           <Link href={`/u/${p.id}`} title={p.name || "Unnamed"} className="block rounded-full border-2 border-background hover:opacity-80">
-            <Avatar url={p.avatar_url} name={p.name} className="h-7 w-7 text-xs" sizes="28px" />
+            <Avatar url={p.avatar_url} name={p.name} size="sm" />
           </Link>
         </li>
       ))}
@@ -114,9 +113,9 @@ export function AwardsSection({ awards, profileId, canEdit, options }: { awards:
           })}
         </div>
       ) : (
-        <EmptyPrompt title="Add an award" text="Hackathon wins, finals, track prizes. Link the event and tag your teammates so they can confirm it.">
-          <AwardEdit options={options} trigger="button" />
-        </EmptyPrompt>
+        <EmptyState title="Add an award" action={<AwardEdit options={options} trigger="button" />}>
+          Hackathon wins, finals, track prizes. Link the event and tag your teammates so they can confirm it.
+        </EmptyState>
       )}
     </Section>
   );
@@ -133,8 +132,8 @@ export function PendingTags({ awards }: { awards: Award[] }) {
             <span className="font-semibold">{placementLabel(a.placement)}</span>, <EventName award={a} />.
           </p>
           <div className="flex shrink-0 gap-2">
-            <form action={answerAwardTag.bind(null, a.id, "confirmed")}><button className="btn h-9 px-4">Confirm</button></form>
-            <form action={answerAwardTag.bind(null, a.id, "declined")}><button className="btn-outline h-9">Decline</button></form>
+            <form action={answerAwardTag.bind(null, a.id, "confirmed")}><button className={buttonClass({ size: "sm" })}>Confirm</button></form>
+            <form action={answerAwardTag.bind(null, a.id, "declined")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
           </div>
         </div>
       ))}

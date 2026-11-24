@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createIdea, createPost } from "@/app/actions";
+import { Input, Select, Textarea, buttonClass } from "@/components/ui";
 
 type Author = { id: string; name: string; university: string } | null;
 type Item =
@@ -24,21 +25,17 @@ export default async function FeedPage() {
       <section className="grid gap-6 sm:grid-cols-2">
         <form action={createPost} className="space-y-2">
           <h2 className="text-sm font-medium">Post an update</h2>
-          <textarea name="content" rows={4} placeholder="What are you working on?" required maxLength={2000} className="input" />
-          <button className="btn">Post</button>
+          <Textarea name="content" rows={4} placeholder="What are you working on?" required maxLength={2000} />
+          <button className={buttonClass()}>Post</button>
         </form>
         <form action={createIdea} className="space-y-2">
           <h2 className="text-sm font-medium">Share an idea</h2>
-          <input name="title" placeholder="Title" required maxLength={200} className="input" />
-          <textarea name="description" rows={2} placeholder="Description" className="input" />
-          <input name="skills_needed" placeholder="Skills needed, comma separated" className="input" />
+          <Input name="title" placeholder="Title" required maxLength={200} />
+          <Textarea name="description" rows={2} placeholder="Description" />
+          <Input name="skills_needed" placeholder="Skills needed, comma separated" />
           <div className="flex gap-2">
-            <select name="stage" className="input">
-              <option value="idea">Idea</option>
-              <option value="building">Building</option>
-              <option value="launched">Launched</option>
-            </select>
-            <button className="btn">Share</button>
+            <Select name="stage" options={[{ value: "idea", label: "Idea" }, { value: "building", label: "Building" }, { value: "launched", label: "Launched" }]} />
+            <button className={buttonClass()}>Share</button>
           </div>
         </form>
       </section>

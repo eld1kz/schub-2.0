@@ -17,7 +17,7 @@ export default async function OnboardingPage(props: PageProps<"/onboarding">) {
   return (
     <>
       <header className="border-b border-border">
-        <div className="mx-auto flex h-[60px] max-w-wide items-center px-4 sm:px-12">
+        <div className="mx-auto flex h-15 max-w-wide items-center px-4 sm:px-12">
           <span className="flex items-center gap-2 text-xl font-bold tracking-tighter">
             <span aria-hidden className="h-3 w-3 rounded-sm bg-accent" />
             schub

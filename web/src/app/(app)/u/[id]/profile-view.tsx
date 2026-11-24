@@ -5,18 +5,18 @@ import { mediaUrl, webLink, type Experience, type Project } from "@/lib/portfoli
 import { byRank, type Award } from "@/lib/awards";
 import { skillEvidence } from "@/lib/skills";
 import { workStyleLine } from "@/lib/languages";
-import { Avatar } from "../../avatar";
 import { ProfileCompletion } from "../../profile/completion";
 import { About } from "./about";
 import type { AwardOptions } from "./award-fields";
 import { AwardsSection, HeroAward, PendingTags, Placement } from "./awards";
 import { CopyLinkButton } from "./copy-link";
 import { OpenToTeamSwitch } from "./open-to-team-switch";
-import { EmptyPrompt, KeyValue, Section, SideBlock, SkillRows, Timeline, TimelineEntry } from "./profile-parts";
+import { ExperienceEntry, KeyValue, SideBlock, SkillRows } from "./profile-parts";
 import { AboutEdit, ContactEdit, ExperienceEdit, HeroEdit, InterestsEdit, LinksEdit, ProjectEdit, SkillsEdit } from "./section-edits";
 import { ToastProvider } from "./toast";
 import type { SharedProject } from "@/lib/shared-projects";
 import { HideButton, PendingSharedProjects, SharedProjectBody, ShowAgainButton } from "./shared-projects";
+import { Avatar, Chip, ChipList, EmptyState, Section, Timeline } from "@/components/ui";
 
 export type ProfileData = {
   name: string;
@@ -114,15 +114,15 @@ function ProjectItem({ project: p, award, edit }: { project: Project; award?: Aw
       {where && <p className="text-meta text-ink2 sm:text-sm">{where}</p>}
       {p.description && <p className="line-clamp-3 max-w-prose text-sm leading-normal whitespace-pre-wrap text-ink2">{p.description}</p>}
       {image && (
-        <div className="relative mt-1 aspect-[3/2] w-60 overflow-hidden rounded-md border border-border">
+        <div className="relative mt-1 aspect-photo w-60 overflow-hidden rounded-md border border-border">
           <Image src={image} alt="" fill sizes="240px" className="object-cover" />
         </div>
       )}
       {(p.skills.length > 0 || live || code) && (
         <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <ul className="flex flex-wrap gap-1.5">
-            {p.skills.map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
-          </ul>
+          <ChipList>
+            {p.skills.map((s) => <Chip key={s}>{s}</Chip>)}
+          </ChipList>
           {(live || code) && (
             <p className="flex gap-4 text-sm font-medium">
               {live && <a href={live} target="_blank" rel="noreferrer" className={outLink}>Live ↗</a>}
@@ -141,7 +141,7 @@ function ConnectionStack({ people }: { people: Connection[] }) {
       {people.map((c) => (
         <li key={c.id} className="-mr-1.5">
           <Link href={`/u/${c.id}`} title={c.name || "Unnamed"} className="block rounded-full border-2 border-background hover:opacity-80">
-            <Avatar url={c.avatar_url} name={c.name} className="h-8 w-8 text-xs" sizes="32px" />
+            <Avatar url={c.avatar_url} name={c.name} size="md" />
           </Link>
         </li>
       ))}
@@ -173,10 +173,10 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
       {owner && <OwnerBanner id={id} preview={owner.preview} />}
       {pendingAwards.length > 0 && <PendingTags awards={pendingAwards} />}
       {pendingShared.length > 0 && <PendingSharedProjects projects={pendingShared} />}
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_296px] lg:items-start lg:gap-20">
+      <div className="lg:grid lg:grid-cols-sidebar lg:items-start lg:gap-20">
         <div>
-          <header className="relative grid grid-cols-[72px_minmax(0,1fr)] items-center gap-x-4 gap-y-3 pb-8 sm:grid-cols-[120px_minmax(0,1fr)] sm:grid-rows-[auto_1fr] sm:items-start sm:gap-x-8 sm:gap-y-2">
-            <Avatar url={p.avatar_url} name={p.name} className="h-[72px] w-[72px] border border-border text-xl sm:row-span-2 sm:h-[120px] sm:w-[120px] sm:text-2xl" sizes="(min-width: 640px) 120px, 72px" priority square open={p.open_to_collaborate} />
+          <header className="relative grid grid-cols-media items-center gap-x-4 gap-y-3 pb-8 sm:grid-rows-auto-fill sm:items-start sm:gap-x-8 sm:gap-y-2">
+            <Avatar url={p.avatar_url} name={p.name} size="profile" className="border border-border sm:row-span-2" priority square ring={p.open_to_collaborate ? "open" : null} />
             <h1 className={`text-2xl leading-tight font-semibold tracking-tight sm:text-3xl sm:tracking-tighter ${canEdit ? "pr-8" : ""}`}>
               {p.name || "Unnamed"}
             </h1>
@@ -227,9 +227,9 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
               {p.bio ? (
                 <div className="max-w-prose text-base leading-relaxed text-pretty"><About text={p.bio} /></div>
               ) : (
-                <EmptyPrompt title="Write a few lines about you" text="What you like building, what you're good at, and what kind of team you want to join.">
-                  <AboutEdit bio="" trigger="button" />
-                </EmptyPrompt>
+                <EmptyState title="Write a few lines about you" action={<AboutEdit bio="" trigger="button" />}>
+                  What you like building, what you&apos;re good at, and what kind of team you want to join.
+                </EmptyState>
               )}
             </Section>
           )}
@@ -239,13 +239,13 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
               {experiences.length > 0 ? (
                 <Timeline>
                   {experiences.map((e) => (
-                    <TimelineEntry key={e.id} experience={e} edit={canEdit && <ExperienceEdit experience={e} trigger="edit" />} />
+                    <ExperienceEntry key={e.id} experience={e} edit={canEdit && <ExperienceEdit experience={e} trigger="edit" />} />
                   ))}
                 </Timeline>
               ) : (
-                <EmptyPrompt title="Add your experience" text="Internships, club roles, TA positions, research. Team leads check this first when reviewing a request to join.">
-                  <ExperienceEdit trigger="button" />
-                </EmptyPrompt>
+                <EmptyState title="Add your experience" action={<ExperienceEdit trigger="button" />}>
+                  Internships, club roles, TA positions, research. Team leads check this first when reviewing a request to join.
+                </EmptyState>
               )}
             </Section>
           )}
@@ -257,9 +257,9 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
               {skillGroups.length > 0 ? (
                 <SkillRows groups={skillGroups} />
               ) : (
-                <EmptyPrompt title="Add your skills" text="The skills you bring to a team. They decide who you get matched with.">
-                  <SkillsEdit skills={[]} trigger="button" />
-                </EmptyPrompt>
+                <EmptyState title="Add your skills" action={<SkillsEdit skills={[]} trigger="button" />}>
+                  The skills you bring to a team. They decide who you get matched with.
+                </EmptyState>
               )}
             </Section>
           )}
@@ -273,9 +273,9 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                   {p.looking_for.length > 0 && <p className="text-sm text-ink2 sm:text-base">Team up with: {p.looking_for.join(", ")}</p>}
                 </div>
               ) : (
-                <EmptyPrompt title="Add interests and goals" text="What you're into, and what you're on Schub for: a hackathon team, a cofounder, a side project.">
-                  <InterestsEdit profile={p} trigger="button" />
-                </EmptyPrompt>
+                <EmptyState title="Add interests and goals" action={<InterestsEdit profile={p} trigger="button" />}>
+                  What you&apos;re into, and what you&apos;re on Schub for: a hackathon team, a cofounder, a side project.
+                </EmptyState>
               )}
             </Section>
           )}
@@ -306,9 +306,9 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                   ))}
                 </div>
               ) : (
-                <EmptyPrompt title="Add a project" text="One thing you built, even a small one: an app, a design, a pitch, a research paper.">
-                  <ProjectEdit trigger="button" />
-                </EmptyPrompt>
+                <EmptyState title="Add a project" action={<ProjectEdit trigger="button" />}>
+                  One thing you built, even a small one: an app, a design, a pitch, a research paper.
+                </EmptyState>
               )}
             </Section>
           )}
@@ -427,10 +427,10 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
             <SideBlock title="People you may team up with">
               <ul className="flex flex-col gap-4">
                 {suggestions.map((s) => (
-                  <li key={s.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                  <li key={s.id} className="grid grid-cols-fill-auto items-center gap-3">
                     <Link href={`/u/${s.id}`} className="flex min-w-0 items-center gap-3 hover:opacity-80">
                       {/* Suggestions are all open to a team */}
-                      <Avatar url={s.avatar_url} name={s.name} className="h-10 w-10 text-meta" sizes="40px" open />
+                      <Avatar url={s.avatar_url} name={s.name} size="lg" ring="open" />
                       <span className="min-w-0">
                         <span className="block truncate text-base font-semibold">{s.name}</span>
                         {s.headline && <span className="block truncate text-meta text-ink2">{s.headline}</span>}

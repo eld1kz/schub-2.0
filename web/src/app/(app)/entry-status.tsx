@@ -4,13 +4,13 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { setEntryStatus } from "@/app/actions";
 import { ENTRY_STATUSES, type EntryStatus } from "@/lib/teams";
-import { Select } from "./select";
+import { ErrorText, MonoLabel, Select } from "@/components/ui";
 
 const options = Object.entries(ENTRY_STATUSES).map(([value, label]) => ({ value, label }));
 
 // How far a team got in an event, as a small label: on team rows for that event, and for anyone but the owner
 export function EntryStatusLabel({ status }: { status: EntryStatus }) {
-  return <span className="font-mono text-xs font-medium tracking-wide text-ink2 uppercase">{ENTRY_STATUSES[status]}</span>;
+  return <MonoLabel>{ENTRY_STATUSES[status]}</MonoLabel>;
 }
 
 // The owner moves the entry along: Going, Registered, Submitted, Placed. While it's going or registered, the official
@@ -49,7 +49,7 @@ export function EntryStatusControl({ teamId, teamTitle, event, status, userId }:
           <Link href={`/u/${userId}#awards`} className="text-sm font-semibold text-accent hover:underline">Add the award to your profile</Link>
         )}
       </div>
-      {error && <p role="alert" className="text-meta text-danger ">{error}</p>}
+      {error && <ErrorText>{error}</ErrorText>}
     </div>
   );
 }

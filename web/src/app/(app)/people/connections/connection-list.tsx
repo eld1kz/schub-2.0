@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PersonRow } from "../person-row";
+import { Input } from "@/components/ui";
 
 export type ConnectionItem = { id: string; name: string; headline: string; avatar_url: string; open: boolean; telegram: string; email: string; awarded: boolean };
 
@@ -20,13 +21,14 @@ export function ConnectionList({ people }: { people: ConnectionItem[] }) {
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
         </svg>
-        <input
+        <Input
+          search
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search your connections"
           aria-label="Search your connections by name"
-          className="input h-10 pl-8 text-sm"
+          className="pl-8"
         />
       </div>
 

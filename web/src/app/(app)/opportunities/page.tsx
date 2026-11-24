@@ -8,6 +8,7 @@ import { connectionsGoing, myConnections } from "@/lib/connections";
 import { eventState, myTeams } from "@/lib/teams";
 import { ToastProvider } from "../u/[id]/toast";
 import { EventActions } from "./event-actions";
+import { ButtonLink, PageHeader, Tabs, buttonClass } from "@/components/ui";
 
 export const instant = false;
 
@@ -68,28 +69,22 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
     );
   };
 
-  const tab = (t: OpportunityType | null, label: string) => (
-    <Link
-      key={t ?? "all"}
-      href={t ? `/opportunities?type=${t}` : "/opportunities"}
-      aria-current={type === t ? "page" : undefined}
-      className="shrink-0 py-2 whitespace-nowrap hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:shadow-[inset_0_-2px_0_var(--accent)]"
-    >
-      {label} <span className="text-muted tabular-nums">{count(t)}</span>
-    </Link>
-  );
+  const tab = (t: OpportunityType | null, label: string) => ({ href: t ? `/opportunities?type=${t}` : "/opportunities", label, current: type === t, count: count(t) });
 
   return (
     <ToastProvider>
     <div className="flex flex-col gap-6">
-      <div className="flex items-end justify-between gap-6">
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl sm:tracking-tighter">Opportunities</h1>
-          <p className="hidden text-base text-ink2 sm:block">Hackathons, competitions, grants and internships open to students. Soonest date first.</p>
-        </div>
-        <Link href="/opportunities/new" className="btn-outline hidden sm:inline-flex">Add opportunity</Link>
-        <Link href="/opportunities/new" className="pb-1.5 text-base font-semibold text-accent sm:hidden">+ Add</Link>
-      </div>
+      <PageHeader
+        title="Opportunities"
+        description="Hackathons, competitions, grants and internships open to students. Soonest date first."
+        quietOnPhones
+        action={
+          <>
+            <ButtonLink href="/opportunities/new" variant="secondary" showFrom="sm">Add opportunity</ButtonLink>
+            <Link href="/opportunities/new" className="pb-1.5 text-base font-semibold text-accent sm:hidden">+ Add</Link>
+          </>
+        }
+      />
 
       {admin && (hidden ?? []).length > 0 && (
         <section className="border-y border-line2 py-4">
@@ -101,19 +96,15 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
                 <span className="text-ink2"> · {(o.opportunity_reports as { reason: string }[]).map((r) => r.reason).join(", ")}</span>
               </div>
               <div className="flex gap-2">
-                <form action={setOpportunityStatus.bind(null, o.id, "live")}><button className="btn-outline h-9">Restore</button></form>
-                <form action={setOpportunityStatus.bind(null, o.id, "removed")}><button className="btn h-9 px-4">Remove</button></form>
+                <form action={setOpportunityStatus.bind(null, o.id, "live")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Restore</button></form>
+                <form action={setOpportunityStatus.bind(null, o.id, "removed")}><button className={buttonClass({ size: "sm" })}>Remove</button></form>
               </div>
             </div>
           ))}
         </section>
       )}
 
-      {/* Underlined type tabs; on phones they scroll sideways in one row */}
-      <nav aria-label="Opportunity types" className="-mx-4 flex gap-6 overflow-x-auto border-b border-line2 px-4 text-base font-medium text-ink2 sm:mx-0 sm:px-0">
-        {tab(null, "All")}
-        {types.map((t) => tab(t, tabLabel(t)))}
-      </nav>
+      <Tabs label="Opportunity types" scroll tabs={[tab(null, "All"), ...types.map((t) => tab(t, tabLabel(t)))]} />
 
       <OpportunitySearch
         empty={type ? `No upcoming ${tabLabel(type).toLowerCase()} yet.` : "No upcoming opportunities yet."}

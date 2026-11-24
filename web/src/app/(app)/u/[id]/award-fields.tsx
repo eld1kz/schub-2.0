@@ -3,17 +3,15 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { searchPeople, type PersonResult } from "@/app/actions";
 import { AWARD_DESCRIPTION_MAX, AWARD_TEAMMATES_MAX, PLACEMENTS, placementLabel, type Award } from "@/lib/awards";
-import { Avatar } from "../../avatar";
-import { Select } from "../../select";
 import { FieldError } from "./edit-dialog";
-import { Field, nextOnEnter } from "./experience-fields";
+import { nextOnEnter } from "./experience-fields";
 import { monthOptions, yearOptions } from "./period-fields";
+import { Avatar, Field, FieldLabel, Input, Select, Textarea } from "@/components/ui";
 
 export type AwardOptions = { opportunities: { id: string; title: string }[]; projects: { id: string; title: string }[] };
 
 type Teammate = { id: string; name: string; avatar_url: string; status?: "pending" | "confirmed" };
 
-const input = "input h-11 sm:h-10";
 const placementOptions = PLACEMENTS.map((p) => ({ value: p, label: placementLabel(p) }));
 const shownMatches = 6;
 const option = "block w-full truncate px-3 py-2 text-left text-base hover:bg-chip focus-visible:bg-chip focus-visible:outline-none";
@@ -114,7 +112,7 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
           </div>
         ) : (
           <>
-            <input
+            <Input
               ref={eventInput}
               id="award-event"
               value={eventQuery}
@@ -122,7 +120,6 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
               onKeyDown={(e) => pickOnEnter(e, () => chooseEvent(matches[0] ?? { id: "", title: q }))}
               placeholder="Search opportunities on Schub"
               autoComplete="off"
-              className={input}
             />
             {q && (
               <ul className="mt-1.5 divide-y divide-border overflow-hidden rounded-md border border-line2">
@@ -147,11 +144,11 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
       </Field>
 
       <Field id="award-prize" label="Prize name">
-        <input id="award-prize" name="prize_name" defaultValue={a?.prize_name} maxLength={100} placeholder="Best use of AI track" className={input} />
+        <Input id="award-prize" name="prize_name" defaultValue={a?.prize_name} maxLength={100} placeholder="Best use of AI track" />
       </Field>
 
       <fieldset>
-        <legend className="mb-1.5 block text-sm font-medium">Date<span aria-hidden className="ml-0.5 text-accent">*</span></legend>
+        <FieldLabel as="legend" required>Date</FieldLabel>
         <input type="hidden" name="awarded_on" value={month && year ? `${year}-${month}` : ""} />
         <div className="grid grid-cols-2 gap-3">
           <Select label="Month" placeholder="Month" value={month} onChange={setMonth} options={monthOptions} selectRef={monthRef} />
@@ -169,14 +166,14 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
       </Field>
 
       <div>
-        <label htmlFor="award-teammates" className="mb-1.5 block text-sm font-medium">Teammates</label>
+        <FieldLabel htmlFor="award-teammates">Teammates</FieldLabel>
         {teammates.length > 0 && (
           <ul className="mb-3 flex flex-col">
             {teammates.map((t) => (
               <li key={t.id} className="flex items-center justify-between gap-3 border-b border-border py-2">
                 <input type="hidden" name="teammates" value={t.id} />
                 <span className="flex min-w-0 items-center gap-2">
-                  <Avatar url={t.avatar_url} name={t.name} className="h-7 w-7 text-xs" sizes="28px" />
+                  <Avatar url={t.avatar_url} name={t.name} size="sm" />
                   <span className="truncate text-base">{t.name || "Unnamed"}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-4">
@@ -191,7 +188,7 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
         )}
         {teammates.length < AWARD_TEAMMATES_MAX && (
           <>
-            <input
+            <Input
               id="award-teammates"
               value={peopleQuery}
               onChange={(e) => {
@@ -201,7 +198,6 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
               onKeyDown={(e) => pickOnEnter(e, () => found[0] && addTeammate(found[0]))}
               placeholder="Search your connections and teammates"
               autoComplete="off"
-              className={input}
             />
             {people && (
               <ul className="mt-1.5 divide-y divide-border overflow-hidden rounded-md border border-line2">
@@ -209,7 +205,7 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
                 {found.map((p) => (
                   <li key={p.id}>
                     <button type="button" onClick={() => addTeammate(p)} className={`${option} flex items-center gap-2`}>
-                      <Avatar url={p.avatar_url} name={p.name} className="h-7 w-7 text-xs" sizes="28px" />
+                      <Avatar url={p.avatar_url} name={p.name} size="sm" />
                       <span className="min-w-0 truncate">
                         {p.name}
                         {p.headline && <span className="text-muted"> · {p.headline}</span>}
@@ -226,11 +222,11 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
       </div>
 
       <Field id="award-proof" label="Proof link">
-        <input id="award-proof" name="proof_url" defaultValue={a?.proof_url} placeholder="Announcement or certificate, https://" className={input} />
+        <Input id="award-proof" name="proof_url" defaultValue={a?.proof_url} placeholder="Announcement or certificate, https://" />
       </Field>
 
       <Field id="award-description" label="Description">
-        <textarea
+        <Textarea
           id="award-description"
           name="description"
           rows={3}
@@ -238,7 +234,6 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
           onChange={(e) => setDescription(e.target.value)}
           maxLength={AWARD_DESCRIPTION_MAX}
           placeholder="What you built and what the judges liked."
-          className="input resize-none leading-normal"
         />
         <div className="mt-1 flex justify-between gap-4">
           <FieldError field="description" />

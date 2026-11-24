@@ -16,11 +16,13 @@ export default async function LoginPage(props: PageProps<"/login">) {
   return (
     <>
       <PublicHeader />
-      <main className="mx-auto w-full max-w-[392px] px-4 pt-12 pb-20 sm:pt-20">
-        <h1 className="text-2xl font-semibold tracking-tight">Sign in to Schub</h1>
-        <p className="mt-2 text-base leading-normal text-ink2">New here? Signing in creates your account.</p>
-        <div className="mt-8">
-          <SignInOptions next={next} error={params.error !== undefined} />
+      <main className="w-full px-4 pt-12 pb-20 sm:pt-20">
+        <div className="mx-auto max-w-narrow">
+          <h1 className="text-2xl font-semibold tracking-tight">Sign in to Schub</h1>
+          <p className="mt-2 text-base leading-normal text-ink2">New here? Signing in creates your account.</p>
+          <div className="mt-8">
+            <SignInOptions next={next} error={params.error !== undefined} />
+          </div>
         </div>
       </main>
     </>

@@ -39,13 +39,13 @@ function CountLink({ tab, n }: { tab: string; n?: number }) {
 export function NavTabs({ counts = {} }: { counts?: Counts }) {
   const pathname = usePathname();
   return (
-    <nav className="hidden h-[60px] gap-6 text-sm font-medium text-ink2 sm:flex">
+    <nav className="hidden h-15 gap-6 text-sm font-medium text-ink2 sm:flex">
       {tabs.map((t) => (
         <span key={t.href} className="flex items-center">
           <Link
             href={t.href}
             aria-current={isActive(pathname, t.href) ? "page" : undefined}
-            className="flex h-full items-center hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:shadow-[inset_0_-2px_0_var(--accent)]"
+            className="flex h-full items-center hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:shadow-tab"
           >
             {t.label}
             {!countLinks[t.href] && <Count n={counts[t.href]} />}
@@ -62,7 +62,7 @@ export function TabBar({ counts = {}, profileHref }: { counts?: Counts; profileH
   const pathname = usePathname();
   const all = [{ href: profileHref, label: "Profile" }, ...tabs];
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] text-xs font-medium text-muted sm:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-border bg-background pb-safe text-xs font-medium text-muted sm:hidden">
       {all.map((t) => (
         <span key={t.label} className="flex items-center justify-center">
           <Link

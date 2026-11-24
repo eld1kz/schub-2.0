@@ -3,18 +3,18 @@ import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
 import { teamsWaiting } from "@/lib/teams";
 import { signOut } from "@/app/actions";
-import { Avatar } from "./avatar";
 import { SignInButton } from "./sign-in";
 import { Notifications, type Notification } from "./notifications";
 import { GlobalSearch } from "./global-search";
 import { NavTabs, TabBar } from "./nav-tabs";
 import { AccountMenu } from "./account-menu";
+import { Avatar } from "@/components/ui";
 
 function Header({ counts = {}, profileHref = "/profile", account }: { counts?: Record<string, number>; profileHref?: string; account?: ReactNode }) {
   return (
     <>
       <header className="border-b border-border">
-        <div className="mx-auto flex h-[60px] max-w-wide items-center gap-4 px-4 sm:gap-12 sm:px-12">
+        <div className="mx-auto flex h-15 max-w-wide items-center gap-4 px-4 sm:gap-12 sm:px-12">
           <Link href="/opportunities" className="flex items-center gap-2 text-xl font-bold tracking-tighter">
             <span aria-hidden className="h-3 w-3 rounded-sm bg-accent" />
             schub
@@ -48,7 +48,7 @@ async function NavWithCounts() {
   const account = (
     <span className="flex items-center gap-4 text-sm">
       <Notifications items={(notifications.data ?? []) as Notification[]} unread={(unread.count ?? 0) > 0} />
-      <AccountMenu avatar={<Avatar url={me.data?.avatar_url ?? ""} name={name} className="h-8 w-8 text-xs" sizes="32px" />}>
+      <AccountMenu avatar={<Avatar url={me.data?.avatar_url ?? ""} name={name} size="md" />}>
         <Link href={`/u/${userId}`} className={menuItem}>Your profile</Link>
         <Link href="/settings" className={menuItem}>Settings</Link>
         <form action={signOut} className="border-t border-border pt-1 mt-1"><button className={`${menuItem} w-full text-left`}>Sign out</button></form>

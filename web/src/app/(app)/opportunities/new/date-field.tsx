@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Select } from "../../select";
 import { FieldError } from "../../u/[id]/edit-dialog";
+import { FieldLabel, Select } from "@/components/ui";
 
 const monthOptions = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((m, i) => ({ value: String(i + 1).padStart(2, "0"), label: m }));
 const yearsAhead = 3;
@@ -39,7 +39,7 @@ export function DateField({ name, label, onChange, error }: { name: string; labe
 
   return (
     <fieldset>
-      <legend className="mb-1.5 block text-sm font-medium">{label}</legend>
+      <FieldLabel as="legend">{label}</FieldLabel>
       <input type="hidden" name={name} value={value} />
       <div className="grid grid-cols-3 gap-3">
         <Select label={`${label} month`} placeholder="Month" value={parts.month} onChange={(month) => update({ month })} options={monthOptions} selectRef={first} required={false} />

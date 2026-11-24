@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import type { SaveResult } from "@/app/actions";
 import { useToast } from "./toast";
+import { CloseIcon, ErrorText, IconButton, Modal, ModalGrabber, buttonClass } from "@/components/ui";
 
 type Props = {
   title: string;
@@ -40,10 +41,8 @@ export function useFieldError(field: string) {
 export function FieldError({ field, message }: { field: string; message?: string }) {
   const saved = useFieldError(field);
   const text = message || saved;
-  return text ? <p role="alert" className="mt-1.5 text-meta text-danger ">{text}</p> : null;
+  return text ? <ErrorText under>{text}</ErrorText> : null;
 }
-
-const iconButton = "grid h-[34px] w-[34px] shrink-0 place-items-center rounded-md text-ink2 hover:bg-chip hover:text-foreground";
 
 function PencilIcon() {
   return (
@@ -58,7 +57,6 @@ function PencilIcon() {
 export function EditDialog({ title, trigger, label, cta = label, note, save, remove, tall = false, requireValid = false, submit = "Save", done = "Saved", children }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const form = useRef<HTMLFormElement>(null);
-  const pressedOutside = useRef(false);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<SaveError | null>(null);
   const [valid, setValid] = useState(!requireValid);
@@ -106,9 +104,9 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
 
   const triggers = {
     edit: (
-      <button type="button" onClick={() => setOpen(true)} aria-label={label} title={label} className={iconButton}>
+      <IconButton label={label} onClick={() => setOpen(true)}>
         <PencilIcon />
-      </button>
+      </IconButton>
     ),
     link: (
       <button type="button" onClick={() => setOpen(true)} className="text-left text-sm font-semibold text-accent hover:underline">
@@ -116,12 +114,12 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
       </button>
     ),
     button: (
-      <button type="button" onClick={() => setOpen(true)} className="h-11 w-full rounded-md border border-accent px-4 text-base font-semibold text-accent hover:bg-accent-soft sm:h-9 sm:w-auto sm:text-sm">
+      <button type="button" onClick={() => setOpen(true)} className={buttonClass({ variant: "accent", size: "touch", full: true })}>
         + {cta}
       </button>
     ),
     action: (
-      <button type="button" onClick={() => setOpen(true)} className="btn-outline h-9">
+      <button type="button" onClick={() => setOpen(true)} className={buttonClass({ variant: "secondary", size: "sm" })}>
         {cta}
       </button>
     ),
@@ -130,23 +128,17 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
   return (
     <>
       {triggers[trigger]}
-      <dialog
-        ref={dialog}
-        aria-label={title}
+      <Modal
+        open={open}
+        dialogRef={dialog}
+        label={title}
         onClose={() => {
           setOpen(false);
           setError(null);
         }}
-        // A click that starts and ends on the backdrop (the dialog box itself, outside the panel) closes it
-        onMouseDown={(e) => {
-          pressedOutside.current = e.target === dialog.current;
-        }}
-        onClick={(e) => {
-          if (pressedOutside.current && e.target === dialog.current) close();
-        }}
-        className={`m-0 mt-auto w-full max-w-none overflow-hidden bg-background ${tall ? "h-dvh max-h-dvh sm:h-fit" : "max-h-[92dvh] rounded-t-lg"} p-0 text-foreground backdrop:bg-[rgba(20,20,24,0.45)] sm:mx-auto sm:mt-16 sm:mb-auto sm:max-h-[calc(100dvh-8rem)] sm:max-w-dialog sm:rounded-lg sm:border sm:border-line2 sm:shadow-modal `}
+        tall={tall}
+        scroll={false}
       >
-        {open && (
           <form
             ref={form}
             onSubmit={onSubmit}
@@ -156,9 +148,9 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
               checkValid();
             }}
             onChange={checkValid}
-            className={`flex max-h-[inherit] flex-col ${tall ? "h-full sm:h-auto" : ""}`}
+            className={`flex max-h-inherit flex-col ${tall ? "h-full sm:h-auto" : ""}`}
           >
-            {!tall && <div aria-hidden className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-line2 sm:hidden" />}
+            {!tall && <ModalGrabber />}
             {/* Phones: Cancel, title and Save across the top (Save moves to the bottom when tall). From sm up: title and a close button. */}
             <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-4 pt-3 pb-3 sm:px-6 sm:py-4">
               <button type="button" onClick={close} className="text-base text-ink2 sm:hidden">Cancel</button>
@@ -170,15 +162,11 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
                   {saving ? "Saving..." : submit}
                 </button>
               )}
-              <button type="button" onClick={close} aria-label="Close" className={`${iconButton} hidden sm:grid`}>
-                <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 fill-none stroke-current" strokeWidth={2} strokeLinecap="round">
-                  <path d="M6 6l12 12M18 6 6 18" />
-                </svg>
-              </button>
+              <IconButton label="Close" onClick={close} className="hidden sm:grid"><CloseIcon /></IconButton>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-0">
               <FieldErrorContext value={error}>{children}</FieldErrorContext>
-              {error && !error.field && <p role="alert" className="pb-4 text-sm text-danger ">{error.message}</p>}
+              {error && !error.field && <ErrorText size="sm" className="pb-4">{error.message}</ErrorText>}
             </div>
             <div className={`${tall || note || remove ? "flex" : "hidden sm:flex"} shrink-0 items-center gap-4 border-t border-border px-4 py-4 sm:px-6`}>
               {note && <p className="text-meta text-ink2">{note}</p>}
@@ -188,15 +176,14 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
                 </button>
               )}
               <div className={`${tall ? "flex flex-1 justify-end" : "hidden sm:flex"} ml-auto gap-2`}>
-                <button type="button" onClick={close} className="btn-outline hidden sm:inline-flex">Cancel</button>
-                <button disabled={saving || !valid} className={`btn disabled:opacity-40 ${tall ? `h-11 sm:h-[38px] ${remove ? "" : "w-full sm:w-auto"}` : ""}`}>
+                <button type="button" onClick={close} className={buttonClass({ variant: "secondary", showFrom: "sm" })}>Cancel</button>
+                <button disabled={saving || !valid} className={buttonClass({ size: tall ? "touch" : "md", full: tall && !remove })}>
                   {saving ? "Saving..." : submit}
                 </button>
               </div>
             </div>
           </form>
-        )}
-      </dialog>
+      </Modal>
     </>
   );
 }

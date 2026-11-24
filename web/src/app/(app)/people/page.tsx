@@ -8,6 +8,7 @@ import { PersonRow } from "./person-row";
 import { PeopleFilters } from "./people-filters";
 import { peopleHref, readPeopleQuery } from "./people-query";
 import { suitedModes, workStyleLine } from "@/lib/languages";
+import { Chip, ChipList, buttonClass } from "@/components/ui";
 
 const chipCount = 12;
 const pageSize = 20;
@@ -112,7 +113,7 @@ export default async function PeoplePage(props: PageProps<"/people">) {
                 actions={
                   <>
                     <span className="text-meta text-muted tabular-nums">{p.score}% match</span>
-                    <ConnectButton profileId={p.id} status={statusWith(p.id)} isGuest={isGuest} className="btn-outline h-9" />
+                    <ConnectButton profileId={p.id} status={statusWith(p.id)} isGuest={isGuest} className={buttonClass({ variant: "secondary", size: "sm" })} />
                   </>
                 }
               >
@@ -121,9 +122,9 @@ export default async function PeoplePage(props: PageProps<"/people">) {
                 {(skills.length > 0 || p.reason) && (
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                     {skills.length > 0 && (
-                      <ul className="flex flex-wrap gap-1.5">
-                        {skills.map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
-                      </ul>
+                      <ChipList>
+                        {skills.map((s) => <Chip key={s}>{s}</Chip>)}
+                      </ChipList>
                     )}
                     {p.reason && <p className="text-meta font-medium text-accent">{p.reason}</p>}
                   </div>

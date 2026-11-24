@@ -108,7 +108,8 @@ test("a laptop that can share files still gets the laptop layout, with Share as 
   // In this order after the QR code: Copy image (Chromium can copy images), Share, Copy link, Download
   const actions = dialog.locator("[data-layout=laptop] button, [data-layout=laptop] a").filter({ hasText: /^(Copy image|Share|Copy link|Download image)$/ });
   await expect(actions).toHaveText(["Copy image", "Share", "Copy link", "Download image"]);
-  await expect(dialog.getByRole("button", { name: "Share", exact: true })).toHaveClass(/btn-outline/);
+  // Secondary (outlined), not the accent-filled primary
+  await expect(dialog.getByRole("button", { name: "Share", exact: true })).toHaveClass(/(^|\s)border-line2(\s|$)/);
   await dialog.getByRole("button", { name: "Share", exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { shared: unknown[] }).shared)).toHaveLength(1);
 });
@@ -139,7 +140,8 @@ test("the phone share page opens with the theme from the QR code", async ({ cont
 test("owners get Share as the main button, and on their rows in Your teams", async ({ context, page }) => {
   await signInAs(context, 14);
   await page.goto(`/teams/${robotics}`);
-  await expect(page.getByRole("button", { name: "Share", exact: true })).toHaveClass(/(^|\s)btn(\s|$)/);
+  // Primary: filled with the accent
+  await expect(page.getByRole("button", { name: "Share", exact: true })).toHaveClass(/(^|\s)bg-accent(\s|$)/);
   await page.goto("/teams/mine");
   await page.getByRole("button", { name: "Share Testerson Robotics" }).click();
   await expect(page.getByRole("dialog", { name: "Share this team" }).getByRole("img", { name: "Story image for Testerson Robotics" })).toBeVisible();

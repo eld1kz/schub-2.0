@@ -9,7 +9,7 @@ function SwitchButton({ open }: { open: boolean }) {
     <button
       aria-pressed={open}
       disabled={pending}
-      className="flex h-[34px] items-center gap-2 rounded-md border border-line2 px-3 text-sm font-medium hover:border-muted disabled:opacity-60"
+      className="flex h-8.5 items-center gap-2 rounded-md border border-line2 px-3 text-sm font-medium hover:border-muted disabled:opacity-60"
     >
       <span aria-hidden className={`h-2 w-2 rounded-full ${open ? "bg-open" : "bg-line2"}`} />
       Open to a team

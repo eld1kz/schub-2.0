@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Select } from "../../select";
 import { LANGUAGES } from "@/lib/languages";
+import { Select } from "@/components/ui";
 
 const languageOptions = LANGUAGES.map((l) => ({ value: l, label: l }));
 const modeOptions = ["In person", "Remote"].map((m) => ({ value: m, label: m }));

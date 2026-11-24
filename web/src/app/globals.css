@@ -42,6 +42,8 @@
   --color-qr-ink: #141416;
   --color-qr-paper: #ffffff;
   --shadow-modal: 0 24px 60px rgb(0 0 0 / 0.22);
+  /* The line under the current tab */
+  --shadow-tab: inset 0 -2px 0 var(--accent);
   --shadow-frame: 0 10px 15px -3px var(--frame-shadow), 0 4px 6px -4px var(--frame-shadow);
   --font-sans: var(--font-instrument-sans);
   --font-mono: var(--font-plex-mono);
@@ -98,6 +100,12 @@
      the lint rule (eslint-rules/design-tokens.mjs) allows only those. `bar` is the room kept under a page on
      phones for a bar pinned to the bottom of the screen. */
   --spacing-bar: 7rem;
+  /* Room for the home indicator on phones without a home button: pb-safe, or at least 16px with pb-safe-4 */
+  --spacing-safe: env(safe-area-inset-bottom);
+  --spacing-safe-4: max(1rem, env(safe-area-inset-bottom));
+
+  /* Project images */
+  --aspect-photo: 3 / 2;
 
   /* Widths: max-w-<name> */
   --container-*: initial;
@@ -134,26 +142,75 @@
   }
 }
 
+/* Named layouts: the grid columns pages are built on, so no page writes its own (DESIGN.md) */
+@utility grid-cols-label {
+  /* A section's title column, then its content */
+  grid-template-columns: 152px minmax(0, 1fr);
+}
+@utility grid-cols-label-edit {
+  /* The same with the owner's pencil on the right */
+  grid-template-columns: 152px minmax(0, 1fr) 34px;
+}
+@utility grid-cols-label-sm {
+  /* A group's label beside its fields, in forms */
+  grid-template-columns: 120px minmax(0, 1fr);
+}
+@utility grid-cols-media {
+  /* An avatar or photo, then text */
+  grid-template-columns: auto minmax(0, 1fr);
+}
+@utility grid-cols-media-actions {
+  /* An avatar, text, then buttons */
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+@utility grid-cols-fill-auto {
+  /* Text, then something at its own width on the right */
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+@utility grid-cols-fill-short {
+  /* A field and a short one beside it (a year) */
+  grid-template-columns: minmax(0, 1fr) 7rem;
+}
+@utility grid-rows-auto-fill {
+  /* A first row at its own height; the second takes the rest */
+  grid-template-rows: auto minmax(0, 1fr);
+}
+@utility grid-cols-sidebar {
+  /* A page's main column and a 296px side column */
+  grid-template-columns: minmax(0, 1fr) 296px;
+}
+@utility grid-cols-hero {
+  /* The landing page's words and its sample previews */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
+}
+@utility grid-cols-hero-wide {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 580px);
+}
+@utility grid-cols-opportunity {
+  /* The opportunity list's columns: type, event, dates, place, people */
+  grid-template-columns: 120px minmax(0, 1fr) 200px 190px 200px;
+}
+@utility grid-cols-share {
+  /* The share dialog: the story image, then the ways to share it */
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+/* An icon inline with text sits on the text's baseline, like a letter */
+@utility align-icon {
+  vertical-align: -0.125em;
+}
+/* Fills the height its parent allows (a modal's form, so its middle scrolls) */
+@utility max-h-inherit {
+  max-height: inherit;
+}
+/* The story image's height in the share sheet and on the phone share page */
+@utility h-story-sheet {
+  height: min(44dvh, 391px);
+}
+@utility h-story-page {
+  height: min(58dvh, 560px);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-}
-
-@layer components {
-  .input {
-    @apply w-full rounded-md border border-line2 bg-transparent px-3 py-2 text-base outline-none focus:border-accent focus:ring-1 focus:ring-accent;
-  }
-  .btn {
-    @apply inline-flex h-[38px] items-center justify-center rounded-md bg-accent px-5 text-sm font-semibold whitespace-nowrap text-on-accent hover:opacity-90 disabled:opacity-50;
-  }
-  .btn-outline {
-    @apply inline-flex h-[38px] items-center justify-center rounded-md border border-line2 bg-background px-4 text-sm font-semibold whitespace-nowrap hover:border-muted;
-  }
-  /* A skill: mono text on a flat chip */
-  .skill {
-    @apply rounded-sm bg-chip px-2 py-0.5 font-mono text-meta;
-  }
-  .label {
-    @apply mb-1.5 block text-meta text-ink2;
-  }
 }

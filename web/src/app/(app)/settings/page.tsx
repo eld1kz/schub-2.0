@@ -1,8 +1,9 @@
 import { requireUser } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
 import { SignInPrompt } from "../sign-in";
-import { KeyValue, Section } from "../u/[id]/profile-parts";
+import { KeyValue } from "../u/[id]/profile-parts";
 import { DeleteAccount } from "./delete-account";
+import { PageHeader, Section, buttonClass } from "@/components/ui";
 
 export const instant = false;
 
@@ -20,7 +21,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="max-w-column">
-      <h1 className="pb-8 text-2xl font-semibold tracking-tight sm:text-3xl sm:tracking-tighter">Settings</h1>
+      <PageHeader title="Settings" className="pb-8" />
 
       <Section title="Account">
         <div className="flex flex-col gap-3">
@@ -31,7 +32,7 @@ export default async function SettingsPage() {
             </KeyValue>
           ))}
           <form action={signOut} className="pt-2">
-            <button className="btn-outline">Sign out</button>
+            <button className={buttonClass({ variant: "secondary" })}>Sign out</button>
           </form>
         </div>
       </Section>

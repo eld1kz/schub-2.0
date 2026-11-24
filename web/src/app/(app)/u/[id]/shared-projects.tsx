@@ -5,8 +5,8 @@ import { answerSharedProject, hideSharedProject } from "@/app/actions";
 import { mediaUrl, webLink } from "@/lib/portfolio";
 import { builtWith, type SharedProject } from "@/lib/shared-projects";
 import type { Award } from "@/lib/awards";
-import { Avatar } from "../../avatar";
 import { Placement } from "./awards";
+import { Avatar, buttonClass } from "@/components/ui";
 
 const outLink = "text-accent hover:underline";
 
@@ -21,7 +21,7 @@ export function BuiltWith({ project, except }: { project: SharedProject; except?
         {people.map((p) => (
           <li key={p.id} className="-mr-1.5">
             <Link href={`/u/${p.id}`} title={p.name || "Unnamed"} aria-label={p.name || "Unnamed"} className="block rounded-full border-2 border-background hover:opacity-80">
-              <Avatar url={p.avatar_url} name={p.name} className="h-7 w-7 text-xs" sizes="28px" />
+              <Avatar url={p.avatar_url} name={p.name} size="sm" />
             </Link>
           </li>
         ))}
@@ -54,7 +54,7 @@ export function SharedProjectBody({ project: p, award, except, edit, showTeam = 
         </p>
       )}
       {image && (
-        <div className="relative mt-1 aspect-[3/2] w-60 overflow-hidden rounded-md border border-border">
+        <div className="relative mt-1 aspect-photo w-60 overflow-hidden rounded-md border border-border">
           <Image src={image} alt="" fill sizes="240px" className="object-cover" />
         </div>
       )}
@@ -100,8 +100,8 @@ export function PendingSharedProjects({ projects }: { projects: SharedProject[] 
             <span className="font-semibold">{p.title}</span>. Show it on your profile?
           </p>
           <div className="flex shrink-0 gap-2">
-            <form action={answerSharedProject.bind(null, p.id, "confirmed")}><button className="btn h-9 px-4">Confirm</button></form>
-            <form action={answerSharedProject.bind(null, p.id, "declined")}><button className="btn-outline h-9">Decline</button></form>
+            <form action={answerSharedProject.bind(null, p.id, "confirmed")}><button className={buttonClass({ size: "sm" })}>Confirm</button></form>
+            <form action={answerSharedProject.bind(null, p.id, "declined")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
           </div>
         </div>
       ))}

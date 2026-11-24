@@ -5,9 +5,9 @@ import { goingLabel } from "@/lib/connections";
 import type { TeamSummary } from "@/lib/teams";
 import type { Award } from "@/lib/awards";
 import { TeamList } from "./(app)/team-list";
-import { Avatar } from "./(app)/avatar";
-import { Timeline, TimelineEntry } from "./(app)/u/[id]/profile-parts";
+import { ExperienceEntry } from "./(app)/u/[id]/profile-parts";
 import { AwardItem, TrustLabels } from "./(app)/u/[id]/awards";
+import { Avatar, Chip, ChipList, MonoLabel, Timeline, buttonClass } from "@/components/ui";
 
 // Made-up people and teams for the landing page's previews, drawn with the app's own components.
 // Every preview is `inert` (not clickable or focusable) and marked `data-sample`, so tests can tell it from real data.
@@ -66,8 +66,7 @@ const sampleExperience = {
 };
 
 // Looks like a piece of a screenshot: a light border and a soft shadow
-const frame = "rounded-md border border-border bg-background shadow-lg ";
-const label = "font-mono text-xs font-medium tracking-wide text-muted uppercase";
+const frame = "rounded-md border border-border bg-background shadow-frame";
 
 function Sample({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div data-sample inert className={className}>{children}</div>;
@@ -83,18 +82,18 @@ export function HeroPreview() {
         </div>
         <div className={`-mt-4 ml-3 flex flex-col gap-4 px-4 pt-8 pb-4 sm:ml-8 sm:px-6 ${frame}`}>
           <div className="flex items-center gap-3">
-            <Avatar url="" name={alex.name} className="h-10 w-10 text-sm" sizes="40px" />
+            <Avatar url="" name={alex.name} size="lg" />
             <div className="flex flex-col">
               <p className="text-base font-semibold">{alex.name}</p>
               <p className="text-meta text-ink2">Backend developer · {alex.university}</p>
             </div>
           </div>
           <div className="flex flex-col gap-3">
-            <p className={label}>Experience</p>
-            <Timeline><TimelineEntry experience={sampleExperience} /></Timeline>
+            <MonoLabel as="p" tone="muted">Experience</MonoLabel>
+            <Timeline><ExperienceEntry experience={sampleExperience} /></Timeline>
           </div>
           <div className="flex flex-col gap-3 [&_article]:border-b-0 [&_article]:pb-0">
-            <p className={label}>Awards</p>
+            <MonoLabel as="p" tone="muted">Awards</MonoLabel>
             <AwardItem award={sampleAward} profileId={alex.id} waiting={0} />
           </div>
         </div>
@@ -109,16 +108,16 @@ export function LookingPreview() {
   return (
     <Sample className={`flex flex-col gap-3 p-4 ${frame}`}>
       <div className="flex flex-col gap-1">
-        <p className="font-mono text-xs font-medium tracking-wide text-ink2 uppercase">
+        <MonoLabel as="p">
           Sample Hack Seoul · <span className="font-semibold text-accent">5 days left</span>
-        </p>
+        </MonoLabel>
         <p className="text-sm font-medium text-accent">{goingLabel(2)}</p>
       </div>
       <div className="flex flex-col">
         {["iOS developer", "Designer"].map((role) => (
           <div key={role} className="flex items-center justify-between gap-4 border-t border-border py-2 last:pb-0">
             <span className="text-base font-semibold">{role}</span>
-            <span className="btn-outline h-8 text-meta">Ask to join</span>
+            <span className={buttonClass({ variant: "secondary", size: "xs" })}>Ask to join</span>
           </div>
         ))}
       </div>
@@ -134,19 +133,19 @@ export function BuildingPreview() {
       <div className="flex flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="flex items-center gap-2">
-            <Avatar url="" name={jordan.name} className="h-8 w-8 text-xs" sizes="32px" />
+            <Avatar url="" name={jordan.name} size="md" />
             <span className="text-base font-medium">{jordan.name}</span>
           </span>
           <span className="text-sm text-ink2">{jordan.university}</span>
         </div>
         <p className="text-base leading-normal">Built two iOS apps in SwiftUI, free every evening.</p>
-        <ul className="flex flex-wrap gap-1.5">
-          {["Swift", "SwiftUI", "Figma"].map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
-        </ul>
+        <ChipList>
+          {["Swift", "SwiftUI", "Figma"].map((s) => <Chip key={s}>{s}</Chip>)}
+        </ChipList>
       </div>
       <div className="flex gap-2">
-        <span className="btn h-8 px-4 text-meta">Accept</span>
-        <span className="btn-outline h-8 text-meta">Decline</span>
+        <span className={buttonClass({ size: "xs" })}>Accept</span>
+        <span className={buttonClass({ variant: "secondary", size: "xs" })}>Decline</span>
       </div>
     </Sample>
   );
@@ -156,9 +155,9 @@ export function BuildingPreview() {
 export function EventMark() {
   return (
     <Sample>
-      <p className="font-mono text-xs font-medium tracking-wide text-ink2 uppercase">
+      <MonoLabel as="p">
         Sample Hack Seoul · <span className="font-semibold text-accent">5 days left</span>
-      </p>
+      </MonoLabel>
     </Sample>
   );
 }

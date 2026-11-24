@@ -3,8 +3,9 @@ import { cookies } from "next/headers";
 import { sendSignInLink, signIn } from "./actions";
 import { LAST_METHOD_COOKIE, enabledMethods, lastUsedFirst, type OAuthProvider } from "@/lib/auth-providers";
 import { EmailSignIn } from "./email-sign-in";
+import { ErrorText, buttonClass } from "@/components/ui";
 
-const icon = "h-[18px] w-[18px] shrink-0";
+const icon = "h-4.5 w-4.5 shrink-0";
 
 const providers: Record<OAuthProvider, { name: string; icon: ReactNode }> = {
   google: {
@@ -47,7 +48,7 @@ export async function SignInOptions({ next = "/", error = false }: { next?: stri
   const buttons = oauth.map((p) => (
     <form key={p} action={signIn.bind(null, p, next)}>
       {/* The label takes its room at the right and the rest centers beside it, so they never overlap on narrow phones */}
-      <button className="btn-outline h-11 w-full gap-2 text-base">
+      <button className={`${buttonClass({ variant: "secondary", size: "lg" })} w-full`}>
         <span className="flex flex-1 items-center justify-center gap-2">
           {providers[p].icon}
           Continue with {providers[p].name}
@@ -68,9 +69,7 @@ export async function SignInOptions({ next = "/", error = false }: { next?: stri
   return (
     <div className="flex w-full max-w-narrow flex-col gap-3">
       {error && (
-        <p role="alert" className="text-sm text-danger ">
-          Sign-in didn&apos;t work. Try again or use another option.
-        </p>
+        <ErrorText size="sm">Sign-in didn&apos;t work. Try again or use another option.</ErrorText>
       )}
       {lastUsed === "email" ? <>{form}{divider}{buttons}</> : <>{buttons}{divider}{form}</>}
     </div>

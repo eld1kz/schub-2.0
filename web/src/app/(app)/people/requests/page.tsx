@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/supabase/server";
 import { respond, withdrawRequest } from "@/app/actions";
 import { awardedIds } from "@/lib/awards";
 import { PersonRow } from "../person-row";
+import { buttonClass } from "@/components/ui";
 
 type Person = { name: string; headline: string; avatar_url: string; open_to_collaborate: boolean } | null;
 type Request = { id: string; sender_id: string; receiver_id: string; created_at: string; sender: Person; receiver: Person };
@@ -61,8 +62,8 @@ export default async function RequestsPage() {
               awarded={awarded.has(c.sender_id)}
               actions={
                 <>
-                  <form action={respond.bind(null, c.id, "accepted")}><button className="btn h-9 px-4">Accept</button></form>
-                  <form action={respond.bind(null, c.id, "declined")}><button className="btn-outline h-9">Decline</button></form>
+                  <form action={respond.bind(null, c.id, "accepted")}><button className={buttonClass({ size: "sm" })}>Accept</button></form>
+                  <form action={respond.bind(null, c.id, "declined")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
                 </>
               }
             >

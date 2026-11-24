@@ -8,13 +8,13 @@ import { teamMembers, type EnterableTeam, type MyEntry, type TeamSummary } from 
 import { goingLabel, tallyGoing } from "@/lib/connections";
 import type { Award } from "@/lib/awards";
 import { formatMonth } from "@/lib/portfolio";
-import { Avatar } from "../../avatar";
 import { ConnectButton } from "../../connect-button";
 import { TeamList } from "../../team-list";
 import { PersonRow } from "../../people/person-row";
 import { ToastProvider } from "../../u/[id]/toast";
 import { Placement, TrustLabels, awardPeople } from "../../u/[id]/awards";
 import { EventActions } from "../event-actions";
+import { Avatar, ButtonAnchor, Chip, ChipList, EmptyState, MonoLabel, PageHeader, Select, buttonClass } from "@/components/ui";
 
 export type Opportunity = {
   id: string;
@@ -82,14 +82,14 @@ function SectionHeader({ title, count, action }: { title: string; count?: number
 function PlacedAward({ award: a }: { award: Award }) {
   const details = [a.prize_name, formatMonth(a.awarded_on)].filter(Boolean).join(" · ");
   return (
-    <article className="flex flex-col gap-2 border-b border-border py-4 first:pt-0 sm:grid sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-6">
+    <article className="flex flex-col gap-2 border-b border-border py-4 first:pt-0 sm:grid sm:grid-cols-label sm:gap-6">
       <Placement placement={a.placement} className="sm:pt-1" />
       <div className="flex min-w-0 flex-col gap-1.5">
         <ul className="flex flex-wrap gap-x-4 gap-y-2">
           {awardPeople(a).map((p) => (
             <li key={p.id}>
               <Link href={`/u/${p.id}`} className="flex items-center gap-2 text-base font-medium hover:text-accent">
-                <Avatar url={p.avatar_url} name={p.name} className="h-6 w-6 text-xs" sizes="24px" />
+                <Avatar url={p.avatar_url} name={p.name} size="xs" />
                 {p.name || "Unnamed"}
               </Link>
             </li>
@@ -109,6 +109,13 @@ function PlacedAward({ award: a }: { award: Award }) {
     </article>
   );
 }
+
+const reportReasons = [
+  { value: "fake", label: "Fake or spam" },
+  { value: "duplicate", label: "Duplicate" },
+  { value: "expired", label: "Expired" },
+  { value: "other", label: "Other" },
+];
 
 // People come here to find teammates, so that comes first; the official page has the details
 export function OpportunityView({ o, participants, me, statusWith, connections, myReport, canDelete, isAdmin, teams, myEntry, enterable, over, placed, awarded, userId, isGuest, today }: Props) {
@@ -131,37 +138,40 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
 
   return (
     <ToastProvider>
-      <header className="flex flex-col gap-6 pb-8 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex min-w-0 flex-col gap-2">
-          <span className="font-mono text-xs font-medium tracking-wide text-ink2 uppercase">
+      <PageHeader
+        title={o.title}
+        stack
+        className="pb-8"
+        eyebrow={
+          <MonoLabel>
             {opportunityTypes[o.type]}
             {o.featured && <span className="text-accent"> · Featured</span>}
-          </span>
-          <h1 className="text-2xl leading-tight font-semibold tracking-tight text-balance sm:text-3xl sm:tracking-tighter">{o.title}</h1>
-          {o.organizer && <p className="text-lg text-ink2">{o.organizer}</p>}
-          <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-base">
-            {place && <span>{place}</span>}
-            {dates && <span className="tabular-nums">{dates}</span>}
-            {o.deadline && (
-              <span className="tabular-nums">
-                Apply by {formatDay(o.deadline)}
-                {deadlineDays === null ? (
-                  <span className="text-muted"> · closed</span>
-                ) : (
-                  <span className={deadlineDays <= SOON_DAYS ? "font-semibold text-accent" : "text-muted"}> · {daysLabel(deadlineDays)}</span>
-                )}
-              </span>
-            )}
-          </p>
-          {going && (
-            <a href={going.onTeam ? "#teams" : "#looking"} className="mt-1 w-fit text-base font-medium text-accent hover:underline">
-              {goingLabel(going.people.size)}
-            </a>
+          </MonoLabel>
+        }
+        action={<ButtonAnchor href={o.url} variant="secondary">Official page ↗</ButtonAnchor>}
+      >
+        {o.organizer && <p className="text-lg text-ink2">{o.organizer}</p>}
+        <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-base">
+          {place && <span>{place}</span>}
+          {dates && <span className="tabular-nums">{dates}</span>}
+          {o.deadline && (
+            <span className="tabular-nums">
+              Apply by {formatDay(o.deadline)}
+              {deadlineDays === null ? (
+                <span className="text-muted"> · closed</span>
+              ) : (
+                <span className={deadlineDays <= SOON_DAYS ? "font-semibold text-accent" : "text-muted"}> · {daysLabel(deadlineDays)}</span>
+              )}
+            </span>
           )}
-          {o.status !== "live" && <p className="font-mono text-xs text-muted uppercase">{o.status}</p>}
-        </div>
-        <a href={o.url} target="_blank" rel="noreferrer" className="btn-outline shrink-0">Official page ↗</a>
-      </header>
+        </p>
+        {going && (
+          <a href={going.onTeam ? "#teams" : "#looking"} className="mt-1 w-fit text-base font-medium text-accent hover:underline">
+            {goingLabel(going.people.size)}
+          </a>
+        )}
+        {o.status !== "live" && <p className="font-mono text-xs text-muted uppercase">{o.status}</p>}
+      </PageHeader>
 
       {/* The main actions: find a team, create one, or enter yours */}
       <EventActions
@@ -178,7 +188,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
         <section className="mt-12">
           <SectionHeader title="Schub teams that placed" count={placed.length} />
           {placed.length === 0 ? (
-            <p className="py-8 text-sm text-ink2">No results added yet. Placed here? Add it to the Awards section of your profile.</p>
+            <EmptyState>No results added yet. Placed here? Add it to the Awards section of your profile.</EmptyState>
           ) : (
             <div className="flex flex-col pt-4">
               {placed.map((a) => <PlacedAward key={a.id} award={a} />)}
@@ -202,7 +212,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
       <section id="looking" className="mt-12 scroll-mt-6">
         <SectionHeader title="Looking for a team" count={others.length} />
         {others.length === 0 ? (
-          <p className="py-8 text-sm text-ink2">{mine ? "Nobody else yet. You're the first." : "Nobody yet. Be the first."}</p>
+          <EmptyState>{mine ? "Nobody else yet. You're the first." : "Nobody yet. Be the first."}</EmptyState>
         ) : (
           <div className="flex flex-col pt-4">
             {others.map((p) => (
@@ -217,16 +227,16 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
                 actions={
                   <>
                     <span className="text-meta text-muted tabular-nums">{p.score}% match</span>
-                    <ConnectButton profileId={p.user_id} status={statusWith[p.user_id]} isGuest={isGuest} className="btn-outline h-9" />
+                    <ConnectButton profileId={p.user_id} status={statusWith[p.user_id]} isGuest={isGuest} className={buttonClass({ variant: "secondary", size: "sm" })} />
                   </>
                 }
               >
                 {connections.has(p.user_id) && <p className="text-meta font-medium text-accent">Your connection</p>}
                 {p.note && <p className="mt-1 max-w-form text-base leading-normal">&ldquo;{p.note}&rdquo;</p>}
                 {knownSkills(p.person.skills).length > 0 && (
-                  <ul className="mt-1.5 flex flex-wrap gap-1.5">
-                    {knownSkills(p.person.skills).slice(0, 4).map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
-                  </ul>
+                  <ChipList className="mt-1.5">
+                    {knownSkills(p.person.skills).slice(0, 4).map((s) => <Chip key={s}>{s}</Chip>)}
+                  </ChipList>
                 )}
               </PersonRow>
             ))}
@@ -251,18 +261,8 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
             <details className="group">
               <summary className="cursor-pointer list-none hover:text-foreground [&::-webkit-details-marker]:hidden">Report this listing</summary>
               <form action={reportOpportunity.bind(null, o.id)} className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="relative">
-                  <select name="reason" aria-label="What's wrong" className="input h-9 cursor-pointer appearance-none py-0 pr-8 text-sm">
-                    <option value="fake">Fake or spam</option>
-                    <option value="duplicate">Duplicate</option>
-                    <option value="expired">Expired</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <svg viewBox="0 0 16 16" aria-hidden className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 fill-none stroke-muted" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m4 6 4 4 4-4" />
-                  </svg>
-                </span>
-                <button className="btn-outline h-9">Report</button>
+                <Select name="reason" label="What's wrong" small options={reportReasons} />
+                <button className={buttonClass({ variant: "secondary", size: "sm" })}>Report</button>
               </form>
             </details>
           ))}
@@ -273,7 +273,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
         )}
         {canDelete && (
           <form action={deleteOpportunity.bind(null, o.id)}>
-            <button className="hover:text-danger ">Delete this listing</button>
+            <button className="hover:text-danger">Delete this listing</button>
           </form>
         )}
       </footer>

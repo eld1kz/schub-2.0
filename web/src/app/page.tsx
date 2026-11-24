@@ -8,10 +8,10 @@ import { awardedIds } from "@/lib/awards";
 import { OpportunityHeader, OpportunityRow, type OpportunityRowData } from "./(app)/opportunities/opportunity-row";
 import { TeamList } from "./(app)/team-list";
 import { EventActions } from "./(app)/opportunities/event-actions";
-import { EmptyPrompt } from "./(app)/u/[id]/profile-parts";
 import { BuildingPreview, ConfirmedMark, EventMark, HeroPreview, LookingPreview, MatchMark } from "./landing-samples";
 import { PublicHeader } from "./public-header";
 import { SignInOptions } from "./sign-in-options";
+import { EmptyState, buttonClass } from "@/components/ui";
 
 // Signed-out visitors get the landing page; members go straight to opportunities
 export const instant = false;
@@ -88,7 +88,7 @@ export default async function Home(props: PageProps<"/">) {
         <p role="status" className="border-b border-border bg-chip px-4 py-3 text-center text-base font-medium">Your account was deleted.</p>
       )}
       <main className="mx-auto max-w-page px-4 sm:px-6">
-        <section className="grid gap-12 pt-8 pb-16 sm:pt-16 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:items-center lg:gap-12 lg:pt-20 lg:pb-20 xl:grid-cols-[minmax(0,1fr)_minmax(0,580px)] xl:gap-20">
+        <section className="grid gap-12 pt-8 pb-16 sm:pt-16 sm:pb-20 lg:grid-cols-hero lg:items-center lg:gap-12 lg:pt-20 lg:pb-20 xl:grid-cols-hero-wide xl:gap-20">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-4">
               <h1 className="text-2xl leading-tight font-semibold tracking-tighter sm:text-display xl:text-display">Find teammates for hackathons and projects.</h1>
@@ -105,13 +105,13 @@ export default async function Home(props: PageProps<"/">) {
               title="Looking for a team"
               points={["Browse teams by event", "See where your connections are going", "Ask to join the role that fits you"]}
               preview={<LookingPreview />}
-              action={<Link href="/teams" className="btn-outline">Browse teams</Link>}
+              action={<Link href="/teams" className={buttonClass({ variant: "secondary" })}>Browse teams</Link>}
             />
             <Path
               title="Building a team"
               points={["Post what you're building", "List the roles you need", "Review who applies, then accept or decline"]}
               preview={<BuildingPreview />}
-              action={<Link href={signInTo("/teams/new")} className="btn-outline">Post a team</Link>}
+              action={<Link href={signInTo("/teams/new")} className={buttonClass({ variant: "secondary" })}>Post a team</Link>}
             />
           </div>
         </Part>
@@ -242,9 +242,9 @@ function AskForTeam({ o, day, first }: { o: OpportunityRowData; day: string; fir
   const next = nextDate(o, day);
   const when = next.date ? `${next.label} · ${daysLabel(daysUntil(next.date, day))}. ` : "";
   return (
-    <EmptyPrompt title={`${first ? "Be the first to post a team" : "Post a team"} for ${o.title}`} text={`${when}List the roles you need, and people going can ask to join.`}>
-      <Link href={signInTo(`/teams/new?opportunity=${o.id}`)} className="btn">Post a team</Link>
-    </EmptyPrompt>
+    <EmptyState title={`${first ? "Be the first to post a team" : "Post a team"} for ${o.title}`} action={<Link href={signInTo(`/teams/new?opportunity=${o.id}`)} className={buttonClass()}>Post a team</Link>}>
+      {`${when}List the roles you need, and people going can ask to join.`}
+    </EmptyState>
   );
 }
 

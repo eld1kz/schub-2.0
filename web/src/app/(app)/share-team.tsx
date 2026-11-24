@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { qrPath, storyPath, type StoryTheme } from "@/lib/story";
+import { Button, IconButton, Modal, ModalGrabber, ModalHeader, buttonClass } from "@/components/ui";
 
 // Sharing a team as a story image (/teams/[id]/story.png). Which options show depends on what the device can do,
 // never on its user agent. With a mouse or trackpad (pointer: fine) it's a laptop: a QR code hands the image over
@@ -120,13 +121,10 @@ function ShareIcon() {
   );
 }
 
-const iconButton = "grid h-9 w-9 shrink-0 place-items-center rounded-md text-ink2 hover:bg-chip hover:text-foreground";
-
 // The Share button and its dialog. `variant`: "primary" for the team's owner, "outline" for everyone else,
 // "icon" on the rows in Your teams.
 export function ShareTeamButton({ variant, ...team }: Team & { variant: "primary" | "outline" | "icon" }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const pressedOutside = useRef(false);
   const [open, setOpen] = useState(false);
   const [layout, setLayout] = useState<"phone" | "laptop">("laptop");
   const [copyImage, setCopyImage] = useState(false);
@@ -146,77 +144,55 @@ export function ShareTeamButton({ variant, ...team }: Team & { variant: "primary
     setOpen(true);
   }
 
-  useEffect(() => {
-    if (open) dialog.current?.showModal();
-  }, [open]);
-
   const trigger =
     variant === "icon" ? (
-      <button type="button" onClick={openDialog} aria-label={`Share ${team.title}`} title="Share" className={iconButton}><ShareIcon /></button>
+      <IconButton label={`Share ${team.title}`} onClick={openDialog}><ShareIcon /></IconButton>
     ) : (
-      <button type="button" onClick={openDialog} className={`${variant === "primary" ? "btn" : "btn-outline"} h-9 gap-2`}><ShareIcon />Share</button>
+      <Button type="button" variant={variant === "primary" ? "primary" : "secondary"} size="sm" onClick={openDialog}><ShareIcon />Share</Button>
     );
 
   return (
     <>
       {trigger}
-      <dialog
-        ref={dialog}
-        aria-label="Share this team"
-        onClose={() => setOpen(false)}
-        onMouseDown={(e) => {
-          pressedOutside.current = e.target === dialog.current;
-        }}
-        onClick={(e) => {
-          if (pressedOutside.current && e.target === dialog.current) dialog.current?.close();
-        }}
-        className="m-0 mt-auto max-h-[94dvh] w-full max-w-none overflow-y-auto rounded-t-lg bg-background p-0 text-foreground backdrop:bg-[rgba(20,20,24,0.45)] sm:mx-auto sm:mt-16 sm:mb-auto sm:max-h-[calc(100dvh-8rem)] sm:max-w-dialog sm:rounded-lg sm:border sm:border-line2 sm:shadow-modal "
-      >
-        {open && (
-          <div data-layout={layout} className="flex flex-col">
-            <div aria-hidden className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-line2 sm:hidden" />
-            <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 sm:px-6 sm:py-4">
-              <h2 className="text-base font-semibold sm:text-xl sm:tracking-snug">Share this team</h2>
-              <button type="button" onClick={() => dialog.current?.close()} aria-label="Close" className={iconButton}>
-                <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 fill-none stroke-current" strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
-              </button>
-            </div>
-            <div className="flex flex-col gap-4 px-4 py-4 sm:grid sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-6 sm:px-6 sm:py-6">
-              <Preview team={team} theme={theme} className="mx-auto h-[min(44dvh,391px)] w-auto sm:h-auto sm:w-full" />
-              <div className="flex min-w-0 flex-col gap-4">
-                <p className="text-sm text-ink2">A story image with the open roles and a QR code to the team.</p>
-                <ThemeToggle theme={theme} onChange={setTheme} />
-                {layout === "phone" ? (
-                  <div className="flex flex-col gap-2">
-                    <button type="button" onClick={actions.share} disabled={!blob} className="btn h-11 gap-2 text-base disabled:opacity-50"><ShareIcon />Share</button>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button type="button" onClick={actions.copyLink} className="btn-outline h-11">Copy link</button>
-                      <a {...actions.download} className="btn-outline h-11">Download image</a>
-                    </div>
+      <Modal open={open} dialogRef={dialog} label="Share this team" onClose={() => setOpen(false)}>
+        <div data-layout={layout} className="flex flex-col">
+          <ModalGrabber />
+          <ModalHeader title="Share this team" onClose={() => dialog.current?.close()} />
+          <div className="flex flex-col gap-4 px-4 py-4 sm:grid sm:grid-cols-share sm:gap-6 sm:px-6 sm:py-6">
+            <Preview team={team} theme={theme} className="mx-auto h-story-sheet w-auto sm:h-auto sm:w-full" />
+            <div className="flex min-w-0 flex-col gap-4">
+              <p className="text-sm text-ink2">A story image with the open roles and a QR code to the team.</p>
+              <ThemeToggle theme={theme} onChange={setTheme} />
+              {layout === "phone" ? (
+                <div className="flex flex-col gap-2">
+                  <button type="button" onClick={actions.share} disabled={!blob} className={buttonClass({ size: "lg" })}><ShareIcon />Share</button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={actions.copyLink} className={buttonClass({ variant: "secondary", size: "touch" })}>Copy link</button>
+                    <a {...actions.download} className={buttonClass({ variant: "secondary", size: "touch" })}>Download image</a>
                   </div>
-                ) : (
-                  <>
-                    <section aria-label="Post to your story from your phone" className="flex items-center gap-4 rounded-md border border-border p-4">
-                      <QrCode text={`${origin}/teams/${team.teamId}/share?theme=${theme}`} />
-                      <div className="flex flex-col gap-1">
-                        <h3 className="text-base font-semibold">Post to your story from your phone</h3>
-                        <p className="text-sm text-ink2">Scan with your phone&apos;s camera, then tap Share to send it to Instagram, Kakao or Telegram.</p>
-                      </div>
-                    </section>
-                    <div className="flex flex-wrap gap-2">
-                      {copyImage && <button type="button" onClick={actions.copyImage} disabled={!blob} className="btn-outline disabled:opacity-50">Copy image</button>}
-                      {shareFiles && <button type="button" onClick={actions.share} disabled={!blob} className="btn-outline gap-2 disabled:opacity-50"><ShareIcon />Share</button>}
-                      <button type="button" onClick={actions.copyLink} className="btn-outline">Copy link</button>
-                      <a {...actions.download} className="btn-outline">Download image</a>
+                </div>
+              ) : (
+                <>
+                  <section aria-label="Post to your story from your phone" className="flex items-center gap-4 rounded-md border border-border p-4">
+                    <QrCode text={`${origin}/teams/${team.teamId}/share?theme=${theme}`} />
+                    <div className="flex flex-col gap-1">
+                      <h3 className="text-base font-semibold">Post to your story from your phone</h3>
+                      <p className="text-sm text-ink2">Scan with your phone&apos;s camera, then tap Share to send it to Instagram, Kakao or Telegram.</p>
                     </div>
-                  </>
-                )}
-                <p aria-live="polite" className="min-h-5 text-sm text-ink2 break-all">{failed ? "Couldn't load the image. Try again later." : actions.note}</p>
-              </div>
+                  </section>
+                  <div className="flex flex-wrap gap-2">
+                    {copyImage && <button type="button" onClick={actions.copyImage} disabled={!blob} className={buttonClass({ variant: "secondary" })}>Copy image</button>}
+                    {shareFiles && <button type="button" onClick={actions.share} disabled={!blob} className={buttonClass({ variant: "secondary" })}><ShareIcon />Share</button>}
+                    <button type="button" onClick={actions.copyLink} className={buttonClass({ variant: "secondary" })}>Copy link</button>
+                    <a {...actions.download} className={buttonClass({ variant: "secondary" })}>Download image</a>
+                  </div>
+                </>
+              )}
+              <p aria-live="polite" className="min-h-5 text-sm text-ink2 break-all">{failed ? "Couldn't load the image. Try again later." : actions.note}</p>
             </div>
           </div>
-        )}
-      </dialog>
+        </div>
+      </Modal>
     </>
   );
 }
@@ -224,7 +200,7 @@ export function ShareTeamButton({ variant, ...team }: Team & { variant: "primary
 function QrCode({ text }: { text: string }) {
   const { size, d } = qrPath(text);
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} role="img" aria-label="QR code to the share page" shapeRendering="crispEdges" className="h-[112px] w-[112px] shrink-0 rounded-sm bg-qr-paper">
+    <svg viewBox={`0 0 ${size} ${size}`} role="img" aria-label="QR code to the share page" shapeRendering="crispEdges" className="h-28 w-28 shrink-0 rounded-sm bg-qr-paper">
       <path d={d} className="fill-qr-ink" />
     </svg>
   );
@@ -242,12 +218,12 @@ export function ShareOnPhone({ initialTheme, ...team }: Team & { initialTheme: S
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <Preview team={team} theme={theme} className="h-[min(58dvh,560px)] w-auto" />
+      <Preview team={team} theme={theme} className="h-story-page w-auto" />
       <ThemeToggle theme={theme} onChange={setTheme} />
       <div className="flex w-full max-w-narrow flex-col gap-2">
-        {canShare !== false && <button type="button" onClick={actions.share} disabled={!blob || !canShare} className="btn h-12 gap-2 text-base disabled:opacity-50"><ShareIcon />Share</button>}
+        {canShare !== false && <button type="button" onClick={actions.share} disabled={!blob || !canShare} className={buttonClass({ size: "lg" })}><ShareIcon />Share</button>}
         {canShare === false && <p className="text-center text-sm text-ink2">This browser can&apos;t share images. Download it, then post it from your gallery.</p>}
-        <a {...actions.download} className={`${canShare === false ? "btn" : "btn-outline"} h-11`}>Download image</a>
+        <a {...actions.download} className={buttonClass({ variant: canShare === false ? "primary" : "secondary", size: "lg" })}>Download image</a>
       </div>
       <p aria-live="polite" className="min-h-5 text-sm text-ink2">{failed ? "Couldn't load the image. Try again later." : actions.note}</p>
     </div>

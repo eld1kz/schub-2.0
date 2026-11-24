@@ -12,12 +12,12 @@ import { SharedProjectBody } from "../../u/[id]/shared-projects";
 import { Placement } from "../../u/[id]/awards";
 import { EntryStatusControl, EntryStatusLabel } from "../../entry-status";
 import { SharedProjectEdit } from "./shared-project-edit";
-import { Avatar } from "../../avatar";
 import { SignInButton } from "../../sign-in";
 import { EditDialog } from "../../u/[id]/edit-dialog";
-import { Section } from "../../u/[id]/profile-parts";
+
 import { ToastProvider } from "../../u/[id]/toast";
 import { ShareTeamButton } from "../../share-team";
+import { Avatar, Chip, ChipList, Row, Section, Textarea, buttonClass } from "@/components/ui";
 
 type Person = { name: string; headline: string; university: string; skills: string[]; avatar_url: string; open_to_collaborate: boolean } | null;
 export type Application = {
@@ -36,7 +36,7 @@ const row = "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between 
 function PersonLink({ id, person, you }: { id: string; person: { name: string; avatar_url: string; open_to_collaborate: boolean } | null; you: boolean }) {
   return (
     <Link href={`/u/${id}`} className="flex min-w-0 items-center gap-2 hover:text-accent">
-      <Avatar url={person?.avatar_url ?? ""} name={person?.name ?? ""} className="h-8 w-8 text-xs" sizes="32px" open={person?.open_to_collaborate} />
+      <Avatar url={person?.avatar_url ?? ""} name={person?.name ?? ""} size="md" ring={person?.open_to_collaborate ? "open" : null} />
       <span className="truncate text-base font-medium">{you ? "You" : person?.name || "Unnamed"}</span>
     </Link>
   );
@@ -51,9 +51,8 @@ function Member({ id, person, role, you, connection }: { id: string; person: { n
         <Avatar
           url={person?.avatar_url ?? ""}
           name={person?.name ?? ""}
-          className={`h-11 w-11 text-sm ${connection ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : ""}`}
-          sizes="44px"
-          open={!connection && person?.open_to_collaborate}
+          size="xl"
+          ring={connection ? "connection" : person?.open_to_collaborate ? "open" : null}
         />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -89,7 +88,7 @@ function ApplyButton({ teamId, teamTitle, role }: { teamId: string; teamTitle: s
           <label htmlFor={`note-${role}`} className="mb-1.5 block text-sm font-medium">
             Why you <span className="font-normal text-muted">(optional)</span>
           </label>
-          <textarea id={`note-${role}`} name="note" rows={4} maxLength={300} placeholder="Built two React apps, free every evening" className="input resize-none leading-normal" />
+          <Textarea id={`note-${role}`} name="note" rows={4} maxLength={300} placeholder="Built two React apps, free every evening" />
           <p className="mt-1 text-meta text-muted">Up to 300 characters</p>
         </div>
       </div>
@@ -167,7 +166,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
       const waiting = pending.filter((a) => a.role === role).length;
       return <span className="text-sm text-ink2">{waiting > 0 ? `${waiting} ${waiting === 1 ? "applicant" : "applicants"}` : "No applicants yet"}</span>;
     }
-    if (isGuest) return <SignInButton label="Sign in to apply" className="btn-outline h-9" />;
+    if (isGuest) return <SignInButton label="Sign in to apply" className={buttonClass({ variant: "secondary", size: "sm" })} />;
     if (mine?.direction === "invite") return mine.role === role && mine.status === "pending" ? <span className="text-sm font-medium text-accent">You&apos;re invited</span> : null;
     if (mine?.role === role && mine.status === "pending") {
       return (
@@ -203,7 +202,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
           <div className="mt-1 flex items-center gap-2 text-sm text-ink2">
             Started by
             <Link href={`/u/${t.owner_id}`} className="flex items-center gap-2 font-medium text-foreground hover:text-accent">
-              <Avatar url={owner?.avatar_url ?? ""} name={owner?.name ?? ""} className="h-6 w-6 text-xs" sizes="24px" open={owner?.open_to_collaborate} />
+              <Avatar url={owner?.avatar_url ?? ""} name={owner?.name ?? ""} size="xs" ring={owner?.open_to_collaborate ? "open" : null} />
               {isOwner ? "you" : owner?.name || "Unnamed"}
             </Link>
           </div>
@@ -217,8 +216,8 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
                 <span className="font-semibold">{owner?.name || "The owner"} invited you to join as {mine.role}.</span>
               </p>
               <div className="flex shrink-0 gap-2">
-                <form action={answerInvite.bind(null, mine.id, "accepted")}><button className="btn h-9 px-4">Accept</button></form>
-                <form action={answerInvite.bind(null, mine.id, "declined")}><button className="btn-outline h-9">Decline</button></form>
+                <form action={answerInvite.bind(null, mine.id, "accepted")}><button className={buttonClass({ size: "sm" })}>Accept</button></form>
+                <form action={answerInvite.bind(null, mine.id, "declined")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
               </div>
             </div>
           )}
@@ -329,24 +328,27 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
                       {g.role} <span className="font-normal text-muted">{g.people.length}</span>
                     </h3>
                     {g.people.map((a) => (
-                      <article key={a.id} className="flex flex-col gap-3 border-b border-border py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-                        <div className="flex min-w-0 flex-col gap-1.5">
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                            <PersonLink id={a.user_id} person={a.person} you={false} />
-                            {a.person?.university && <span className="text-sm text-ink2">{a.person.university}</span>}
-                          </div>
-                          {a.note && <p className="max-w-measure text-base leading-normal">{a.note}</p>}
-                          {knownSkills(a.person?.skills ?? []).length > 0 && (
-                            <ul className="flex flex-wrap gap-1.5">
-                              {knownSkills(a.person?.skills ?? []).slice(0, 6).map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
-                            </ul>
-                          )}
+                      <Row
+                        key={a.id}
+                        stack
+                        actions={
+                          <>
+                            <form action={respondToApplication.bind(null, t.id, a.id, "accepted")}><button className={buttonClass({ size: "sm" })}>Accept</button></form>
+                            <form action={respondToApplication.bind(null, t.id, a.id, "declined")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
+                          </>
+                        }
+                      >
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <PersonLink id={a.user_id} person={a.person} you={false} />
+                          {a.person?.university && <span className="text-sm text-ink2">{a.person.university}</span>}
                         </div>
-                        <div className="flex shrink-0 gap-2">
-                          <form action={respondToApplication.bind(null, t.id, a.id, "accepted")}><button className="btn h-9 px-4">Accept</button></form>
-                          <form action={respondToApplication.bind(null, t.id, a.id, "declined")}><button className="btn-outline h-9">Decline</button></form>
-                        </div>
-                      </article>
+                        {a.note && <p className="max-w-measure text-base leading-normal">{a.note}</p>}
+                        {knownSkills(a.person?.skills ?? []).length > 0 && (
+                          <ChipList>
+                            {knownSkills(a.person?.skills ?? []).slice(0, 6).map((s) => <Chip key={s}>{s}</Chip>)}
+                          </ChipList>
+                        )}
+                      </Row>
                     ))}
                   </div>
                 ))}
@@ -357,7 +359,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
 
         {isOwner && (
           <form action={deleteTeam.bind(null, t.id)} className="border-t border-line2 pt-6">
-            <button className="text-sm text-ink2 hover:text-danger ">Delete team</button>
+            <button className="text-sm text-ink2 hover:text-danger">Delete team</button>
           </form>
         )}
       </div>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ROLES } from "@/lib/roles";
 import { LANGUAGES } from "@/lib/languages";
 import { peopleHref, type PeopleQuery } from "./people-query";
-import { Select } from "../select";
+import { Select } from "@/components/ui";
 
 const roleOptions = ROLES.map((r) => ({ value: r, label: `As ${r}` }));
 const languageOptions = LANGUAGES.map((l) => ({ value: l, label: l }));

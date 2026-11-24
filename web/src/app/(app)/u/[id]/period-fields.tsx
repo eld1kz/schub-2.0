@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { formatPeriod } from "@/lib/portfolio";
-import { Select } from "../../select";
 import { FieldError } from "./edit-dialog";
+import { FieldLabel, Select } from "@/components/ui";
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const firstYear = 1990;
@@ -39,17 +39,14 @@ export function PeriodFields({ start, end, current }: { start?: string; end?: st
     endMonth.current?.setCustomValidity(endsTooEarly ? "The end can't be before the start." : "");
   }, [endsTooEarly]);
 
-  const legend = "mb-1.5 block text-sm font-medium";
-  const required = <span aria-hidden className="ml-0.5 text-accent">*</span>;
-
   return (
     <>
       <label className="flex h-11 w-fit cursor-pointer items-center gap-2 text-base sm:h-auto">
-        <input type="checkbox" name="current" checked={isCurrent} onChange={(e) => setCurrent(e.target.checked)} className="h-[18px] w-[18px] accent-[var(--accent)]" />
+        <input type="checkbox" name="current" checked={isCurrent} onChange={(e) => setCurrent(e.target.checked)} className="h-4.5 w-4.5 accent-accent" />
         I currently work here
       </label>
       <fieldset>
-        <legend className={legend}>Start date{required}</legend>
+        <FieldLabel as="legend" required>Start date</FieldLabel>
         <input type="hidden" name="start" value={startValue} />
         <div className="grid grid-cols-2 gap-3">
           <Select label="Start month" placeholder="Month" value={from.month} onChange={(month) => setFrom({ ...from, month })} options={monthOptions} />
@@ -59,7 +56,7 @@ export function PeriodFields({ start, end, current }: { start?: string; end?: st
       </fieldset>
       {!isCurrent && (
         <fieldset>
-          <legend className={legend}>End date{required}</legend>
+          <FieldLabel as="legend" required>End date</FieldLabel>
           <input type="hidden" name="end" value={endValue} />
           <div className="grid grid-cols-2 gap-3">
             <Select label="End month" placeholder="Month" value={to.month} onChange={(month) => setTo({ ...to, month })} options={monthOptions} selectRef={endMonth} />

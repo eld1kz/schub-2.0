@@ -2,8 +2,8 @@ import Link from "next/link";
 import { withdrawInvite } from "@/app/actions";
 import { knownRoles } from "@/lib/roles";
 import { ROLE_SKILLS, type Candidate } from "@/lib/invites";
-import { Avatar } from "../../avatar";
 import { InviteButton } from "./invite-button";
+import { Avatar, MonoLabel } from "@/components/ui";
 
 export type PendingInvite = { id: string; user_id: string; role: string; person: { name: string; avatar_url: string; open_to_collaborate: boolean } | null };
 
@@ -30,7 +30,7 @@ export function InvitePanel({ teamId, role, invites, suggestions, showRole = fal
           {invites.map((i) => (
             <li key={i.id} className="flex items-center justify-between gap-3">
               <Link href={`/u/${i.user_id}`} className="flex min-w-0 items-center gap-2 hover:text-accent">
-                <Avatar url={i.person?.avatar_url ?? ""} name={i.person?.name ?? ""} className="h-7 w-7 text-xs" sizes="28px" open={i.person?.open_to_collaborate} />
+                <Avatar url={i.person?.avatar_url ?? ""} name={i.person?.name ?? ""} size="sm" ring={i.person?.open_to_collaborate ? "open" : null} />
                 <span className="truncate text-sm font-medium">{i.person?.name || "Unnamed"}</span>
                 <span className="shrink-0 text-meta text-accent">{showRole ? `Invited as ${i.role}` : "Invited"}</span>
               </Link>
@@ -43,12 +43,12 @@ export function InvitePanel({ teamId, role, invites, suggestions, showRole = fal
       )}
       {suggestions.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="font-mono text-xs font-medium tracking-wide text-muted uppercase">People who fill this role</p>
+          <MonoLabel as="p" tone="muted">People who fill this role</MonoLabel>
           <ul className="flex flex-col gap-2">
             {suggestions.map((c) => (
               <li key={c.id} className="flex items-center justify-between gap-3">
                 <Link href={`/u/${c.id}`} className="flex min-w-0 items-center gap-2 hover:opacity-80">
-                  <Avatar url={c.avatar_url} name={c.name} className="h-8 w-8 text-xs" sizes="32px" open={c.open_to_collaborate} />
+                  <Avatar url={c.avatar_url} name={c.name} size="md" ring={c.open_to_collaborate ? "open" : null} />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold">{c.name}</span>
                     {why(role, c) && <span className="block truncate text-meta text-ink2">{why(role, c)}</span>}

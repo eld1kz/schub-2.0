@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { requireUser } from "@/lib/supabase/server";
 import { PeopleTabs } from "./people-tabs";
+import { PageHeader } from "@/components/ui";
 
 // Incoming requests waiting on you, for the Requests tab
 async function TabsWithCount() {
@@ -13,7 +14,7 @@ async function TabsWithCount() {
 export default function PeopleLayout({ children }: LayoutProps<"/people">) {
   return (
     <div>
-      <h1 className="pb-4 text-2xl font-semibold tracking-tight sm:pb-6 sm:text-3xl sm:tracking-tighter">People</h1>
+      <PageHeader title="People" className="pb-4 sm:pb-6" />
       <Suspense fallback={<PeopleTabs requests={0} />}>
         <TabsWithCount />
       </Suspense>

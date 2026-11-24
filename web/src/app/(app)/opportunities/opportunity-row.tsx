@@ -2,8 +2,9 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { SOON_DAYS, daysLabel, daysUntil, nextDate, opportunityTypes, placeLabel, type OpportunityType } from "@/lib/opportunities";
 import { goingLabel, type Going } from "@/lib/connections";
+import { MonoLabel } from "@/components/ui";
 
-export const columns = "lg:grid lg:grid-cols-[120px_minmax(0,1fr)_200px_190px_200px] lg:items-center lg:gap-6";
+export const columns = "lg:grid lg:grid-cols-opportunity lg:items-center lg:gap-6";
 
 export type OpportunityRowData = { id: string; title: string; url: string; type: OpportunityType; organizer: string; location: string; online: boolean; starts_at: string | null; deadline: string | null; ends_at: string | null; opportunity_participants: unknown; featured: boolean };
 
@@ -31,10 +32,10 @@ export function OpportunityRow({ o, day, going, actions }: { o: OpportunityRowDa
   return (
     <article className={`group relative flex flex-col gap-1 border-b border-border py-4 ${columns}`}>
       <span className="flex items-center justify-between gap-2">
-        <span className="font-mono text-xs font-medium tracking-wide text-ink2 uppercase">
+        <MonoLabel>
           {opportunityTypes[o.type]}
           {o.featured && <span className="block text-accent">Featured</span>}
-        </span>
+        </MonoLabel>
         <span className="lg:hidden">{urgent && left}</span>
       </span>
       <span className="flex min-w-0 flex-col gap-0.5">

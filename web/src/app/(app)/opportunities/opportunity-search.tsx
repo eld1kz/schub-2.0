@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState, type ReactNode } from "react";
+import { Input } from "@/components/ui";
 
 // Filters the already-loaded list by title as you type; no server call. `header` sits above the rows.
 export function OpportunitySearch({ rows, header, empty }: { rows: { id: string; title: string; node: ReactNode }[]; header: ReactNode; empty: string }) {
@@ -15,13 +16,14 @@ export function OpportunitySearch({ rows, header, empty }: { rows: { id: string;
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
         </svg>
-        <input
+        <Input
+          search
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search opportunities"
           aria-label="Search opportunities by title"
-          className="input h-10 pr-8 pl-8 text-sm"
+          className="pr-8 pl-8"
         />
         {query && (
           <button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="absolute inset-y-0 right-0 px-3 text-muted hover:text-foreground">

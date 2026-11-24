@@ -5,6 +5,7 @@ import { EditDialog } from "../u/[id]/edit-dialog";
 import { EntryStatusControl, EntryStatusLabel } from "../entry-status";
 import { EnterTeamFields } from "./[id]/enter-team-fields";
 import { FindTeamButton, LookingNote } from "./[id]/looking-panel";
+import { buttonClass } from "@/components/ui";
 
 type Props = {
   event: { id: string; title: string; url: string };
@@ -32,7 +33,7 @@ export function EventActions({ event, userId, isGuest, looking, entered, enterab
   // On the event's page, once you're looking, your note takes a line of its own above the buttons
   const note = !isGuest && looking && !compact;
   const find = isGuest ? (
-    <Link href={login(page)} className="btn h-9 px-4">Find a team</Link>
+    <Link href={login(page)} className={buttonClass({ size: "sm" })}>Find a team</Link>
   ) : looking ? (
     compact && (
       <Link href={`${page}#teams`} className="flex h-9 items-center gap-2 text-sm font-semibold hover:text-accent">
@@ -45,7 +46,7 @@ export function EventActions({ event, userId, isGuest, looking, entered, enterab
   );
 
   const enter = isGuest ? (
-    <Link href={login(page)} className="btn-outline h-9">Enter your team</Link>
+    <Link href={login(page)} className={buttonClass({ variant: "secondary", size: "sm" })}>Enter your team</Link>
   ) : enterable.length > 0 ? (
     <EditDialog title={`Enter your team in ${event.title}`} trigger="action" label="Enter your team" submit="Enter team" done="Team entered" save={enterTeam.bind(null, event.id)} requireValid tall>
       <EnterTeamFields teams={enterable} />
@@ -73,7 +74,7 @@ export function EventActions({ event, userId, isGuest, looking, entered, enterab
       {!ended && (
         <div className="flex flex-wrap items-center gap-2">
           {find}
-          <Link href={isGuest ? login(create) : create} className="btn-outline h-9">Create a team</Link>
+          <Link href={isGuest ? login(create) : create} className={buttonClass({ variant: "secondary", size: "sm" })}>Create a team</Link>
           {!entered && enter}
         </div>
       )}

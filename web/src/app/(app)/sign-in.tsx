@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { buttonClass } from "@/components/ui";
 
 // Goes to /login, which brings people back to this page after they sign in
-export function SignInButton({ label = "Sign in", className = "btn" }: { label?: string; className?: string }) {
+export function SignInButton({ label = "Sign in", className = buttonClass() }: { label?: string; className?: string }) {
   const pathname = usePathname();
   const search = useSearchParams().toString();
   const next = pathname + (search ? `?${search}` : "");
