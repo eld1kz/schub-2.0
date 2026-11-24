@@ -12,9 +12,13 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 // An exact, optional date as Month, Day and Year dropdowns, sent as `name` in YYYY-MM-DD.
 // A half-picked date blocks the form; so does `error`, a check from the form (like dates out of order).
-export function DateField({ name, label, onChange, error }: { name: string; label: string; onChange: (value: string) => void; error?: string }) {
+// `initial` (YYYY-MM-DD) is where it starts, for a form filled from a link or an edit.
+export function DateField({ name, label, onChange, error, initial = "" }: { name: string; label: string; onChange: (value: string) => void; error?: string; initial?: string }) {
   const thisYear = new Date().getFullYear();
-  const [parts, setParts] = useState({ year: "", month: "", day: "" });
+  const [parts, setParts] = useState(() => {
+    const [year = "", month = "", day = ""] = /^\d{4}-\d{2}-\d{2}$/.test(initial) ? initial.split("-") : [];
+    return { year, month, day };
+  });
   const first = useRef<HTMLSelectElement>(null);
 
   const filled = [parts.year, parts.month, parts.day].filter(Boolean).length;
@@ -35,7 +39,8 @@ export function DateField({ name, label, onChange, error }: { name: string; labe
   }
 
   const days = Array.from({ length: daysIn(parts.year, parts.month) }, (_, i) => ({ value: pad(i + 1), label: String(i + 1) }));
-  const years = Array.from({ length: yearsAhead + 1 }, (_, i) => String(thisYear + i)).map((y) => ({ value: y, label: y }));
+  // An earlier year that's already set (editing an event that started last year) stays pickable
+  const years = [...new Set([parts.year, ...Array.from({ length: yearsAhead + 1 }, (_, i) => String(thisYear + i))].filter(Boolean))].sort().map((y) => ({ value: y, label: y }));
 
   return (
     <fieldset>

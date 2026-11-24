@@ -52,48 +52,85 @@ export const safeLookup: LookupFunction = (hostname, options, callback) => {
 };
 
 type Hop = { status: number; location: string | null };
+type Page = Hop & { contentType: string; body: string };
 
-// One request, no redirects followed: the status and where it points next
-function requestStatus(url: URL): Promise<Hop> {
+// The most of a page "Fill from link" reads: event details sit in the head
+const maxPageBytes = 1_000_000;
+
+// One request, no redirects followed: the status and where it points next. With `readBody`, a 200's body too
+// (up to maxPageBytes), as text.
+function request(url: URL, readBody: boolean): Promise<Page> {
   const client = url.protocol === "https:" ? https : http;
   return new Promise((resolve, reject) => {
-    const request = client.request(
+    const req = client.request(
       url,
-      { method: "GET", lookup: safeLookup, timeout: 5000, headers: { "user-agent": "Mozilla/5.0 (Schub link check)" } },
+      { method: "GET", lookup: safeLookup, timeout: 5000, headers: { "user-agent": "Mozilla/5.0 (Schub link check)", accept: "text/html" } },
       (response) => {
-        resolve({ status: response.statusCode ?? 0, location: response.headers.location ?? null });
-        response.destroy();
+        const hop = { status: response.statusCode ?? 0, location: response.headers.location ?? null, contentType: response.headers["content-type"] ?? "" };
+        if (!readBody || hop.status !== 200) {
+          resolve({ ...hop, body: "" });
+          response.destroy();
+          return;
+        }
+        const chunks: Buffer[] = [];
+        let size = 0;
+        const done = () => resolve({ ...hop, body: Buffer.concat(chunks).toString("utf8") });
+        response.on("data", (chunk: Buffer) => {
+          chunks.push(chunk);
+          size += chunk.length;
+          if (size >= maxPageBytes) {
+            done();
+            response.destroy();
+          }
+        });
+        response.on("end", done);
+        response.on("error", reject);
       },
     );
-    request.on("timeout", () => request.destroy(new Error("Timed out")));
-    request.on("error", reject);
-    request.end();
+    req.on("timeout", () => req.destroy(new Error("Timed out")));
+    req.on("error", reject);
+    req.end();
   });
 }
+
+const requestStatus = (url: URL): Promise<Hop> => request(url, false);
+const requestPage = (url: URL): Promise<Page> => request(url, true);
 
 // Only public websites: http(s), a dotted host name, never a raw IP address
 function allowed(url: URL) {
   return /^https?:$/.test(url.protocol) && url.hostname.includes(".") && isIP(url.hostname.replace(/^\[|\]$/g, "")) === 0;
 }
 
-// Rejects links that don't resolve, point somewhere private, or are gone (404/410). Sites that block bots
-// (403, 429) still count as working, since a person can open them. Redirects are followed one at a time and
-// every hop is checked again. `request` is only replaced in tests.
-export async function linkWorks(url: string, request = requestStatus) {
+// Follows redirects one at a time, checking every hop again: the last answer, or null when a hop isn't allowed,
+// fails, or there are too many
+async function follow<T extends Hop>(url: string, send: (url: URL) => Promise<T>): Promise<T | null> {
   let current = URL.parse(url);
   for (let hop = 0; hop <= maxRedirects && current; hop++) {
-    if (!allowed(current)) return false;
-    let result: Hop;
+    if (!allowed(current)) return null;
+    let result: T;
     try {
-      result = await request(current);
+      result = await send(current);
     } catch {
-      return false;
+      return null;
     }
     if (result.status >= 300 && result.status < 400 && result.location) {
       current = URL.parse(result.location, current);
       continue;
     }
-    return result.status !== 404 && result.status !== 410;
+    return result;
   }
-  return false;
+  return null;
+}
+
+// Rejects links that don't resolve, point somewhere private, or are gone (404/410). Sites that block bots
+// (403, 429) still count as working, since a person can open them. `send` is only replaced in tests.
+export async function linkWorks(url: string, send = requestStatus) {
+  const result = await follow(url, send);
+  return result !== null && result.status !== 404 && result.status !== 410;
+}
+
+// The HTML of a public page, with the same protections, or null when it doesn't open as HTML. For "Fill from link".
+export async function fetchPage(url: string, send = requestPage) {
+  const page = await follow(url, send);
+  return page && page.status === 200 && /html/i.test(page.contentType) ? page.body : null;
 }

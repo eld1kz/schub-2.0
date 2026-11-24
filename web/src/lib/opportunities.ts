@@ -1,3 +1,5 @@
+import { countryName } from "./countries";
+
 export const opportunityTypes = {
   hackathon: "Hackathon",
   competition: "Competition",
@@ -54,5 +56,19 @@ export function dateRange(start: string | null, end: string | null) {
   return "";
 }
 
-// Where it happens: the place, "Online", or both
-export const placeLabel = (o: { location: string; online: boolean }) => [o.location, o.online && "Online"].filter(Boolean).join(" · ");
+// Where it happens: "Seoul, South Korea", "Online", or both. Opportunities added before the city and country
+// columns (supabase/opportunity-engine.sql) only have the typed-in location.
+export function placeLabel(o: { location: string; online: boolean; city?: string; country?: string | null }) {
+  const place = [o.city || o.location, countryName(o.country ?? null)].filter(Boolean).join(", ");
+  return [place, o.online && "Online"].filter(Boolean).join(" · ");
+}
+
+// Who can join (opportunities.eligibility); "country" means only people in the event's country
+export const ELIGIBILITY = {
+  anyone: "Anyone",
+  students: "Students",
+  country: "Only people in its country",
+} as const;
+
+export type Eligibility = keyof typeof ELIGIBILITY;
+export const isEligibility = (value: unknown): value is Eligibility => typeof value === "string" && value in ELIGIBILITY;

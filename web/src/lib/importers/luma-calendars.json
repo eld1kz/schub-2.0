@@ -1,0 +1,4 @@
+{
+  "about": "Public Luma calendars to import, as iCal feed links. On a calendar's Luma page choose Add iCal Subscription and copy the link; it looks like https://api.lu.ma/ics/get?entity=calendar&id=cal-XXXX. Every Luma event waits for an admin's review on /opportunities.",
+  "feeds": []
+}

@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { matchScore, type MatchableProfile } from "@/lib/match";
 import { knownSkills } from "@/lib/skills";
-import { SOON_DAYS, dateRange, daysLabel, daysUntil, formatDay, opportunityTypes, placeLabel, type OpportunityType } from "@/lib/opportunities";
+import { ELIGIBILITY, SOON_DAYS, dateRange, daysLabel, daysUntil, formatDay, isEligibility, opportunityTypes, placeLabel, type OpportunityType } from "@/lib/opportunities";
+import { countryName } from "@/lib/countries";
 import { deleteOpportunity, reportOpportunity, setFeatured } from "@/app/actions";
 import { teamMembers, type EnterableTeam, type MyEntry, type TeamSummary } from "@/lib/teams";
 import { goingLabel, tallyGoing } from "@/lib/connections";
@@ -32,6 +33,13 @@ export type Opportunity = {
   submitted_by: string | null;
   // Shown first on /opportunities and the landing page; only admins change it (supabase/team-entries.sql)
   featured: boolean;
+  // supabase/opportunity-engine.sql
+  city: string;
+  country: string | null;
+  languages: string[];
+  eligibility: string;
+  eligibility_note: string;
+  needs_review: boolean;
 };
 
 export type Participant = {
@@ -141,6 +149,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
           {o.organizer && <p className="text-lg text-ink2">{o.organizer}</p>}
           <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-base">
             {place && <span>{place}</span>}
+            {o.languages.length > 0 && <span>{o.languages.join(", ")}</span>}
             {dates && <span className="tabular-nums">{dates}</span>}
             {o.deadline && (
               <span className="tabular-nums">
@@ -158,7 +167,14 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
               {goingLabel(going.people.size)}
             </a>
           )}
+          {isEligibility(o.eligibility) && o.eligibility !== "anyone" && (
+            <p className="text-sm text-ink2">
+              Who can join: {o.eligibility === "country" ? `only people in ${countryName(o.country)}` : ELIGIBILITY[o.eligibility]}
+              {o.eligibility_note && <span className="text-muted"> · {o.eligibility_note}</span>}
+            </p>
+          )}
           {o.status !== "live" && <p className="font-mono text-xs text-muted uppercase">{o.status}</p>}
+          {o.status === "live" && o.needs_review && <p className="font-mono text-xs text-muted uppercase">Imported, waiting for review</p>}
         </div>
         <a href={o.url} target="_blank" rel="noreferrer" className="btn-outline shrink-0">Official page ↗</a>
       </header>

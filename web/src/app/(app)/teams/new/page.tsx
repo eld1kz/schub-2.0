@@ -19,6 +19,8 @@ export default async function NewTeamPage(props: PageProps<"/teams/new">) {
     .from("opportunities")
     .select("id, title")
     .eq("status", "live")
+    // Admins can read imports waiting for review; they aren't events to enter yet
+    .eq("needs_review", false)
     .or(`deadline.gte.${day},starts_at.gte.${day},and(deadline.is.null,starts_at.is.null)`)
     .order("title");
 

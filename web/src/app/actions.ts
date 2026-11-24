@@ -5,9 +5,11 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient, requireMember, requireUser } from "@/lib/supabase/server";
 import { parseList } from "@/lib/match";
-import { opportunityTypes } from "@/lib/opportunities";
+import { isEligibility, opportunityTypes } from "@/lib/opportunities";
+import { isCountryCode } from "@/lib/countries";
+import { foundDetails, readEventPage, type Prefill } from "@/lib/link-preview";
 import { isEntryStatus, openRoles } from "@/lib/teams";
-import { linkWorks } from "@/lib/link-check";
+import { fetchPage, linkWorks } from "@/lib/link-check";
 import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, mediaPath, toLink } from "@/lib/portfolio";
 import { AWARD_DESCRIPTION_MAX, AWARD_TEAMMATES_MAX, PLACEMENTS } from "@/lib/awards";
 import { knownSkills } from "@/lib/skills";
@@ -501,53 +503,132 @@ export async function withdrawRequest(connectionId: string) {
   revalidatePath("/", "layout");
 }
 
-// Errors come back with the field they belong to, so the form can show them there. Success opens the new page.
-export async function addOpportunity(formData: FormData): Promise<SaveResult> {
-  const { supabase, userId } = await requireMember();
+type OpportunityFields = {
+  title: string; type: string; url: string; organizer: string; city: string; country: string | null; online: boolean;
+  languages: string[]; eligibility: string; eligibility_note: string;
+  starts_at: string | null; deadline: string | null; ends_at: string | null; description: string;
+};
+
+// The opportunity form's fields, checked in the order the form shows them, or the first problem and its field
+async function opportunityFields(formData: FormData): Promise<{ fields: OpportunityFields } | { error: string; field?: string }> {
   const text = (key: string) => String(formData.get(key) ?? "").trim();
   const day = (key: string) => (/^\d{4}-\d{2}-\d{2}$/.test(text(key)) ? text(key) : null);
 
   const deadline = day("deadline");
   const startsAt = day("starts_at");
   const endsAt = day("ends_at");
+  const country = isCountryCode(text("country")) ? text("country") : null;
+  const eligibility = isEligibility(text("eligibility")) ? text("eligibility") : "anyone";
   if (text("title").length < 3) return { error: "Add a title of at least 3 characters.", field: "title" };
   if (!(text("type") in opportunityTypes)) return { error: "Choose a type.", field: "type" };
+  if (eligibility === "country" && !country) return { error: "Pick the country it's limited to.", field: "country" };
   if (deadline && startsAt && deadline > startsAt) return { error: "The deadline should be on or before the start.", field: "deadline" };
   const begins = startsAt ?? deadline;
   if (endsAt && begins && endsAt < begins) return { error: "The end can't be before the start.", field: "ends_at" };
   const url = text("url");
   if (!(await linkWorks(url))) return { error: "That link doesn't open. Check it and try again.", field: "url" };
 
-  const { data, error } = await supabase
-    .from("opportunities")
-    .insert({
+  return {
+    fields: {
       title: text("title"),
       type: text("type"),
-      organizer: text("organizer"),
-      location: text("location"),
-      online: formData.get("online") === "on",
       url,
+      organizer: text("organizer"),
+      city: text("city").slice(0, 80),
+      country,
+      online: formData.get("online") === "on",
+      languages: knownLanguages(formData.getAll("languages")),
+      eligibility,
+      eligibility_note: eligibility === "anyone" ? "" : text("eligibility_note").slice(0, 300),
       starts_at: startsAt,
       deadline,
       ends_at: endsAt,
       description: text("description"),
-      submitted_by: userId,
-    })
+    },
+  };
+}
+
+// What the database says when it refuses an opportunity, as a message under the field it's about
+function opportunityError(error: { code?: string; message: string }, deadline: string | null): SaveResult {
+  const message = error.message;
+  if (error.code === "23505") return { error: "This link is already listed.", field: "url" };
+  if (message.includes("ends_after_start")) return { error: "The end can't be before the start.", field: "ends_at" };
+  if (message.includes("deadline_before_start")) return { error: "The deadline should be on or before the start.", field: "deadline" };
+  // Raised by check_new_opportunity() in supabase/opportunities.sql
+  if (message.includes("similar opportunity")) return { error: message, field: "title" };
+  if (message.includes("in the past")) return { error: message, field: deadline ? "deadline" : "starts_at" };
+  if (message.includes("a day")) return { error: message };
+  return { error: "Couldn't save it. Try again." };
+}
+
+// Errors come back with the field they belong to, so the form can show them there. Success opens the new page.
+export async function addOpportunity(formData: FormData): Promise<SaveResult> {
+  const { supabase, userId } = await requireMember();
+  const checked = await opportunityFields(formData);
+  if ("error" in checked) return checked;
+
+  const { data, error } = await supabase
+    .from("opportunities")
+    .insert({ ...checked.fields, submitted_by: userId })
     .select("id")
     .single();
-  if (error || !data) {
-    const message = error?.message ?? "";
-    if (error?.code === "23505") return { error: "This link is already listed.", field: "url" };
-    if (message.includes("ends_after_start")) return { error: "The end can't be before the start.", field: "ends_at" };
-    if (message.includes("deadline_before_start")) return { error: "The deadline should be on or before the start.", field: "deadline" };
-    // Raised by check_new_opportunity() in supabase/opportunities.sql
-    if (message.includes("similar opportunity")) return { error: message, field: "title" };
-    if (message.includes("in the past")) return { error: message, field: deadline ? "deadline" : "starts_at" };
-    if (message.includes("a day")) return { error: message };
-    return { error: "Couldn't add it. Try again." };
-  }
+  if (error || !data) return error ? opportunityError(error, checked.fields.deadline) : { error: "Couldn't add it. Try again." };
   revalidatePath("/opportunities");
   redirect(`/opportunities/${data.id}`);
+}
+
+// Admins fix an opportunity, usually an import waiting for review. Saving counts as reviewing it: it goes live,
+// and the importer stops overwriting it (supabase/opportunity-engine.sql).
+export async function updateOpportunity(id: string, formData: FormData): Promise<SaveResult> {
+  const { supabase } = await requireMember();
+  const { data: admin } = await supabase.rpc("is_admin");
+  if (!admin) return { error: "Only admins can edit opportunities." };
+  const checked = await opportunityFields(formData);
+  if ("error" in checked) return checked;
+
+  const { error } = await supabase
+    .from("opportunities")
+    .update({ ...checked.fields, needs_review: false, reviewed_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return opportunityError(error, checked.fields.deadline);
+  revalidatePath("/opportunities", "layout");
+  redirect(`/opportunities/${id}`);
+}
+
+// "Review imports" on /opportunities: approve puts it live; reject removes it for good, and the importer
+// won't bring it back. Only admins' update policy lets these through.
+export async function reviewImport(id: string, decision: "approve" | "reject") {
+  const { supabase } = await requireMember();
+  if (decision !== "approve" && decision !== "reject") return;
+  const reviewed = { needs_review: false, reviewed_at: new Date().toISOString() };
+  await supabase
+    .from("opportunities")
+    .update(decision === "approve" ? reviewed : { ...reviewed, status: "removed" })
+    .eq("id", id)
+    .eq("needs_review", true);
+  revalidatePath("/opportunities", "layout");
+}
+
+export type LinkFill = { prefill?: Prefill; error?: string };
+
+// "Fill from link" on /opportunities/new: reads one event page with the same protections as the link check and
+// returns what it says, for the person to check. 20 an hour each (supabase/opportunity-engine.sql).
+export async function fillFromLink(url: string): Promise<LinkFill> {
+  const { supabase } = await requireMember();
+  const link = URL.parse(String(url).trim());
+  if (!link || !/^https?:$/.test(link.protocol)) return { error: "Paste the event's full link, starting with https://." };
+
+  const { error } = await supabase.from("link_fetches").insert({});
+  if (error) return { error: error.message.includes("an hour") ? error.message : "Couldn't read that page. Try again." };
+
+  // Tests only: dev:local serves sample event pages from LINK_PREVIEW_FIXTURES (tests/e2e/fixtures), a local address
+  // the safe fetch refuses. Never in production builds.
+  const fixtures = process.env.NODE_ENV === "development" ? process.env.LINK_PREVIEW_FIXTURES : undefined;
+  const html = fixtures && link.origin === fixtures ? await fetch(link).then((r) => r.text()) : await fetchPage(link.href);
+  if (html === null) return { error: "Couldn't open that page. Check the link, or fill the form in yourself." };
+  const prefill = readEventPage(html);
+  if (!prefill.title && !foundDetails(prefill)) return { error: "That page doesn't describe an event we can read. Fill the form in yourself." };
+  return { prefill };
 }
 
 export async function setOpportunityStatus(id: string, status: "live" | "removed") {

@@ -134,6 +134,26 @@ insert into opportunities (id, title, type, organizer, location, online, url, st
   ('00000000-0000-4000-9000-000000000006', 'Fake Internship Fair',             'internship',  'Example Corp',    'Daejeon', false, 'https://example.com/fair',            '2027-02-01', '2027-01-20', null,         'Reported three times, so hidden.', 'live',    pg_temp.fake_id(12)),
   ('00000000-0000-4000-9000-000000000007', 'Removed Sample Event',             'other',       'Nobody',          '',        true,  'https://example.com/removed',         '2027-04-01', null,         null,         'An admin removed it.',             'removed', pg_temp.fake_id(13));
 
+-- Place, languages and who can join (opportunity-engine.sql); 4, 5 and 7 keep only the old typed-in location
+update opportunities set country = 'KR', city = 'Seoul', languages = '{Korean,English}' where id = '00000000-0000-4000-9000-000000000001';
+update opportunities set languages = '{English}' where id = '00000000-0000-4000-9000-000000000002';
+update opportunities set country = 'KR', city = 'Daejeon', languages = '{Korean}' where id = '00000000-0000-4000-9000-000000000006';
+
+insert into opportunities (id, title, type, organizer, url, starts_at, deadline, ends_at, description, status, submitted_by,
+                           online, country, city, languages, eligibility, eligibility_note, inferred, source, external_id, imported_at, needs_review) values
+  -- Imported and live: Hack Club events are for students
+  ('00000000-0000-4000-9000-000000000008', 'Sample Hack Club Jam',       'hackathon',   'Hack Club',       'https://example.com/hackclub-jam',   '2027-02-10', null,         '2027-02-11', '', 'live', null,
+   false, 'US', 'Boston', '{English}', 'students', 'High school students', '{languages}', 'hackclub', 'hc-sample-1', now(), false),
+  -- Imported from Luma, waiting for an admin's review
+  ('00000000-0000-4000-9000-000000000009', 'Sample Luma Builders Night', 'other',       'Sample Calendar', 'https://example.com/luma-night',     '2027-01-20', null,         null,         '', 'live', null,
+   false, 'KR', 'Seoul', '{English}', 'anyone', '', '{country,languages}', 'luma', 'luma-sample-1', now(), true),
+  -- Added by a person: only people in Japan can join
+  ('00000000-0000-4000-9000-000000000010', 'Tokyo Sample Ideathon',      'competition', 'Example Japan',   'https://example.com/tokyo-ideathon', '2027-03-05', '2027-02-20', null,         '', 'live', pg_temp.fake_id(10),
+   false, 'JP', 'Tokyo', '{Japanese}', 'country', 'Residents of Japan', '{}', null, null, null, false);
+
+-- A different day for each, so Newest has an order: the higher the number, the newer
+update opportunities set created_at = now() - make_interval(days => 20 - right(id::text, 2)::int) where id::text like '00000000-0000-4000-9000-%';
+
 alter table opportunities enable trigger opportunities_check;
 
 -- Three reports hide opportunity 6 (trigger in opportunities.sql)

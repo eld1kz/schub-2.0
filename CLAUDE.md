@@ -23,6 +23,7 @@ The repo has two apps on the same Supabase project:
   tests in `tests/db/`) and `npm run test:e2e` (Playwright, `tests/e2e/`). The last two need Docker:
   they run `npm run db:local` first, which starts a local Supabase, applies every migration and loads
   `supabase/seed.local.sql`. `npm run dev:local` serves the app on port 3101 against that local database.
+  The e2e tests also serve sample event pages for "Fill from link" on port 3102 (`tests/e2e/fixtures`).
   Tests never touch the real project. Known open issues are `it.fails` tests marked KNOWN ISSUE.
 
 ## Web structure
@@ -43,7 +44,9 @@ web/src/
     (app)/
       layout.tsx            top bar (tabs, search, bell, avatar), phone tab bar, nav counts
       nav-tabs.tsx          active-tab tabs (desktop) and bottom tab bar (phones)
-      opportunities/        list, [id] detail, new; event-actions.tsx is the event's action bar (Find a team,
+      opportunities/        list (country, language, "Can I join?" and sort filters in the URL; "for you" by
+                            default for members; admins' Review imports), [id] detail, [id]/edit (admins), new
+                            (with "Fill from link"); event-actions.tsx is the event's action bar (Find a team,
                             Create a team, Enter your team), also inline on featured events
       teams/                list with filters; [id] (page.tsx loads, team-view.tsx renders,
                             story.png 1080x1920 share image, og.png link preview); new
@@ -66,6 +69,14 @@ web/src/
     teams.ts                team rows, open roles, entries: a team's current event (its soonest upcoming entry,
                             else the one that ended last) and recruitingRoles (none once that event is over)
     opportunities.ts, goals.ts
+    opportunity-filters.ts  /opportunities filters, sorting, "for you" and the country choices with counts
+    countries.ts            ISO country codes and names, and the country a typed-in city or address is in
+    importers/              one module per source (Hack Club, Kaggle, K-Startup, Luma) returning one shape
+                            (types.ts), dedupe.ts across sources, run.ts writes them; run by
+                            scripts/import-opportunities.ts (npm run import:opportunities) twice a day from
+                            .github/workflows/import-opportunities.yml. MLH and Devpost are out: their terms forbid it
+    link-preview.ts         "Fill from link": an event page's schema.org Event and Open Graph tags as form values
+    link-check.ts           the safe link check (no private addresses, limited redirects); fetchPage reads one page
     connections.ts          your accepted connections (one query per page) and which events they're going to
     story.ts, story-image.tsx  the team share images: wording (English, or Korean for mostly-Hangul teams) and
                             sizing (story.ts), drawing with next/og
@@ -80,7 +91,7 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
 `people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read` → `people-discover` →
 `notification-limits` → `participant-notes` → `display-name` →
-`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites` → `shared-projects` → `team-entries`. `seed_opportunities.sql` and
+`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites` → `shared-projects` → `team-entries` → `opportunity-engine`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -95,6 +106,12 @@ Tables:
 - `opportunities` — title, type, organizer, location, online, url, deadline, starts_at, ends_at,
   status (live / hidden / removed), submitted_by, featured (only admins set it; first on /opportunities and the
   landing page). `check_new_opportunity()` limits 5 a day, rejects past dates and near-duplicate titles.
+  Where and who (`opportunity-engine.sql`): country (ISO code, null when online only), city (old rows only have
+  `location`), languages[] (`lib/languages.ts`), eligibility (anyone / students / country) and eligibility_note,
+  inferred[] (fields an importer guessed). Imports: source and external_id (unique together), imported_at,
+  needs_review (Luma, and anything without dates: only admins see it until approved), reviewed_at (set by an
+  admin's approve, edit or reject; the importer then leaves the row alone). People can't add rows with any of these.
+- `link_fetches` — one row per "Fill from link" page read, 20 an hour per member; no one reads it
 - `opportunity_participants` — people looking for a team for an opportunity
 - `opportunity_reports` — 3 reports hide an opportunity; `admins` can restore or remove
 - `teams` — owner, title, description, roles[] (new teams pick from `lib/roles.ts`; old

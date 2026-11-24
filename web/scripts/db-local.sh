@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 # Same order as CLAUDE.md. New migrations go at the end.
 MIGRATIONS=(
   schema opportunities contact teams profile portfolio connections-list auth notifications
-  goals experience-details people-requests opportunity-details awards length-limits public-read people-discover notification-limits participant-notes display-name own-images team-contact google-photos account-photos delete-account open-to-team languages team-invites shared-projects team-entries
+  goals experience-details people-requests opportunity-details awards length-limits public-read people-discover notification-limits participant-notes display-name own-images team-contact google-photos account-photos delete-account open-to-team languages team-invites shared-projects team-entries opportunity-engine
 )
 
 npx supabase start
@@ -26,14 +26,16 @@ done
 echo "Seeding"
 run_sql supabase/seed.local.sql
 
-# Only the two public values the app needs, and the sign-in methods to show (email works against the
-# local inbox); the tests read the rest from `supabase status`
+# Only the two public values the app needs, the sign-in methods to show (email works against the
+# local inbox) and where the sample event pages are; the tests read the rest from `supabase status`
 eval "$(npx supabase status -o env 2>/dev/null | grep -E '^(API_URL|PUBLISHABLE_KEY|ANON_KEY)=')"
 {
   echo "# Written by scripts/db-local.sh. Local Supabase only; gitignored."
   echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
   echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${PUBLISHABLE_KEY:-$ANON_KEY}"
   echo "AUTH_PROVIDERS=google,github,email"
+  # "Fill from link" may read the e2e tests' sample pages (tests/e2e/fixtures), in development only
+  echo "LINK_PREVIEW_FIXTURES=http://localhost:3102"
 } > .env.test.local
 
 # `db reset` restarts the API containers before the migrations above run, so the REST API can load its schema
