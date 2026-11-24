@@ -11,13 +11,13 @@ export type SharedProject = {
   url: string;
   repo_url: string;
   result: string;
-  team: { id: string; title: string; owner_id: string; opportunity_id: string | null } | null;
+  team: { id: string; title: string; owner_id: string } | null;
   // Row level security returns confirmed members, plus your own row and, for the team's owner, every row
   team_project_members: { user_id: string; status: "pending" | "confirmed" | "declined"; hidden: boolean; person: SharedProjectPerson | null }[];
 };
 
 export const sharedProjectColumns =
-  "id, team_id, title, pitch, image_url, url, repo_url, result, team:teams(id, title, owner_id, opportunity_id), " +
+  "id, team_id, title, pitch, image_url, url, repo_url, result, team:teams(id, title, owner_id), " +
   "team_project_members(user_id, status, hidden, person:profiles(id, name, avatar_url))";
 
 export const SHARED_PROJECT_TITLE_MAX = 80;

@@ -29,7 +29,8 @@ const sampleTeam = (): TeamSummary => ({
   work_mode: "",
   owner_id: alex.id,
   owner: alex,
-  opportunity: { id: "00000000-0000-4000-f000-000000000020", title: "Sample Hack Seoul", deadline: soon(), starts_at: null, ends_at: null },
+  team_entries: [],
+  opportunity: { id: "00000000-0000-4000-f000-000000000020", title: "Sample Hack Seoul", url: "", deadline: soon(), starts_at: null, ends_at: null },
   team_applications: [{ role: "Backend", status: "accepted", direction: "application", user_id: jordan.id, person: jordan }],
 });
 

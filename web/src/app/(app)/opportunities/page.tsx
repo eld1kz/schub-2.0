@@ -5,6 +5,9 @@ import { setOpportunityStatus } from "@/app/actions";
 import { OpportunitySearch } from "./opportunity-search";
 import { OpportunityHeader, OpportunityRow, type OpportunityRowData } from "./opportunity-row";
 import { connectionsGoing, myConnections } from "@/lib/connections";
+import { eventState, myTeams } from "@/lib/teams";
+import { ToastProvider } from "../u/[id]/toast";
+import { EventActions } from "./event-actions";
 
 export const instant = false;
 
@@ -27,17 +30,43 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
 
   // Your connections going to each one: loaded once for the whole list
   const going = myConnections(supabase, userId, isGuest).then((connections) => connectionsGoing(supabase, connections));
-  const [{ data: items }, { data: admin }, goingTo] = await Promise.all([query, supabase.rpc("is_admin"), going]);
+  const [{ data: items }, { data: admin }, goingTo, looking, yourTeams] = await Promise.all([
+    query,
+    supabase.rpc("is_admin"),
+    going,
+    // For featured events' buttons: where you're looking for a team, and your teams
+    supabase.from("opportunity_participants").select("opportunity_id, note").eq("user_id", userId),
+    isGuest ? [] : myTeams(supabase, userId),
+  ]);
+  const note = new Map((looking.data ?? []).map((p) => [p.opportunity_id as string, p.note as string]));
   const { data: hidden } = admin
     ? await supabase.from("opportunities").select("id, title, opportunity_reports(reason)").eq("status", "hidden").order("created_at")
     : { data: [] };
 
   const all = ((items ?? []) as OpportunityRowData[]).map((o) => ({ ...o, next: nextDate(o, day) }));
   const count = (t: OpportunityType | null) => (t ? all.filter((o) => o.type === t).length : all.length);
-  // Soonest next date first; ones without a date last
+  // Featured first, then soonest next date first; ones without a date last
   const shown = all
     .filter((o) => !type || o.type === type)
-    .sort((a, b) => (a.next.date ?? "9999").localeCompare(b.next.date ?? "9999"));
+    .sort((a, b) => Number(b.featured) - Number(a.featured) || (a.next.date ?? "9999").localeCompare(b.next.date ?? "9999"));
+  // A featured event's buttons, as on its own page
+  const actions = (o: (typeof all)[number]) => {
+    if (!o.featured) return undefined;
+    const { entered, enterable } = eventState(yourTeams, o.id);
+    const mine = note.get(o.id);
+    return (
+      <EventActions
+        event={{ id: o.id, title: o.title, url: o.url }}
+        userId={userId}
+        isGuest={isGuest}
+        looking={mine === undefined ? null : { note: mine }}
+        entered={entered}
+        enterable={enterable}
+        ended={false}
+        compact
+      />
+    );
+  };
 
   const tab = (t: OpportunityType | null, label: string) => (
     <Link
@@ -51,6 +80,7 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
   );
 
   return (
+    <ToastProvider>
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between gap-6">
         <div className="flex flex-col gap-1.5">
@@ -88,8 +118,9 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
       <OpportunitySearch
         empty={type ? `No upcoming ${tabLabel(type).toLowerCase()} yet.` : "No upcoming opportunities yet."}
         header={<OpportunityHeader />}
-        rows={shown.map((o) => ({ id: o.id, title: o.title, node: <OpportunityRow o={o} day={day} going={goingTo.get(o.id)} /> }))}
+        rows={shown.map((o) => ({ id: o.id, title: o.title, node: <OpportunityRow o={o} day={day} going={goingTo.get(o.id)} actions={actions(o)} /> }))}
       />
     </div>
+    </ToastProvider>
   );
 }

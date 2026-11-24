@@ -150,19 +150,27 @@ insert into opportunity_participants (opportunity_id, user_id, note) values
 
 -- Teams in different states ---------------------------------------------------------------
 
-insert into teams (id, owner_id, opportunity_id, title, description, roles) values
+insert into teams (id, owner_id, title, description, roles) values
   -- Open: nobody has applied
-  ('00000000-0000-4000-a000-000000000001', pg_temp.fake_id(1),  '00000000-0000-4000-9000-000000000001', 'Open Placeholder Team',  'No applicants yet.',           '{Backend,Designer}'),
+  ('00000000-0000-4000-a000-000000000001', pg_temp.fake_id(1), 'Open Placeholder Team',  'No applicants yet.',           '{Backend,Designer}'),
   -- Full: every role has an accepted member
-  ('00000000-0000-4000-a000-000000000002', pg_temp.fake_id(7),  '00000000-0000-4000-9000-000000000002', 'Full Sample Team',       'Every role is filled.',        '{Backend,ML}'),
+  ('00000000-0000-4000-a000-000000000002', pg_temp.fake_id(7), 'Full Sample Team',       'Every role is filled.',        '{Backend,ML}'),
   -- Pending applicants waiting for the owner, and one declined
-  ('00000000-0000-4000-a000-000000000003', pg_temp.fake_id(2),  '00000000-0000-4000-9000-000000000001', 'Mock Team With Pending', 'Two people are waiting.',      '{Frontend,Backend,Designer}'),
+  ('00000000-0000-4000-a000-000000000003', pg_temp.fake_id(2), 'Mock Team With Pending', 'Two people are waiting.',      '{Frontend,Backend,Designer}'),
   -- Partly filled: user A was accepted here
-  ('00000000-0000-4000-a000-000000000004', pg_temp.fake_id(14), '00000000-0000-4000-9000-000000000001', 'Testerson Robotics',     'One role still open.',         '{iOS,Product,Design}'),
+  ('00000000-0000-4000-a000-000000000004', pg_temp.fake_id(14), 'Testerson Robotics',     'One role still open.',         '{iOS,Product,Design}'),
   -- No opportunity, one declined applicant
-  ('00000000-0000-4000-a000-000000000005', pg_temp.fake_id(11), null,                                   'Fakename Growth Squad',  'A side project, no event.',    '{Marketing}'),
+  ('00000000-0000-4000-a000-000000000005', pg_temp.fake_id(11), 'Fakename Growth Squad',  'A side project, no event.',    '{Marketing}'),
   -- Mixed: one accepted, user A and someone else pending
-  ('00000000-0000-4000-a000-000000000006', pg_temp.fake_id(18), '00000000-0000-4000-9000-000000000003', 'Prototype Fintech',      'Applying for the fake grant.', '{Frontend,Backend,ML}');
+  ('00000000-0000-4000-a000-000000000006', pg_temp.fake_id(18), 'Prototype Fintech',      'Applying for the fake grant.', '{Frontend,Backend,ML}');
+
+-- Each team's event (team-entries.sql); team 5 has none. Added before the members, so nobody is notified.
+insert into team_entries (team_id, opportunity_id) values
+  ('00000000-0000-4000-a000-000000000001', '00000000-0000-4000-9000-000000000001'),
+  ('00000000-0000-4000-a000-000000000002', '00000000-0000-4000-9000-000000000002'),
+  ('00000000-0000-4000-a000-000000000003', '00000000-0000-4000-9000-000000000001'),
+  ('00000000-0000-4000-a000-000000000004', '00000000-0000-4000-9000-000000000001'),
+  ('00000000-0000-4000-a000-000000000006', '00000000-0000-4000-9000-000000000003');
 
 insert into team_applications (team_id, user_id, role, note, status) values
   ('00000000-0000-4000-a000-000000000002', pg_temp.fake_id(8),  'Backend',  'Go person',          'accepted'),

@@ -33,20 +33,21 @@ export function tallyGoing(looking: { opportunity_id: string; user_id: string }[
 }
 
 // The same for a whole list of opportunities: three queries, whatever the list's length. Only public rows:
-// who's looking for a team, team owners, and accepted members.
+// who's looking for a team, and the owners and accepted members of teams entered in each event.
 export async function connectionsGoing(supabase: Client, connections: Set<string>) {
   if (connections.size === 0) return new Map<string, Going>();
   const ids = [...connections];
   const [looking, owners, members] = await Promise.all([
     supabase.from("opportunity_participants").select("opportunity_id, user_id").in("user_id", ids),
-    supabase.from("teams").select("opportunity_id, owner_id").in("owner_id", ids).not("opportunity_id", "is", null),
-    supabase.from("team_applications").select("user_id, team:teams(opportunity_id)").eq("status", "accepted").in("user_id", ids),
+    supabase.from("teams").select("owner_id, team_entries(opportunity_id)").in("owner_id", ids),
+    supabase.from("team_applications").select("user_id, team:teams(team_entries(opportunity_id))").eq("status", "accepted").in("user_id", ids),
   ]);
+  type Entered = { team_entries: { opportunity_id: string }[] };
   const onTeams = [
-    ...(owners.data ?? []).map((t) => ({ opportunity_id: t.opportunity_id as string, user_id: t.owner_id as string })),
-    ...((members.data ?? []) as unknown as { user_id: string; team: { opportunity_id: string | null } | null }[])
-      .filter((m) => m.team?.opportunity_id)
-      .map((m) => ({ opportunity_id: m.team?.opportunity_id as string, user_id: m.user_id })),
+    ...((owners.data ?? []) as unknown as ({ owner_id: string } & Entered)[])
+      .flatMap((t) => t.team_entries.map((e) => ({ opportunity_id: e.opportunity_id, user_id: t.owner_id }))),
+    ...((members.data ?? []) as unknown as { user_id: string; team: Entered | null }[])
+      .flatMap((m) => (m.team?.team_entries ?? []).map((e) => ({ opportunity_id: e.opportunity_id, user_id: m.user_id }))),
   ];
   return tallyGoing(looking.data ?? [], onTeams, connections);
 }

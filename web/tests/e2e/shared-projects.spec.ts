@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { id, service, signInAs } from "./auth";
 
 // Team 2 "Full Sample Team": owner 07 (Yuna), members 08 (Taeho, Backend) and 14 (Kai, ML), for the upcoming
-// Mock AI Challenge Winter. Opportunity 4, Placeholder Hack 2025, ended long ago.
+// Mock AI Challenge Winter (its entry). Opportunity 4, Placeholder Hack 2025, ended long ago.
 const team = "00000000-0000-4000-a000-000000000002";
 const upcoming = "00000000-0000-4000-9000-000000000002";
 const ended = "00000000-0000-4000-9000-000000000004";
@@ -12,7 +12,7 @@ test.afterAll(async () => {
   const db = service();
   await db.from("team_projects").delete().eq("team_id", team);
   await db.from("awards").delete().eq("id", awardId);
-  await db.from("teams").update({ opportunity_id: upcoming }).eq("id", team);
+  await db.from("team_entries").update({ opportunity_id: upcoming }).eq("team_id", team);
 });
 
 test("the owner records what the team built after the event; members confirm, it shows with who built it, and edits ask again", async ({ browser }) => {
@@ -32,7 +32,7 @@ test("the owner records what the team built after the event; members confirm, it
   await expect(page.getByText("Once Mock AI Challenge Winter is over, you can record what the team built here.")).toBeVisible();
 
   // After it
-  await db.from("teams").update({ opportunity_id: ended }).eq("id", team);
+  await db.from("team_entries").update({ opportunity_id: ended }).eq("team_id", team);
   await page.reload();
   await page.getByRole("button", { name: "+ Record what we built" }).click();
   const dialog = page.getByRole("dialog", { name: "Record what we built" });

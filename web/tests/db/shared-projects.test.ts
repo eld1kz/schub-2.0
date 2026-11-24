@@ -14,15 +14,15 @@ beforeAll(async () => {
 
 afterEach(async () => {
   await service.from("team_projects").delete().in("team_id", [teamId(2), teamId(5), teamId(4)]);
-  await service.from("teams").update({ opportunity_id: "00000000-0000-4000-9000-000000000002" }).eq("id", teamId(2));
+  await service.from("team_entries").update({ opportunity_id: "00000000-0000-4000-9000-000000000002" }).eq("team_id", teamId(2));
 });
 
 const record = (client: Client, team: string, fields: Record<string, unknown> = {}) =>
   client.from("team_projects").insert({ team_id: team, title: "Built it", ...fields }).select("id").single();
 const membersOf = async (project: string) =>
   ((await service.from("team_project_members").select("user_id, status, hidden").eq("project_id", project)).data ?? []).sort((a, b) => a.user_id.localeCompare(b.user_id));
-// Team 2's event is upcoming; this moves it to one that has ended
-const endEvent = () => service.from("teams").update({ opportunity_id: ended }).eq("id", teamId(2));
+// Team 2's event is upcoming; this moves its entry to one that has ended (team-entries.sql)
+const endEvent = () => service.from("team_entries").update({ opportunity_id: ended }).eq("team_id", teamId(2));
 
 describe("recording a project", () => {
   it("a team with no event can record it any time; the owner is on it and nobody else was accepted", async () => {
@@ -90,7 +90,8 @@ describe("joining later", () => {
 
   it("an event with no dates at all doesn't keep the team waiting", async () => {
     await service.from("opportunities").update({ starts_at: null, ends_at: null, deadline: null }).eq("id", "00000000-0000-4000-9000-000000000003");
-    const { data: team } = await service.from("teams").insert({ owner_id: id(11), title: "Dateless team", roles: ["Backend"], opportunity_id: "00000000-0000-4000-9000-000000000003" }).select("id").single();
+    const { data: team } = await service.from("teams").insert({ owner_id: id(11), title: "Dateless team", roles: ["Backend"] }).select("id").single();
+    await service.from("team_entries").insert({ team_id: team?.id, opportunity_id: "00000000-0000-4000-9000-000000000003" });
     try {
       expect((await record(owner11, team?.id)).error).toBeNull();
     } finally {

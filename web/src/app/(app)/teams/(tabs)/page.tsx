@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
-import { openRoles, teamRank, teamSummaryColumns, type TeamSummary } from "@/lib/teams";
+import { recruitingRoles, teamRank, teamSummaries, teamSummaryColumns, type TeamSummary } from "@/lib/teams";
+import { today } from "@/lib/opportunities";
 import { myConnections } from "@/lib/connections";
 import { awardedIds } from "@/lib/awards";
 import { TeamList } from "../../team-list";
@@ -17,6 +18,7 @@ export default async function TeamsPage(props: PageProps<"/teams">) {
   // Teams that said Either count for both
   const mode = oneOf(["In person", "Remote"], params.mode);
   const { supabase, userId, isGuest } = await requireUser();
+  const day = today();
   const [{ data }, awarded, mine, looking, connections] = await Promise.all([
     supabase.from("teams").select(teamSummaryColumns).order("created_at", { ascending: false }),
     awardedIds(supabase),
@@ -29,16 +31,18 @@ export default async function TeamsPage(props: PageProps<"/teams">) {
   const applied = new Set((mine.data ?? []).filter((a) => a.status !== "accepted" && a.direction === "application").map((a) => a.team_id));
   const lookingFor = new Set((looking.data ?? []).map((p) => p.opportunity_id));
   // Teams you run or are on live in Your teams
-  const all = ((data ?? []) as unknown as TeamSummary[]).filter((t) => t.owner_id !== userId && !memberOf.has(t.id));
+  const all = teamSummaries(data, day).filter((t) => t.owner_id !== userId && !memberOf.has(t.id));
 
+  // Roles teams are recruiting for: none once a team's event is over (lib/teams.ts)
+  const recruiting = (t: TeamSummary) => recruitingRoles(t, day);
   // Role choices are the open roles teams actually list, one per spelling regardless of case
-  const roles = [...new Map(all.flatMap(openRoles).map((r) => [r.toLowerCase(), r])).values()].sort((a, b) => a.localeCompare(b));
+  const roles = [...new Map(all.flatMap(recruiting).map((r) => [r.toLowerCase(), r])).values()].sort((a, b) => a.localeCompare(b));
 
   // Newest first within each group of teamRank (the query's order, kept by the stable sort)
-  const rank = (t: TeamSummary) => teamRank(t, lookingFor, connections);
+  const rank = (t: TeamSummary) => teamRank(t, lookingFor, connections, day);
   const teams = all
     .filter((t) => {
-      const open = openRoles(t);
+      const open = recruiting(t);
       if (role && !open.some((r) => r.toLowerCase() === role.toLowerCase())) return false;
       if (lang && !t.languages.includes(lang)) return false;
       if (mode && !suitedModes(mode).includes(t.work_mode)) return false;
@@ -51,7 +55,7 @@ export default async function TeamsPage(props: PageProps<"/teams">) {
   const selectedRole = roles.find((r) => r.toLowerCase() === role.toLowerCase()) ?? role;
   // A role from the URL that no team lists any more still shows as selected
   const options = role && !roles.includes(selectedRole) ? [...roles, role] : roles;
-  const withOpenRoles = all.filter((t) => openRoles(t).length > 0).length;
+  const withOpenRoles = all.filter((t) => recruiting(t).length > 0).length;
   const empty = filtered ? (
     <>
       No teams match these filters.{lang || mode ? " Only teams that set a language or work mode show up for those." : ""}{" "}

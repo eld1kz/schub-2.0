@@ -30,6 +30,15 @@ export function nextDate(o: Dates, day: string) {
   return { label: "No date set", date: null };
 }
 
+// An event's last day: its end, else its start, else its deadline; null when it has no dates
+export const lastDay = (o: Dates) => o.ends_at ?? o.starts_at ?? o.deadline;
+
+// Over once its last day is before `day`; an event with no dates never is
+export function hasEnded(o: Dates, day: string) {
+  const last = lastDay(o);
+  return last !== null && last < day;
+}
+
 // Whole days from today to a plain YYYY-MM-DD day
 export const daysUntil = (date: string, day: string) => Math.round((Date.parse(date) - Date.parse(day)) / 86_400_000);
 export const daysLabel = (n: number) => (n === 0 ? "Today" : n === 1 ? "1 day left" : n <= SOON_DAYS ? `${n} days left` : `${n} days`);

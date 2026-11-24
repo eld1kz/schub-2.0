@@ -11,7 +11,7 @@ const project = (members: SharedProject["team_project_members"]): SharedProject 
   url: "",
   repo_url: "",
   result: "",
-  team: { id: "t", title: "Team", owner_id: "owner", opportunity_id: null },
+  team: { id: "t", title: "Team", owner_id: "owner" },
   team_project_members: members,
 });
 

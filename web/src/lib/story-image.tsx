@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { publicClient } from "@/lib/supabase/server";
 import { photoUrl } from "@/lib/portfolio";
-import { openRoles } from "@/lib/teams";
+import { currentEntry, entryColumns, openRoles, type Entry } from "@/lib/teams";
 import { today } from "@/lib/opportunities";
 import { clampLines, textWidth, eventLine, firstName, fitSize, headline, qrPath, storyLang, storyText, type Lang, type StoryTheme } from "@/lib/story";
 
@@ -78,7 +78,7 @@ async function photo(url: string) {
 export async function loadStory(id: string): Promise<StoryData | null> {
   const { data } = await publicClient()
     .from("teams")
-    .select("id, title, roles, owner:profiles(name, avatar_url), opportunity:opportunities(title, deadline, starts_at, ends_at), team_applications(role, status, person:profiles(name, avatar_url))")
+    .select(`id, title, roles, owner:profiles(name, avatar_url), team_entries(${entryColumns}), team_applications(role, status, person:profiles(name, avatar_url))`)
     .eq("id", id)
     .maybeSingle();
   if (!data) return null;
@@ -87,9 +87,11 @@ export async function loadStory(id: string): Promise<StoryData | null> {
     title: string;
     roles: string[];
     owner: Person | null;
-    opportunity: { title: string; deadline: string | null; starts_at: string | null; ends_at: string | null } | null;
+    team_entries: Entry[];
     team_applications: { role: string; status: string; person: Person | null }[];
   };
+  // The team's current event (lib/teams.ts)
+  const event = currentEntry(team.team_entries, today())?.opportunity ?? null;
   const accepted = team.team_applications.filter((a) => a.status === "accepted");
   const people = [team.owner, ...accepted.map((a) => a.person)].filter((p): p is Person => p !== null);
   const lang = storyLang([team.title, ...team.roles]);
@@ -98,8 +100,8 @@ export async function loadStory(id: string): Promise<StoryData | null> {
     lang,
     title: team.title,
     open: openRoles({ roles: team.roles, team_applications: accepted }),
-    event: eventLine(team.opportunity, today(), lang),
-    eventTitle: team.opportunity?.title ?? null,
+    event: eventLine(event, today(), lang),
+    eventTitle: event?.title ?? null,
     members: await Promise.all(people.map(async (p) => ({ name: firstName(p.name), photo: await photo(p.avatar_url) }))),
   };
 }

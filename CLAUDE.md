@@ -43,7 +43,8 @@ web/src/
     (app)/
       layout.tsx            top bar (tabs, search, bell, avatar), phone tab bar, nav counts
       nav-tabs.tsx          active-tab tabs (desktop) and bottom tab bar (phones)
-      opportunities/        list, [id] detail, new
+      opportunities/        list, [id] detail, new; event-actions.tsx is the event's action bar (Find a team,
+                            Create a team, Enter your team), also inline on featured events
       teams/                list with filters; [id] (page.tsx loads, team-view.tsx renders,
                             story.png 1080x1920 share image, og.png link preview); new
       people/               tabs: Discover (/people), Requests (/people/requests), Connections (/people/connections)
@@ -53,6 +54,7 @@ web/src/
       feed/                 posts and ideas; on hold, not linked from the nav
       connect-button.tsx, avatar.tsx, select.tsx, team-list.tsx, global-search.tsx, notifications.tsx
       share-team.tsx        Share button and dialog: Web Share on phones, QR code / copy image on laptops
+      entry-status.tsx      a team's status in an event: the owner's select, everyone else's label
   lib/
     match.ts                matching score (the iOS DiscoverViewModel's, plus a shared-language adjustment)
     skills.ts               the fixed skill list and its groups
@@ -61,7 +63,9 @@ web/src/
     invites.ts              "People who fill this role": who to suggest inviting for a team's open role
     shared-projects.ts      a team's shared project: columns, "Built with", when it can be recorded
     portfolio.ts            project/experience types, period formatting, safe link/image helpers
-    opportunities.ts, teams.ts, goals.ts
+    teams.ts                team rows, open roles, entries: a team's current event (its soonest upcoming entry,
+                            else the one that ended last) and recruitingRoles (none once that event is over)
+    opportunities.ts, goals.ts
     connections.ts          your accepted connections (one query per page) and which events they're going to
     story.ts, story-image.tsx  the team share images: wording (English, or Korean for mostly-Hangul teams) and
                             sizing (story.ts), drawing with next/og
@@ -76,7 +80,7 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
 `people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read` → `people-discover` →
 `notification-limits` → `participant-notes` → `display-name` →
-`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites` → `shared-projects`. `seed_opportunities.sql` and
+`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites` → `shared-projects` → `team-entries`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -89,12 +93,17 @@ Tables:
 - `projects` — the profile's portfolio
 - `connections` — sender_id, receiver_id, status (pending / accepted / declined)
 - `opportunities` — title, type, organizer, location, online, url, deadline, starts_at, ends_at,
-  status (live / hidden / removed), submitted_by. `check_new_opportunity()` limits 5 a day,
-  rejects past dates and near-duplicate titles.
+  status (live / hidden / removed), submitted_by, featured (only admins set it; first on /opportunities and the
+  landing page). `check_new_opportunity()` limits 5 a day, rejects past dates and near-duplicate titles.
 - `opportunity_participants` — people looking for a team for an opportunity
 - `opportunity_reports` — 3 reports hide an opportunity; `admins` can restore or remove
-- `teams` — owner, optional opportunity, title, description, roles[] (new teams pick from `lib/roles.ts`; old
-  ones keep typed-in roles), role_notes (jsonb, role → short note), languages[], work_mode
+- `teams` — owner, title, description, roles[] (new teams pick from `lib/roles.ts`; old
+  ones keep typed-in roles), role_notes (jsonb, role → short note), languages[], work_mode. The owner can change
+  roles and role_notes only. `opportunity_id` is old and unused by the app: events are in `team_entries`; drop it
+  once the version using `team_entries` is deployed (`team-entries.sql` header)
+- `team_entries` — team_id, opportunity_id (one per pair), status (going / registered / submitted / placed),
+  created_at. Anyone reads; only the team's owner enters (live events that haven't ended), changes the status or
+  withdraws. Entering notifies accepted members (`team-entries.sql`)
 - `team_applications` — one per person per team, for one role. direction 'application': the person applied and
   the owner accepts or declines; direction 'invite': the owner invited someone open to a team or a connection
   (10 a day), the invited person accepts or declines, and the owner can withdraw it while pending
@@ -102,13 +111,13 @@ Tables:
   direction = 'application'
 - `awards` — placement, prize_name, event_name (always set; the opportunity's title when linked),
   optional opportunity_id / project_id (own project) / team_id (a team you were on, set by the server
-  for the same opportunity), awarded_on (1st of the month), proof_url, description
+  when it entered the same opportunity), awarded_on (1st of the month), proof_url, description
 - `award_teammates` — award_id, user_id, status (pending / confirmed / declined). Only the owner tags;
   only the tagged person answers; declined rows stay so they can't be tagged again. Only confirmed rows
   are public. Changing an award's placement, prize, event or date sets confirmed teammates back to
   pending and notifies them (trigger in `awards.sql`).
 - `team_projects` — what a team built (one per team): title, pitch, image_url, url, repo_url, result. The owner
-  records it once the team's event has ended (or any time without one) and edits it.
+  records it once one of the team's events has ended (or any time without one) and edits it.
 - `team_project_members` — project_id, user_id, status (pending / confirmed / declined), hidden. Written only by
   triggers (`shared-projects.sql`): the owner is confirmed, every accepted member is asked; changing the title or
   result sets confirmed members back to pending. Members answer and hide it from their own profile. Confirmed rows

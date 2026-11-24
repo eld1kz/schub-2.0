@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
 import { answerInvite, withdrawApplication } from "@/app/actions";
-import { teamSummaryColumns, type TeamSummary } from "@/lib/teams";
+import { teamSummaries, teamSummaryColumns } from "@/lib/teams";
+import { today } from "@/lib/opportunities";
 import { awardedIds } from "@/lib/awards";
 import { myConnections } from "@/lib/connections";
 import { TeamList } from "../../../team-list";
@@ -58,7 +59,7 @@ export default async function YourTeamsPage() {
     awardedIds(supabase),
     myConnections(supabase, userId, isGuest),
   ]);
-  const running = (owned.data ?? []) as unknown as TeamSummary[];
+  const running = teamSummaries(owned.data, today());
   const mine = ((applications.data ?? []) as unknown as MyApplication[]).filter((a) => a.team);
   const declinedAt = new Map<string, number>();
   for (const n of declines.data ?? []) {

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { openRoles } from "@/lib/teams";
+import { openRoles, type Entry, type TeamEvent } from "@/lib/teams";
+import { dateRange, hasEnded, nextDate, today } from "@/lib/opportunities";
 import { knownSkills } from "@/lib/skills";
 import { workModeLabel } from "@/lib/languages";
 import { answerInvite, applyToTeam, deleteTeam, respondToApplication, withdrawApplication } from "@/app/actions";
@@ -8,6 +9,8 @@ import { InvitePanel } from "./invite-panel";
 import type { SharedProject } from "@/lib/shared-projects";
 import type { Award } from "@/lib/awards";
 import { SharedProjectBody } from "../../u/[id]/shared-projects";
+import { Placement } from "../../u/[id]/awards";
+import { EntryStatusControl, EntryStatusLabel } from "../../entry-status";
 import { SharedProjectEdit } from "./shared-project-edit";
 import { Avatar } from "../../avatar";
 import { SignInButton } from "../../sign-in";
@@ -106,7 +109,9 @@ export type Team = {
   work_mode: string;
   owner_id: string;
   owner: { name: string; avatar_url: string; headline: string; open_to_collaborate: boolean; languages: string[] } | null;
-  opportunity: { id: string; title: string; ends_at: string | null; starts_at: string | null; deadline: string | null } | null;
+  // Every event the team entered, and its current one (lib/teams.ts withCurrentEvent)
+  team_entries: Entry[];
+  opportunity: TeamEvent | null;
 };
 
 // The team page for whoever is looking: open roles to apply for, the team, and applicants for the owner
@@ -114,8 +119,9 @@ export type Team = {
 // `shareVersion`: storyVersion of the team, for the share image's address
 // `suggestions`: for the owner, people to invite per open role (lib/invites.ts)
 // `sharedProject`: what the team built (lib/shared-projects.ts), shown with `award`, the team's best award.
+// `results`: awards linked to the team, best first, shown next to the event they're for
 // `canRecord`: the owner may record it now (the event has ended, or there is none)
-export function TeamView({ team: t, applications, userId, isGuest, connections, shareVersion, suggestions = {}, sharedProject = null, award, canRecord = false }: {
+export function TeamView({ team: t, applications, userId, isGuest, connections, shareVersion, suggestions = {}, sharedProject = null, award, results = [], canRecord = false }: {
   team: Team;
   applications: Application[];
   userId: string;
@@ -125,6 +131,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
   suggestions?: Record<string, Candidate[]>;
   sharedProject?: SharedProject | null;
   award?: Award;
+  results?: Award[];
   canRecord?: boolean;
 }) {
   const { owner, opportunity } = t;
@@ -138,6 +145,14 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
   const invited = applications.filter((a) => a.status === "pending" && a.direction === "invite" && a.user_id !== userId);
   const invitedMe = mine?.direction === "invite" && mine.status === "pending";
   const open = openRoles({ roles, team_applications: applications });
+  // Once the team's current event is over, its open roles stop showing (lib/teams.ts recruitingRoles)
+  const day = today();
+  const over = opportunity !== null && hasEnded(opportunity, day);
+  const recruiting = over ? [] : open;
+  // Newest entry first
+  const entries = t.team_entries
+    .filter((e): e is Entry & { opportunity: TeamEvent } => e.opportunity !== null)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
   // Invitations for a role that was filled meanwhile can't be accepted any more; the owner can still withdraw them
   const stale = invited.filter((i) => !open.includes(i.role));
   // Applicants grouped by the role they applied for, in the team's order
@@ -215,10 +230,10 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
           )}
         </header>
 
-        <Section title="Open roles" count={open.length}>
-          {open.length > 0 ? (
+        <Section title="Open roles" count={recruiting.length}>
+          {recruiting.length > 0 ? (
             <div className="flex flex-col">
-              {open.map((role) => (
+              {recruiting.map((role) => (
                 <div key={role} role="group" aria-label={role} className="flex flex-col gap-3 border-b border-border py-4 first:pt-0">
                   <div className={row}>
                     <span className="flex min-w-0 flex-col gap-0.5">
@@ -233,10 +248,44 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
                 </div>
               ))}
             </div>
+          ) : over && open.length > 0 ? (
+            <p className="max-w-[520px] text-[15px] text-ink2">
+              {opportunity.title} is over, so the open roles aren&apos;t shown.{isOwner && " Enter the team in another event to recruit again."}
+            </p>
           ) : (
             <p className="text-[15px] text-ink2">All roles are filled.</p>
           )}
         </Section>
+
+        {(entries.length > 0 || isOwner) && (
+          <Section id="events" title="Events" count={entries.length}>
+            {entries.length > 0 ? (
+              <div className="flex flex-col">
+                {entries.map((e) => {
+                  const o = e.opportunity;
+                  const when = dateRange(o.starts_at, o.ends_at) || nextDate(o, day).label;
+                  const result = results.find((a) => a.opportunity_id === o.id);
+                  return (
+                    <div key={o.id} role="group" aria-label={o.title} className="flex flex-col gap-3 border-b border-border py-4 first:pt-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+                      <div className="flex min-w-0 flex-col gap-0.5">
+                        <Link href={`/opportunities/${o.id}`} className="w-fit text-[17px] font-semibold hover:text-accent">{o.title}</Link>
+                        <p className="text-sm text-ink2 tabular-nums">{when}</p>
+                        {result && <Placement placement={result.placement} className="mt-1" />}
+                      </div>
+                      {isOwner ? (
+                        <EntryStatusControl teamId={t.id} teamTitle={t.title} event={o} status={e.status} userId={userId} />
+                      ) : (
+                        <EntryStatusLabel status={e.status} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="max-w-[520px] text-[15px] text-ink2">Not in any event yet. Open an event and choose Enter your team.</p>
+            )}
+          </Section>
+        )}
 
         {(sharedProject || isOwner) && (
           <Section id="built" title="What we built" owner={isOwner} edit={isOwner && sharedProject && <SharedProjectEdit teamId={t.id} project={sharedProject} trigger="edit" />}>

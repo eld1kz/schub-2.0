@@ -6,12 +6,13 @@ import { revalidatePath } from "next/cache";
 import { createClient, requireMember, requireUser } from "@/lib/supabase/server";
 import { parseList } from "@/lib/match";
 import { opportunityTypes } from "@/lib/opportunities";
+import { isEntryStatus, openRoles } from "@/lib/teams";
 import { linkWorks } from "@/lib/link-check";
 import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, mediaPath, toLink } from "@/lib/portfolio";
 import { AWARD_DESCRIPTION_MAX, AWARD_TEAMMATES_MAX, PLACEMENTS } from "@/lib/awards";
 import { knownSkills } from "@/lib/skills";
 import { knownGoals } from "@/lib/goals";
-import { knownRoles, rolesWithNotes } from "@/lib/roles";
+import { ROLES, knownRoles, rolesWithNotes } from "@/lib/roles";
 import { HOURS, knownLanguages, oneOf, WORK_MODES } from "@/lib/languages";
 import { LAST_METHOD_COOKIE, enabledMethods, type OAuthProvider } from "@/lib/auth-providers";
 import { localPath } from "@/lib/redirect";
@@ -401,18 +402,18 @@ export async function saveAward(id: string | null, formData: FormData): Promise<
   if (text("description").length > AWARD_DESCRIPTION_MAX) return { error: `Keep it to ${AWARD_DESCRIPTION_MAX} characters or fewer.`, field: "description" };
   if (teammates.length > AWARD_TEAMMATES_MAX) return { error: `Tag up to ${AWARD_TEAMMATES_MAX} teammates.`, field: "teammates" };
 
-  // A Schub opportunity lends its title, and a team you were on for it (started or accepted to) is linked
+  // A Schub opportunity lends its title, and a team you were on that entered it (started or accepted to) is linked
   let eventName = text("event_name");
   let teamId: string | null = null;
   if (opportunityId) {
     const [opportunity, owned, joined] = await Promise.all([
       supabase.from("opportunities").select("title").eq("id", opportunityId).maybeSingle(),
-      supabase.from("teams").select("id").eq("opportunity_id", opportunityId).eq("owner_id", userId).limit(1),
-      supabase.from("team_applications").select("team_id, team:teams!inner(opportunity_id)").eq("user_id", userId).eq("status", "accepted").eq("team.opportunity_id", opportunityId).limit(1),
+      supabase.from("team_entries").select("team_id, team:teams!inner(owner_id)").eq("opportunity_id", opportunityId).eq("team.owner_id", userId).limit(1),
+      supabase.from("team_applications").select("team_id, team:teams!inner(team_entries!inner(opportunity_id))").eq("user_id", userId).eq("status", "accepted").eq("team.team_entries.opportunity_id", opportunityId).limit(1),
     ]);
     if (!opportunity.data) return { error: "That opportunity isn't listed any more. Type the event name instead.", field: "event" };
     eventName = opportunity.data.title;
-    teamId = owned.data?.[0]?.id ?? joined.data?.[0]?.team_id ?? null;
+    teamId = owned.data?.[0]?.team_id ?? joined.data?.[0]?.team_id ?? null;
   }
   if (!eventName) return { error: "Choose the event or type its name.", field: "event" };
 
@@ -582,6 +583,17 @@ export async function lookForTeam(opportunityId: string, formData: FormData): Pr
   return {};
 }
 
+// "Find a team": says you're looking for a team for this event, keeping your note if you already were
+export async function findTeam(opportunityId: string): Promise<SaveResult> {
+  const { supabase, userId } = await requireMember();
+  const { error } = await supabase
+    .from("opportunity_participants")
+    .upsert({ opportunity_id: opportunityId, user_id: userId }, { onConflict: "opportunity_id,user_id", ignoreDuplicates: true });
+  if (error) return { error: "Couldn't add you. Try again." };
+  revalidatePath("/opportunities", "layout");
+  return {};
+}
+
 export async function stopLooking(opportunityId: string) {
   const { supabase, userId } = await requireMember();
   await supabase.from("opportunity_participants").delete().eq("opportunity_id", opportunityId).eq("user_id", userId);
@@ -608,13 +620,72 @@ export async function createTeam(formData: FormData) {
       role_notes: notes,
       languages: knownLanguages(formData.getAll("languages")),
       work_mode: oneOf(WORK_MODES, formData.get("work_mode")),
-      opportunity_id: text("opportunity_id") || null,
     })
     .select("id")
     .single();
   if (error || !data) return fail(error?.code === "23514" ? "The name should be 3 to 120 characters." : "Couldn't post the team. Try again.");
+  // The event it's for becomes its first entry (supabase/team-entries.sql)
+  const opportunityId = text("opportunity_id");
+  if (opportunityId) {
+    const { error: entryError } = await supabase.from("team_entries").insert({ team_id: data.id, opportunity_id: opportunityId });
+    if (entryError) {
+      await supabase.from("teams").delete().eq("id", data.id);
+      return fail("That event isn't taking teams any more. Pick another one.");
+    }
+  }
   revalidatePath("/", "layout");
   redirect(`/teams/${data.id}`);
+}
+
+// "Enter your team": enters one of your teams in an event; members are notified by a trigger
+// (supabase/team-entries.sql). The "roles" values are the open roles as adjusted in the form; roles someone was
+// accepted for always stay, and their notes stay with them.
+export async function enterTeam(opportunityId: string, formData: FormData): Promise<SaveResult> {
+  const { supabase, userId } = await requireMember();
+  const teamId = field(formData, "team_id");
+  if (!teamId) return { error: "Choose a team.", field: "team_id" };
+  const { data } = await supabase.from("teams").select("owner_id, roles, role_notes, team_applications(role, status)").eq("id", teamId).maybeSingle();
+  const team = data as { owner_id: string; roles: string[]; role_notes: Record<string, string>; team_applications: { role: string; status: string }[] } | null;
+  if (!team || team.owner_id !== userId) return { error: "You can only enter a team you started.", field: "team_id" };
+
+  const open = openRoles(team);
+  const filled = team.roles.filter((r) => !open.includes(r));
+  // From the fixed list, or one of the team's own (older teams typed theirs in)
+  const picked = [...new Set(formData.getAll("roles").map(String))].filter((r) => ROLES.includes(r) || team.roles.includes(r));
+  const roles = [...filled, ...picked.filter((r) => !filled.includes(r))];
+  if (roles.length === 0) return { error: "Keep at least one role.", field: "roles" };
+  if (roles.length > 10) return { error: "A team can list up to 10 roles.", field: "roles" };
+
+  const { error } = await supabase.from("team_entries").insert({ team_id: teamId, opportunity_id: opportunityId });
+  if (error) {
+    if (error.code === "23505") return { error: "This team is already entered.", field: "team_id" };
+    return { error: error.code === "42501" ? "This event isn't taking teams any more." : "Couldn't enter the team. Try again." };
+  }
+  const changed = roles.length !== team.roles.length || roles.some((r) => !team.roles.includes(r));
+  if (changed) {
+    const notes = Object.fromEntries(Object.entries(team.role_notes ?? {}).filter(([r]) => roles.includes(r)));
+    const { error: rolesError } = await supabase.from("teams").update({ roles, role_notes: notes }).eq("id", teamId);
+    if (rolesError) return { error: "The team is entered, but its roles couldn't be changed. Try again from the team page." };
+  }
+  revalidatePath("/", "layout");
+  return {};
+}
+
+// The owner moves an entry along: going, registered, submitted, placed
+export async function setEntryStatus(teamId: string, opportunityId: string, status: string): Promise<SaveResult> {
+  const { supabase } = await requireMember();
+  if (!isEntryStatus(status)) return { error: "Pick a status." };
+  const { data, error } = await supabase.from("team_entries").update({ status }).eq("team_id", teamId).eq("opportunity_id", opportunityId).select("status");
+  if (error || !data?.length) return { error: "Couldn't change the status. Try again." };
+  revalidatePath("/", "layout");
+  return {};
+}
+
+// Admins feature an event, or stop featuring it (only their update policy lets it through)
+export async function setFeatured(opportunityId: string, featured: boolean) {
+  const { supabase } = await requireMember();
+  await supabase.from("opportunities").update({ featured: featured === true }).eq("id", opportunityId);
+  revalidatePath("/", "layout");
 }
 
 export async function deleteTeam(id: string) {

@@ -3,10 +3,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
 import { daysLabel, daysUntil, nextDate, today } from "@/lib/opportunities";
-import { openRoles, teamSummaryColumns, type TeamSummary } from "@/lib/teams";
+import { recruitingRoles, teamSummaries, teamSummaryColumns } from "@/lib/teams";
 import { awardedIds } from "@/lib/awards";
 import { OpportunityHeader, OpportunityRow, type OpportunityRowData } from "./(app)/opportunities/opportunity-row";
 import { TeamList } from "./(app)/team-list";
+import { EventActions } from "./(app)/opportunities/event-actions";
 import { EmptyPrompt } from "./(app)/u/[id]/profile-parts";
 import { BuildingPreview, ConfirmedMark, EventMark, HeroPreview, LookingPreview, MatchMark } from "./landing-samples";
 import { PublicHeader } from "./public-header";
@@ -40,24 +41,34 @@ export default async function Home(props: PageProps<"/">) {
     awardedIds(supabase),
     supabase.from("profiles").select("university").neq("university", "").limit(1000),
   ]);
-  // The 3 soonest by their next date, like /opportunities; ones without a date last
+  // Featured ones, then the soonest by their next date, like /opportunities; ones without a date last. 3 in all.
   const soonest = ((opportunities.data ?? []) as OpportunityRowData[])
     .map((o) => ({ o, date: nextDate(o, day).date ?? "9999" }))
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .sort((a, b) => Number(b.o.featured) - Number(a.o.featured) || a.date.localeCompare(b.date))
     .slice(0, 3)
     .map(({ o }) => o);
-  const allTeams = (teams.data ?? []) as unknown as TeamSummary[];
+  const allTeams = teamSummaries(teams.data, day);
   // The 3 newest teams that still have an open role
-  const open = allTeams.filter((t) => openRoles(t).length > 0).slice(0, 3);
+  const open = allTeams.filter((t) => recruitingRoles(t, day).length > 0).slice(0, 3);
   // With fewer than 2 teams, opportunities lead and the soonest one asks for a team
   const teamsFirst = open.length >= 2;
   const ask = teamsFirst ? null : (soonest[0] ?? null);
   const universities = byPopularity((profiles.data ?? []).map((p) => p.university as string));
 
   const opportunityBlock = soonest.length > 0 && (
-    <Block title="Soonest opportunities" href="/opportunities" more="All opportunities">
+    <Block title={soonest.some((o) => o.featured) ? "Featured and soonest opportunities" : "Soonest opportunities"} href="/opportunities" more="All opportunities">
       <OpportunityHeader />
-      {soonest.map((o) => <OpportunityRow key={o.id} o={o} day={day} />)}
+      {soonest.map((o) => (
+        <OpportunityRow
+          key={o.id}
+          o={o}
+          day={day}
+          // Featured events get their buttons, each going to sign-in first
+          actions={o.featured && (
+            <EventActions event={{ id: o.id, title: o.title, url: o.url }} userId={userId} isGuest looking={null} entered={null} enterable={[]} ended={false} compact />
+          )}
+        />
+      ))}
     </Block>
   );
   const teamBlock = open.length > 0 && (
@@ -65,7 +76,7 @@ export default async function Home(props: PageProps<"/">) {
       <TeamList teams={open} userId={userId} awarded={awarded} empty="" />
     </Block>
   );
-  const askBlock = ask && <AskForTeam o={ask} day={day} first={!allTeams.some((t) => t.opportunity?.id === ask.id)} />;
+  const askBlock = ask && <AskForTeam o={ask} day={day} first={!allTeams.some((t) => t.team_entries.some((e) => e.opportunity?.id === ask.id))} />;
 
   return (
     <>

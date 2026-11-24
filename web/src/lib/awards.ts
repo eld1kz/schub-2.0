@@ -26,7 +26,7 @@ export type Award = {
   // Null when the opportunity is gone or hidden; event_name still has its name
   opportunity: { id: string; title: string } | null;
   project: { id: string; title: string } | null;
-  team: { id: string; opportunity_id: string | null } | null;
+  team: { id: string; team_entries: { opportunity_id: string }[] } | null;
   owner: AwardPerson | null;
   // Row level security returns confirmed teammates, plus every tag to the owner and your own tag to you
   award_teammates: { user_id: string; status: "pending" | "confirmed" | "declined"; person: AwardPerson | null }[];
@@ -35,13 +35,13 @@ export type Award = {
 // awards → profiles is ambiguous (the owner, or the teammates through award_teammates), hence the hints
 export const awardColumns =
   "id, user_id, placement, prize_name, opportunity_id, event_name, awarded_on, project_id, team_id, proof_url, description, " +
-  "opportunity:opportunities(id, title), project:projects(id, title), team:teams(id, opportunity_id), " +
+  "opportunity:opportunities(id, title), project:projects(id, title), team:teams(id, team_entries(opportunity_id)), " +
   "owner:profiles!user_id(id, name, avatar_url), award_teammates(user_id, status, person:profiles!user_id(id, name, avatar_url))";
 
 export const confirmedTeammates = (a: Award) => a.award_teammates.filter((t) => t.status === "confirmed");
 
-// The team was put together on Schub for this same event
-export const formedOnSchub = (a: Award) => Boolean(a.opportunity_id && a.team?.opportunity_id === a.opportunity_id);
+// The team was put together on Schub and entered this same event
+export const formedOnSchub = (a: Award) => Boolean(a.opportunity_id && a.team?.team_entries.some((e) => e.opportunity_id === a.opportunity_id));
 
 // Best placement first, then the most recent
 export function byRank(a: Award, b: Award) {

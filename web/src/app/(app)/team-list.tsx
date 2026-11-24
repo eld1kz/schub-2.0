@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { SOON_DAYS, daysUntil, nextDate, today } from "@/lib/opportunities";
-import { memberSummary, openRoles, teamMembers, universitiesLabel, type TeamSummary } from "@/lib/teams";
+import { memberSummary, openRoles, recruitingRoles, teamMembers, universitiesLabel, type TeamSummary } from "@/lib/teams";
 import { storyVersion } from "@/lib/story";
 import { workModeLabel } from "@/lib/languages";
 import { AwardMark } from "./award-mark";
+import { EntryStatusLabel } from "./entry-status";
 import { Avatar } from "./avatar";
 import { ShareTeamButton } from "./share-team";
 
@@ -18,15 +19,17 @@ const daysLeft = (n: number) => (n === 0 ? "Today" : n === 1 ? "1 day left" : `$
 // `applied`: teams you've already applied to, whose button reads "Applied"
 // `connections`: your accepted connections. A team with one on it leads with them, ringed in the accent.
 // Other members open to a team are ringed in green.
-// `hideEvent`: on an opportunity's own page, where every row's event line would repeat the page title
+// `event`: on an opportunity's own page. Rows show the team's status there instead of an event line, which would
+// repeat the page title, and its open roles only until the event is over.
+// Elsewhere a row shows the team's current event, and no open roles once that's over.
 // `share`: a share icon on each row, opening the share dialog (Your teams > Running)
-export function TeamList({ teams, userId, awarded, applied, connections = new Set(), hideEvent = false, share = false, empty }: {
+export function TeamList({ teams, userId, awarded, applied, connections = new Set(), event, share = false, empty }: {
   teams: TeamSummary[];
   userId: string;
   awarded: Set<string>;
   applied?: Set<string>;
   connections?: Set<string>;
-  hideEvent?: boolean;
+  event?: string;
   share?: boolean;
   empty: ReactNode;
 }) {
@@ -35,7 +38,8 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
   return (
     <div>
       {teams.map((t) => {
-        const open = openRoles(t);
+        const open = recruitingRoles(t, day, event);
+        const status = event ? t.team_entries.find((e) => e.opportunity?.id === event)?.status : undefined;
         const mine = t.owner_id === userId;
         // Owners see every application to their team; everyone else only sees accepted ones and their own
         const toReview = mine ? t.team_applications.filter((a) => a.status === "pending" && a.direction === "application").length : 0;
@@ -46,7 +50,8 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
         return (
           <article key={t.id} className="flex items-start justify-between gap-6 border-b border-border py-5 sm:py-6">
             <div className="flex min-w-0 flex-col gap-1.5">
-              {!hideEvent && <p className="font-mono text-[11px] font-medium tracking-[0.04em] text-ink2 uppercase sm:text-xs">
+              {status && <EntryStatusLabel status={status} />}
+              {!event && <p className="font-mono text-[11px] font-medium tracking-[0.04em] text-ink2 uppercase sm:text-xs">
                 {t.opportunity ? (
                   <>
                     <Link href={`/opportunities/${t.opportunity.id}`} className="hover:text-accent">{t.opportunity.title}</Link>
@@ -60,7 +65,12 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
                 <Link href={`/teams/${t.id}`} className="hover:text-accent">{t.title}</Link>
               </h3>
               <p className="text-sm sm:text-[15px]">
-                {open.length > 0 ? <><span className="text-muted">Needs:</span> {open.join(", ")}</> : <span className="text-muted">All roles filled</span>}
+                {open.length > 0 ? (
+                  <><span className="text-muted">Needs:</span> {open.join(", ")}</>
+                ) : (
+                  // Roles still open, but the event they were for is over
+                  <span className="text-muted">{openRoles(t).length > 0 ? "Not recruiting: the event is over" : "All roles filled"}</span>
+                )}
               </p>
               {(t.languages.length > 0 || t.work_mode) && (
                 <p className="text-[13px] text-ink2 sm:text-sm">{[t.languages.join(", "), workModeLabel(t.work_mode)].filter(Boolean).join(" · ")}</p>

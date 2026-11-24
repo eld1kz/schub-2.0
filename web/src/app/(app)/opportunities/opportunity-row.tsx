@@ -1,10 +1,11 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { SOON_DAYS, daysLabel, daysUntil, nextDate, opportunityTypes, placeLabel, type OpportunityType } from "@/lib/opportunities";
 import { goingLabel, type Going } from "@/lib/connections";
 
 export const columns = "lg:grid lg:grid-cols-[120px_minmax(0,1fr)_200px_190px_200px] lg:items-center lg:gap-6";
 
-export type OpportunityRowData = { id: string; title: string; type: OpportunityType; organizer: string; location: string; online: boolean; starts_at: string | null; deadline: string | null; ends_at: string | null; opportunity_participants: unknown };
+export type OpportunityRowData = { id: string; title: string; url: string; type: OpportunityType; organizer: string; location: string; online: boolean; starts_at: string | null; deadline: string | null; ends_at: string | null; opportunity_participants: unknown; featured: boolean };
 
 // The column labels above the rows, from lg up
 export function OpportunityHeader() {
@@ -20,8 +21,8 @@ export function OpportunityHeader() {
 }
 
 // One opportunity as a row of the ruled table. The title's link covers the whole row; the "going" link sits above it.
-// `day` is today. `going`: your connections going, if any.
-export function OpportunityRow({ o, day, going }: { o: OpportunityRowData; day: string; going?: Going }) {
+// `day` is today. `going`: your connections going, if any. `actions`: a featured event's buttons, under the row.
+export function OpportunityRow({ o, day, going, actions }: { o: OpportunityRowData; day: string; going?: Going; actions?: ReactNode }) {
   const next = nextDate(o, day);
   const looking = (o.opportunity_participants as { count: number }[])[0]?.count ?? 0;
   const days = next.date ? daysUntil(next.date, day) : null;
@@ -30,7 +31,10 @@ export function OpportunityRow({ o, day, going }: { o: OpportunityRowData; day: 
   return (
     <article className={`group relative flex flex-col gap-1 border-b border-border py-4 lg:py-[18px] ${columns}`}>
       <span className="flex items-center justify-between gap-2">
-        <span className="font-mono text-[11px] font-medium tracking-[0.02em] text-ink2 uppercase lg:text-xs">{opportunityTypes[o.type]}</span>
+        <span className="font-mono text-[11px] font-medium tracking-[0.02em] text-ink2 uppercase lg:text-xs">
+          {opportunityTypes[o.type]}
+          {o.featured && <span className="block text-accent">Featured</span>}
+        </span>
         <span className="lg:hidden">{urgent && left}</span>
       </span>
       <span className="flex min-w-0 flex-col gap-0.5">
@@ -54,6 +58,7 @@ export function OpportunityRow({ o, day, going }: { o: OpportunityRowData; day: 
           </Link>
         )}
       </span>
+      {actions && <div className="mt-2 lg:col-span-full lg:col-start-2 lg:mt-0">{actions}</div>}
     </article>
   );
 }
