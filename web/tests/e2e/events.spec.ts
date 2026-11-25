@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { id, service, signInAs } from "./auth";
+import { id, service, signInAs, signInAsAdmin } from "./auth";
 import { pick } from "./combobox";
 
 // The event page's action bar, entering a team, entry status and featured events (supabase/team-entries.sql).
@@ -174,11 +174,13 @@ test("after an event, teams still only going drop off its list and stale open ro
 
 test("an admin features an event: it comes first on /opportunities with its buttons, and leads the landing page's Live block", async ({ browser }) => {
   const context = await browser.newContext();
-  await signInAs(context, 20);
+  await signInAsAdmin(context);
   const page = await context.newPage();
-  await page.goto(`/opportunities/${grant}`);
-  await page.getByRole("button", { name: "Feature this event" }).click();
-  await expect(page.getByRole("button", { name: "Stop featuring" })).toBeVisible();
+  // From the admin area, where it's logged (supabase/admin.sql)
+  await page.goto("/admin/events?q=Notreal");
+  const row = page.getByRole("listitem").filter({ hasText: "Notreal Startup Grant" });
+  await row.getByRole("button", { name: "Feature" }).click();
+  await expect(row.getByRole("button", { name: "Stop featuring" })).toBeVisible();
 
   await page.goto("/opportunities");
   const first = page.getByRole("main").getByRole("article").first();

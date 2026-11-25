@@ -4,6 +4,7 @@ import { SignInPrompt } from "../sign-in";
 import { KeyValue } from "../u/[id]/profile-parts";
 import { DeleteAccount } from "./delete-account";
 import { PageHeader, Section, SubmitButton } from "@/components/ui";
+import { TwoFactor } from "./two-factor";
 
 export const instant = false;
 
@@ -12,11 +13,15 @@ const providers = [
   ["github", "GitHub"],
 ] as const;
 
-// Your account: how you sign in, signing out, and deleting it
+// Your account: how you sign in, two-factor authentication, signing out, and deleting it
 export default async function SettingsPage() {
   const { supabase, isGuest } = await requireUser();
   if (isGuest) return <SignInPrompt text="Sign in to see your account settings." />;
-  const [{ data: auth }, { data: blocked }] = await Promise.all([supabase.auth.getUser(), supabase.rpc("my_account_deletion_blocker")]);
+  const [{ data: auth }, { data: blocked }, { data: factors }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.rpc("my_account_deletion_blocker"),
+    supabase.auth.mfa.listFactors(),
+  ]);
   const linked = new Set((auth.user?.identities ?? []).map((i) => i.provider));
 
   return (
@@ -35,6 +40,10 @@ export default async function SettingsPage() {
             <SubmitButton variant="secondary">Sign out</SubmitButton>
           </form>
         </div>
+      </Section>
+
+      <Section title="Two-factor authentication">
+        <TwoFactor on={(factors?.totp ?? []).some((f) => f.status === "verified")} />
       </Section>
 
       <Section title="Danger zone">

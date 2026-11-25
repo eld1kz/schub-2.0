@@ -37,13 +37,15 @@ const menuItem = "block px-4 py-2 text-foreground hover:bg-foreground/5";
 async function NavWithCounts() {
   const { supabase, userId, isGuest } = await requireUser();
   if (isGuest) return <Header account={<SignInButton label="Sign in" />} />;
-  const [requests, teamsCount, me, notifications, unread] = await Promise.all([
+  const [requests, teamsCount, me, notifications, unread, access] = await Promise.all([
     supabase.from("connections").select("id", { count: "exact", head: true }).eq("receiver_id", userId).eq("status", "pending"),
     // Applications to your teams and invitations to you (lib/teams.ts)
     teamsWaiting(supabase, userId),
     supabase.from("profiles").select("name, avatar_url").eq("id", userId).maybeSingle(),
     supabase.from("notifications").select("id, message, read, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("read", false),
+    // Admins get an "Admin" item, whether or not they've entered their code yet (supabase/admin.sql)
+    supabase.rpc("admin_access"),
   ]);
   const name = me.data?.name ?? "";
   const account = (
@@ -53,11 +55,26 @@ async function NavWithCounts() {
       <AccountMenu avatar={<Avatar url={me.data?.avatar_url ?? ""} name={name} size="md" />}>
         <Link href={`/u/${userId}`} className={menuItem}>Your profile</Link>
         <Link href="/settings" className={menuItem}>Settings</Link>
+        {access.data && access.data !== "none" && <Link href="/admin" className={menuItem}>Admin</Link>}
         <form action={signOut} className="border-t border-border pt-1 mt-1"><SubmitButton variant="bare" className={`${menuItem} w-full text-left`}>Sign out</SubmitButton></form>
       </AccountMenu>
     </span>
   );
   return <Header counts={{ "/people": requests.count ?? 0, "/teams": teamsCount }} profileHref={`/u/${userId}`} account={account} />;
+}
+
+// A suspended member can still browse; the database refuses everything they try to write (supabase/admin.sql)
+async function SuspendedNotice() {
+  const { supabase, userId, isGuest } = await requireUser();
+  if (isGuest) return null;
+  const { data } = await supabase.from("suspensions").select("reason").eq("user_id", userId).maybeSingle();
+  if (!data) return null;
+  return (
+    <div role="status" className="mt-4 rounded-md border border-danger p-3 text-sm">
+      <span className="font-medium">Your account is suspended.</span>{" "}
+      <span className="text-ink2">You can still look around, but you can&apos;t post, edit, connect or apply. Reason: {data.reason}</span>
+    </div>
+  );
 }
 
 async function ProfileNudge() {
@@ -79,6 +96,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       <Suspense fallback={<Header />}><NavWithCounts /></Suspense>
       <RowKeys />
       <div className="mx-auto max-w-page px-4 sm:px-6">
+        <Suspense><SuspendedNotice /></Suspense>
         <Suspense><ProfileNudge /></Suspense>
         {/* Room at the bottom for the phone tab bar */}
         <main className="pt-8 pb-bar sm:pt-12 sm:pb-20">{children}</main>

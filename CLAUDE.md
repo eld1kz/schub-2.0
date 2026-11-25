@@ -39,7 +39,7 @@ bodies, query strings, breadcrumbs and email addresses in messages. Source maps 
 ## Web structure
 ```
 web/src/
-  proxy.ts                  refreshes the session
+  proxy.ts                  refreshes the session; 404s /admin for non-admins (no-store, noindex); counts ?ref= visits
   app/
     actions.ts              ALL server actions (every DB write goes through here)
     layout.tsx              root layout, fonts
@@ -56,7 +56,7 @@ web/src/
       layout.tsx            top bar (tabs, search, bell, avatar), phone tab bar, nav counts
       nav-tabs.tsx          active-tab tabs (desktop) and bottom tab bar (phones)
       opportunities/        list (country, language, "Can I join?" and sort filters in the URL; "for you" by
-                            default for members; admins' Review imports), [id] detail, [id]/edit (admins), new
+                            default for members), [id] detail, new
                             (with "Fill from link"); event-actions.tsx is the event's action bar (Find a team,
                             Create a team, Enter your team), also inline on featured events
       teams/                list with filters; [id] (page.tsx loads, team-view.tsx renders,
@@ -64,7 +64,13 @@ web/src/
       people/               tabs: Discover (/people), Requests (/people/requests), Connections (/people/connections)
       u/[id]/               profile: view + in-place editing for the owner (?as=visitor previews)
       profile/              redirects to /u/<you>; holds skill-picker and completion score
-      settings/             your sign-in email and linked accounts, sign out, delete account
+      settings/             your sign-in email and linked accounts, two-factor (TOTP), sign out, delete account
+      admin/                Overview, Reports, Imports (approve / edit / reject imported events), People, Events
+                            (events/[id] is the edit page, the opportunity form in edit mode), Log; verify/ is the
+                            "Enter your 6-digit code" screen. Every page calls
+                            requireAdmin() and renders inside AdminShell; reason-action.tsx is a logged action
+                            with its reason field
+      report-link.tsx       the quiet "Report" link at the foot of profiles, teams and events
       feed/                 posts and ideas; on hold, not linked from the nav
       connect-button.tsx, team-list.tsx, global-search.tsx, notifications.tsx
       share-team.tsx        Share button and dialog: Web Share on phones, QR code / copy image on laptops
@@ -93,6 +99,8 @@ web/src/
     story.ts, story-image.tsx  the team share images: wording (English, or Korean for mostly-Hangul teams) and
                             sizing (story.ts), drawing with next/og
     supabase/server.ts      createClient, requireUser, requireMember
+    admin.ts                adminAccess() (admin / code / setup / none) and requireAdmin() for /admin and its actions
+    reports.ts              report reasons per kind (the same lists as the check in admin.sql)
 web/DESIGN.md               tokens, components, when to use which, how to add one
 web/eslint-rules/           design-tokens.mjs: the lint rule that keeps pages on the tokens and components
 web/supabase/               SQL migrations, run by hand in the Supabase SQL Editor
@@ -105,7 +113,7 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
 `people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read` → `people-discover` →
 `notification-limits` → `participant-notes` → `display-name` →
-`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites` → `shared-projects` → `team-entries` → `opportunity-engine` → `team-edit`. `seed_opportunities.sql` and
+`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites` → `shared-projects` → `team-entries` → `opportunity-engine` → `team-edit` → `admin`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only; its dates are relative to today (`SEED_TODAY` pins today, as the screenshot tests do). New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -113,7 +121,8 @@ Tables:
 - `profiles` — name, headline, university, graduation_year, bio, skills[], interests[],
   looking_for[], goals[], open_to_collaborate (the "Open to a team" switch: a green ring on avatars),
   wanted_roles[] (from `lib/roles.ts`), languages[], hours_per_week, work_mode, city (`lib/languages.ts`),
-  avatar_url, github, linkedin, website, telegram, email
+  avatar_url, github, linkedin, website, telegram, email, hidden_at (set only by an admin; hidden profiles drop
+  out of every list and their page is not found for others)
 - `experiences` — role, company, type, location, remote, start/end (1st of the month), description, skills[]
 - `projects` — the profile's portfolio
 - `connections` — sender_id, receiver_id, status (pending / accepted / declined)
@@ -124,15 +133,26 @@ Tables:
   `location`), languages[] (`lib/languages.ts`), eligibility (anyone / students / country) and eligibility_note,
   inferred[] (fields an importer guessed). Imports: source and external_id (unique together), imported_at,
   needs_review (Luma, and anything without dates: only admins see it until approved), reviewed_at (set by an
-  admin's approve, edit or reject; the importer then leaves the row alone). People can't add rows with any of these.
+  admin's approve, edit or reject in /admin, through `admin_review_import` and `admin_edit_event` in `admin.sql`; the
+  importer then leaves the row alone). People can't add rows with any of these.
 - `link_fetches` — one row per "Fill from link" page read, 20 an hour per member; no one reads it
 - `opportunity_participants` — people looking for a team for an opportunity
-- `opportunity_reports` — 3 reports hide an opportunity; `admins` can restore or remove
+- `reports` — target_type (person / team / event), target_id, reporter_id, reason (lists in `lib/reports.ts`), note,
+  status (open / dismissed / actioned). One per person per target; not yourself or your own team. 3 open reports
+  hide a live event. Reporters read their own; only the admin functions change them (`admin.sql`)
+- `admins` — who is an admin; added and removed only in the SQL Editor (`fix_admin.sql`), never from the app
+- `admin_actions` — the audit log: admin_id, action, target_type, target_id, reason, details (before / after),
+  created_at. Append-only for everyone, the service role included; written only by the `admin_*` functions
+- `suspensions` — user_id, reason. A suspended member reads but can't write: a restrictive policy on every
+  table and on Storage. A new table needs the same three policies (the loop in `admin.sql`)
+- `visits` — per day, how often a team link was opened from a story image (`?ref=story`) or a shared link
+  (`?ref=link`); counts only, written by `count_visit()`, read only in `admin_overview()`
 - `teams` — owner, title, description, roles[] (new teams pick from `lib/roles.ts`; old
   ones keep typed-in roles), role_notes (jsonb, role → short note), languages[], work_mode. The owner edits all of
   those and title and description (`team-edit.sql`); filled roles stay, and removing a role declines its pending
   applications and invites with a notification. `opportunity_id` is old and unused by the app: events are in `team_entries`; drop it
-  once the version using `team_entries` is deployed (`team-entries.sql` header)
+  once the version using `team_entries` is deployed (`team-entries.sql` header). hidden_at: set only by an admin;
+  a hidden team drops out of lists, and only its owner, members and admins can open it
 - `team_entries` — team_id, opportunity_id (one per pair), status (going / registered / submitted / placed),
   created_at. Anyone reads; only the team's owner enters (live events that haven't ended), changes the status or
   withdraws. Entering notifies accepted members (`team-entries.sql`)
@@ -192,6 +212,13 @@ Privacy details that are easy to break:
 - Never trust client-sent user IDs; read the user from the server session
   (`requireUser` / `requireMember`).
 - Pages that call `requireUser` export `instant = false` (see the comment in `server.ts`).
+- Admins: `is_admin()` is true only for someone in `admins` whose session is verified with their second factor
+  (JWT `aal` = `aal2`). An admin signed in with Google alone has no admin powers until they enter the 6-digit
+  code on `/admin/verify`; with no authenticator yet they set one up in /settings. Every layer checks on its
+  own: the proxy (404), `requireAdmin()` in every /admin page and admin action, and the database. Admins change
+  things only through the `admin_*` functions in `admin.sql` (no direct update policy), each writing exactly one
+  `admin_actions` row; hide, suspend and dismiss need a reason. Tests make codes with `tests/totp.ts` from the
+  seeded admin's authenticator (`signInAsAdmin` in `tests/db/helpers.ts` and `tests/e2e/auth.ts`).
 
 ## Design
 The UI follows **Direction A ("Document")** from the Claude Design project "Schub
@@ -209,7 +236,7 @@ neutral everything else.
 - Profile-only pieces: `u/[id]/profile-parts.tsx` (SideBlock, KeyValue, SkillRows, ExperienceEntry). Owner editing: `u/[id]/edit-dialog.tsx` (modal from sm up, bottom sheet on
   phones) and `u/[id]/section-edits.tsx` (one form per section, grouped with a label column).
 - Redesign status: `/u/[id]`, `/teams` (list, `[id]`, `new`), `/people` (three tabs) and
-  `/opportunities` (list, `[id]`, `new`) and `/onboarding` are done. Only the on-hold `/feed`
+  `/opportunities` (list, `[id]`, `new`), `/onboarding` and `/admin` are done. Only the on-hold `/feed`
   still has the old layout (with the new tokens and fonts).
 
 ## Token budget

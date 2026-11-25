@@ -77,12 +77,14 @@ async function photo(url: string) {
   }
 }
 
-// The team as a signed-out visitor sees it: accepted members only, never pending applicants
+// The team as a signed-out visitor sees it: accepted members only, never pending applicants, and nothing for a
+// team an admin hid
 export async function loadStory(id: string): Promise<StoryData | null> {
   const { data } = await publicClient()
     .from("teams")
     .select(`id, title, roles, owner:profiles(name, avatar_url), team_entries(${entryColumns}), team_applications(role, status, person:profiles(name, avatar_url))`)
     .eq("id", id)
+    .is("hidden_at", null)
     .maybeSingle();
   if (!data) return null;
   const team = data as unknown as {

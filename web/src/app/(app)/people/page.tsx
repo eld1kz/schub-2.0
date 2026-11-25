@@ -43,7 +43,9 @@ export default async function PeoplePage(props: PageProps<"/people">) {
     .from("profiles")
     .select("id, name, headline, university, avatar_url, skills, interests, open_to_collaborate, wanted_roles, languages, hours_per_week, work_mode, city", { count: "exact" })
     .neq("name", "")
-    .neq("id", userId);
+    .neq("id", userId)
+    // Hidden by an admin (supabase/admin.sql)
+    .is("hidden_at", null);
   if (elsewhere.length > 0) query = query.not("id", "in", `(${elsewhere.join(",")})`);
   // Must have every selected skill
   if (selected.length > 0) query = query.contains("skills", selected);

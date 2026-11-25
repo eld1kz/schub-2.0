@@ -8,6 +8,8 @@ import { inviteSuggestions, type Candidate } from "@/lib/invites";
 import { sharedProjectColumns, type SharedProject } from "@/lib/shared-projects";
 import { awardColumns, byRank, formedOnSchub, type Award } from "@/lib/awards";
 import { storyLang, storyVersion } from "@/lib/story";
+import { adminAccess } from "@/lib/admin";
+import { ReportLink } from "../../report-link";
 import { TeamView, type Application, type Team } from "./team-view";
 
 export const instant = false;
@@ -18,7 +20,7 @@ type PublicTeam = Omit<Parameters<typeof storyVersion>[0], "opportunity"> & { te
 // like a signed-out visitor sees it, so the preview is the same whoever pasted the link.
 export async function generateMetadata(props: PageProps<"/teams/[id]">): Promise<Metadata> {
   const { id } = await props.params;
-  const { data } = await publicClient().from("teams").select(`title, roles, owner_id, team_entries(${entryColumns}), team_applications(user_id, role, status)`).eq("id", id).maybeSingle();
+  const { data } = await publicClient().from("teams").select(`title, roles, owner_id, team_entries(${entryColumns}), team_applications(user_id, role, status)`).eq("id", id).is("hidden_at", null).maybeSingle();
   if (!data) return {};
   const team = withCurrentEvent(data as unknown as PublicTeam, today());
   const open = openRoles(team);
@@ -40,19 +42,23 @@ export async function generateMetadata(props: PageProps<"/teams/[id]">): Promise
 export default async function TeamPage(props: PageProps<"/teams/[id]">) {
   const { id } = await props.params;
   const { supabase, userId, isGuest } = await requireUser();
-  const [team, applicationRows, connections, project, awards] = await Promise.all([
-    supabase.from("teams").select(`id, title, description, roles, role_notes, languages, work_mode, owner_id, owner:profiles(name, avatar_url, headline, open_to_collaborate, languages), team_entries(${entryColumns})`).eq("id", id).maybeSingle(),
+  const [team, applicationRows, connections, project, awards, myReport] = await Promise.all([
+    supabase.from("teams").select(`id, title, description, roles, role_notes, languages, work_mode, owner_id, hidden_at, owner:profiles(name, avatar_url, headline, open_to_collaborate, languages), team_entries(${entryColumns})`).eq("id", id).maybeSingle(),
     // Row level security returns accepted members, your own application, and everything if you own the team
     supabase.from("team_applications").select("id, user_id, role, note, status, direction, person:profiles(name, headline, university, skills, avatar_url, open_to_collaborate)").eq("team_id", id).order("created_at"),
     myConnections(supabase, userId, isGuest),
     // What the team built (supabase/shared-projects.sql), and awards for the team, shown together
     supabase.from("team_projects").select(sharedProjectColumns).eq("team_id", id).maybeSingle(),
     supabase.from("awards").select(awardColumns).eq("team_id", id),
+    // Whether you already reported this team
+    isGuest ? { data: null } : supabase.from("reports").select("reason").eq("target_type", "team").eq("target_id", id).eq("reporter_id", userId).maybeSingle(),
   ]);
   if (!team.data) notFound();
   const t = withCurrentEvent(team.data as unknown as Omit<Team, "opportunity">, today());
 
   const applications = (applicationRows.data ?? []) as unknown as Application[];
+  // Hidden by an admin (supabase/admin.sql): only its owner, its members and admins still see it
+  if (team.data.hidden_at && t.owner_id !== userId && !applications.some((a) => a.user_id === userId && a.status === "accepted") && (await adminAccess()).access !== "admin") notFound();
   const version = storyVersion({ ...(t), team_applications: applications });
   const suggestions = t.owner_id === userId && !isGuest ? await inviteCandidates(supabase, t, applications, connections) : {};
   const sharedProject = (project.data as unknown as SharedProject | null) ?? null;
@@ -85,6 +91,7 @@ export default async function TeamPage(props: PageProps<"/teams/[id]">) {
       award={award}
       results={((awards.data ?? []) as unknown as Award[]).sort(byRank)}
       canRecord={canRecord}
+      report={!isGuest && t.owner_id !== userId && <ReportLink kind="team" targetId={id} myReport={myReport.data?.reason ?? null} />}
     />
   );
 }
@@ -97,7 +104,7 @@ const candidatePool = 200;
 async function inviteCandidates(supabase: Awaited<ReturnType<typeof requireUser>>["supabase"], team: Team, applications: Application[], connections: Set<string>) {
   const columns = "id, name, headline, avatar_url, skills, languages, wanted_roles, open_to_collaborate";
   const [open, connected] = await Promise.all([
-    supabase.from("profiles").select(columns).eq("open_to_collaborate", true).neq("name", "").order("updated_at", { ascending: false }).limit(candidatePool),
+    supabase.from("profiles").select(columns).eq("open_to_collaborate", true).neq("name", "").is("hidden_at", null).order("updated_at", { ascending: false }).limit(candidatePool),
     connections.size > 0 ? supabase.from("profiles").select(columns).in("id", [...connections]) : { data: [] },
   ]);
   const people = new Map([...(open.data ?? []), ...(connected.data ?? [])].map((p) => [p.id, p as Candidate]));

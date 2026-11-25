@@ -11,19 +11,20 @@ export default async function OpportunityPage(props: PageProps<"/opportunities/[
   const { id } = await props.params;
   const { supabase, userId, isGuest } = await requireUser();
   const day = today();
-  const [opportunity, participants, me, connections, myReport, admin, entries, awards, awarded, yourTeams] = await Promise.all([
+  const [opportunity, participants, me, connections, myReport, entries, awards, awarded, yourTeams] = await Promise.all([
     supabase.from("opportunities").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("opportunity_participants")
       .select("user_id, note, person:profiles(id, name, headline, avatar_url, university, skills, interests, open_to_collaborate, languages)")
       .eq("opportunity_id", id)
+      // People and teams an admin hid come back without their profile or team, and are left out below
+      .is("person.hidden_at", null)
       .order("created_at"),
     supabase.from("profiles").select("skills, interests, open_to_collaborate, languages").eq("id", userId).single(),
     supabase.from("connections").select("sender_id, receiver_id, status"),
-    supabase.from("opportunity_reports").select("reason").eq("opportunity_id", id).eq("user_id", userId).maybeSingle(),
-    supabase.rpc("is_admin"),
+    supabase.from("reports").select("reason").eq("target_type", "event").eq("target_id", id).eq("reporter_id", userId).maybeSingle(),
     // Teams entered in it, the latest entry first (supabase/team-entries.sql)
-    supabase.from("team_entries").select(`status, team:teams(${teamSummaryColumns})`).eq("opportunity_id", id).order("created_at", { ascending: false }),
+    supabase.from("team_entries").select(`status, team:teams(${teamSummaryColumns})`).eq("opportunity_id", id).is("team.hidden_at", null).order("created_at", { ascending: false }),
     supabase.from("awards").select(awardColumns).eq("opportunity_id", id),
     awardedIds(supabase),
     // Your teams, for the action bar
@@ -49,13 +50,13 @@ export default async function OpportunityPage(props: PageProps<"/opportunities/[
   return (
     <OpportunityView
       o={o}
-      participants={(participants.data ?? []) as unknown as Participant[]}
+      participants={((participants.data ?? []) as unknown as Participant[]).filter((p) => p.person)}
       me={me.data ?? { skills: [], interests: [], open_to_collaborate: true }}
       statusWith={statusWith}
       connections={accepted}
       myReport={myReport.data?.reason ?? null}
-      canDelete={o.submitted_by === userId || Boolean(admin.data)}
-      isAdmin={Boolean(admin.data)}
+      // Admins hide events from /admin instead, which is logged
+      canDelete={o.submitted_by === userId}
       // After the event, teams that only said they were going drop off the list
       teams={over ? teams.filter((t) => statusOf(t.id) !== "going") : teams}
       myEntry={myEntry}

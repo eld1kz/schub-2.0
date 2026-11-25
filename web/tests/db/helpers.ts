@@ -3,6 +3,7 @@
 import { execFileSync } from "node:child_process";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { expect } from "vitest";
+import { SEEDED_ADMIN_FACTOR, SEEDED_ADMIN_SECRET, totp } from "../totp";
 
 type Status = { API_URL: string; PUBLISHABLE_KEY?: string; ANON_KEY: string; SECRET_KEY?: string; SERVICE_ROLE_KEY: string };
 
@@ -38,6 +39,18 @@ export const signedOut = (): Client => createClient(url, publishableKey, options
 export async function signInAs(n: number): Promise<Client> {
   const client = signedOut();
   const { error } = await client.auth.signInWithPassword({ email: `student${String(n).padStart(2, "0")}@schub.test`, password: "password123" });
+  if (error) throw error;
+  return client;
+}
+
+// The seeded admin, signed in with a password only: an admin account, but without admin powers until the code
+// from their authenticator is entered (supabase/admin.sql)
+export const adminWithoutCode = () => signInAs(20);
+
+// The seeded admin after entering a code from the seeded authenticator: a session at aal2, with admin powers
+export async function signInAsAdmin(): Promise<Client> {
+  const client = await signInAs(20);
+  const { error } = await client.auth.mfa.challengeAndVerify({ factorId: SEEDED_ADMIN_FACTOR, code: totp(SEEDED_ADMIN_SECRET) });
   if (error) throw error;
   return client;
 }

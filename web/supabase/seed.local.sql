@@ -118,6 +118,11 @@ where p.id = pg_temp.fake_id(w.n);
 
 insert into admins (user_id) values (pg_temp.fake_id(20));
 
+-- The admin's authenticator app (admin.sql: admins need a second factor). Tests make its codes from this secret.
+insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status, created_at, updated_at, secret)
+values ('00000000-0000-4000-c000-000000000020', pg_temp.fake_id(20), 'Seeded authenticator', 'totp', 'verified', now(), now(),
+        'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP');
+
 -- Experience and projects -------------------------------------------------------------
 
 insert into experiences (user_id, role, company, type, location, remote, start_date, end_date, description, skills) values
@@ -173,11 +178,11 @@ update opportunities set created_at = now() - make_interval(days => 20 - right(i
 
 alter table opportunities enable trigger opportunities_check;
 
--- Three reports hide opportunity 6 (trigger in opportunities.sql)
-insert into opportunity_reports (opportunity_id, user_id, reason) values
-  ('00000000-0000-4000-9000-000000000006', pg_temp.fake_id(3), 'fake'),
-  ('00000000-0000-4000-9000-000000000006', pg_temp.fake_id(9), 'fake'),
-  ('00000000-0000-4000-9000-000000000006', pg_temp.fake_id(11), 'duplicate');
+-- Three reports hide opportunity 6 (trigger in admin.sql)
+insert into reports (target_type, target_id, reporter_id, reason) values
+  ('event', '00000000-0000-4000-9000-000000000006', pg_temp.fake_id(3), 'fake'),
+  ('event', '00000000-0000-4000-9000-000000000006', pg_temp.fake_id(9), 'fake'),
+  ('event', '00000000-0000-4000-9000-000000000006', pg_temp.fake_id(11), 'duplicate');
 
 insert into opportunity_participants (opportunity_id, user_id, note) values
   ('00000000-0000-4000-9000-000000000001', pg_temp.fake_id(5),  'iOS dev looking for a team'),
@@ -265,3 +270,8 @@ insert into award_teammates (award_id, user_id, status) values
   ('00000000-0000-4000-b000-000000000003', pg_temp.fake_id(1),  'pending'),
   ('00000000-0000-4000-b000-000000000003', pg_temp.fake_id(9),  'declined'),
   ('00000000-0000-4000-b000-000000000005', pg_temp.fake_id(13), 'confirmed');
+
+-- Reports waiting for an admin: student 13 reported as spam, team 5 as fake (admin.sql)
+insert into reports (target_type, target_id, reporter_id, reason, note) values
+  ('person', pg_temp.fake_id(13), pg_temp.fake_id(2), 'spam', 'Sends the same message to everyone.'),
+  ('team', '00000000-0000-4000-a000-000000000005', pg_temp.fake_id(4), 'fake', '');

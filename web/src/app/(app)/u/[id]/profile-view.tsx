@@ -72,6 +72,8 @@ type Props = {
   ideas: { id: string; title: string; description: string; skills_needed: string[]; stage: string }[];
   connections: Connection[];
   suggestions: Suggestion[];
+  // "Report this profile", for signed-in visitors (report-link.tsx)
+  report?: ReactNode;
 };
 
 const shownConnections = 6;
@@ -150,7 +152,7 @@ function ConnectionStack({ people }: { people: Connection[] }) {
   );
 }
 
-export function ProfileView({ id, profile: p, canEdit, owner, action, contact, projects, awards, pendingAwards, awardOptions, sharedProjects, pendingShared, experiences, teams, events, ideas, connections, suggestions }: Props) {
+export function ProfileView({ id, profile: p, canEdit, owner, action, contact, projects, awards, pendingAwards, awardOptions, sharedProjects, pendingShared, experiences, teams, events, ideas, connections, suggestions, report }: Props) {
   const links = [
     { label: "GitHub", href: webLink(p.github) },
     { label: "LinkedIn", href: webLink(p.linkedin) },
@@ -445,6 +447,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
           )}
         </aside>
       </div>
+      {report && <footer className="mt-12 border-t border-line2 pt-4 text-sm text-ink2">{report}</footer>}
     </ToastProvider>
   );
 }

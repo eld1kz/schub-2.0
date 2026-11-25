@@ -38,7 +38,7 @@ export default async function Home(props: PageProps<"/">) {
       .select("*, opportunity_participants(count)")
       .eq("status", "live")
       .or(`deadline.gte.${day},starts_at.gte.${day},and(deadline.is.null,starts_at.is.null)`),
-    supabase.from("teams").select(teamSummaryColumns).order("created_at", { ascending: false }).limit(50),
+    supabase.from("teams").select(teamSummaryColumns).is("hidden_at", null).order("created_at", { ascending: false }).limit(50),
     awardedIds(supabase),
     supabase.from("profiles").select("university").neq("university", "").limit(1000),
   ]);

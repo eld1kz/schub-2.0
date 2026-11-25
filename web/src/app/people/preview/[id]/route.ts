@@ -22,14 +22,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   if (!uuid.test(id)) return new Response(null, { status: 404 });
   const { supabase, userId, isGuest } = await requireUser();
   const [{ data: person }, connection] = await Promise.all([
-    supabase.from("profiles").select("name, headline, avatar_url, open_to_collaborate, skills").eq("id", id).maybeSingle(),
+    supabase.from("profiles").select("name, headline, avatar_url, open_to_collaborate, skills, hidden_at").eq("id", id).maybeSingle(),
     isGuest
       ? null
       : supabase.from("connections").select("status").or(`and(sender_id.eq.${userId},receiver_id.eq.${id}),and(sender_id.eq.${id},receiver_id.eq.${userId})`).maybeSingle(),
   ]);
-  if (!person) return new Response(null, { status: 404 });
+  // Hidden by an admin (supabase/admin.sql): no card for anyone else, as their profile page is not found
+  if (!person || (person.hidden_at && id !== userId)) return new Response(null, { status: 404 });
   const preview: PersonPreview = {
-    ...person,
+    name: person.name,
+    headline: person.headline,
+    avatar_url: person.avatar_url,
+    open_to_collaborate: person.open_to_collaborate,
     skills: knownSkills(person.skills ?? []).slice(0, 3),
     status: connection?.data?.status ?? null,
     self: id === userId,
