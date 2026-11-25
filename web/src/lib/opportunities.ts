@@ -13,8 +13,10 @@ export function formatDay(day: string | null) {
   return day ? new Date(day).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "";
 }
 
+// The screenshot tests pin it with FIXED_TODAY (development only), so dates and "days left" don't move
 export function today() {
-  return new Date().toISOString().slice(0, 10);
+  const fixed = process.env.NODE_ENV !== "production" && process.env.FIXED_TODAY;
+  return fixed || new Date().toISOString().slice(0, 10);
 }
 
 // Within this many days, the time left shows in the accent color

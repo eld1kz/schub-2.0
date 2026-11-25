@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { formatPeriod, type Experience } from "@/lib/portfolio";
+import { today } from "@/lib/opportunities";
 import { Chip, ChipList, MonoLabel, TimelineEntry } from "@/components/ui";
 
 // The profile's own pieces, built from src/components/ui
@@ -53,7 +54,7 @@ export function SkillRows({ groups }: { groups: { name: string; skills: { name: 
 export function ExperienceEntry({ experience: e, edit }: { experience: Omit<Experience, "id">; edit?: ReactNode }) {
   return (
     <TimelineEntry
-      period={formatPeriod(e.start_date, e.end_date)}
+      period={formatPeriod(e.start_date, e.end_date, new Date(today()))}
       title={e.role}
       meta={[e.company, e.type, e.location, e.remote && "Remote"].filter(Boolean).join(" · ")}
       description={e.description}
