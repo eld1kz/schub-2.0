@@ -6,7 +6,12 @@ import { MonoLabel } from "@/components/ui";
 
 export const columns = "lg:grid lg:grid-cols-opportunity lg:items-center lg:gap-6";
 
-export type OpportunityRowData = { id: string; title: string; url: string; type: OpportunityType; organizer: string; location: string; online: boolean; starts_at: string | null; deadline: string | null; ends_at: string | null; opportunity_participants: unknown; featured: boolean };
+export type OpportunityRowData = {
+  id: string; title: string; url: string; type: OpportunityType; organizer: string; location: string; online: boolean;
+  starts_at: string | null; deadline: string | null; ends_at: string | null; opportunity_participants: unknown; featured: boolean;
+  // supabase/opportunity-engine.sql
+  city: string; country: string | null; languages: string[]; eligibility: string; created_at: string;
+};
 
 // The column labels above the rows, from lg up
 export function OpportunityHeader() {
@@ -42,11 +47,14 @@ export function OpportunityRow({ o, day, going, actions }: { o: OpportunityRowDa
         <Link href={`/opportunities/${o.id}`} className="text-base leading-snug font-semibold group-hover:text-accent after:absolute after:inset-0">{o.title}</Link>
         {/* Phones: organizer, place and date on one line under the title */}
         <span className="text-meta text-ink2 lg:text-sm">
-          <span className="lg:hidden">{[o.organizer, placeLabel(o), next.label].filter(Boolean).join(" · ")}</span>
+          <span className="lg:hidden">{[o.organizer, placeLabel(o), o.languages.join(", "), next.label].filter(Boolean).join(" · ")}</span>
           <span className="hidden lg:inline">{o.organizer}</span>
         </span>
       </span>
-      <span className="hidden text-sm lg:block">{placeLabel(o) || <span className="text-muted">Not listed</span>}</span>
+      <span className="hidden flex-col gap-0.5 lg:flex">
+        <span className="text-sm">{placeLabel(o) || <span className="text-muted">Not listed</span>}</span>
+        {o.languages.length > 0 && <span className="text-meta text-muted">{o.languages.join(", ")}</span>}
+      </span>
       <span className="hidden flex-col gap-0.5 lg:flex">
         <span className="text-sm tabular-nums">{next.label}</span>
         {left}

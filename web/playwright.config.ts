@@ -14,10 +14,14 @@ export default defineConfig({
     trace: "retain-on-failure",
     ...devices["Desktop Chrome"],
   },
-  webServer: {
-    command: "npm run dev:local",
-    url: "http://localhost:3101/opportunities",
-    reuseExistingServer: true,
-    timeout: 180_000,
-  },
+  webServer: [
+    {
+      command: "npm run dev:local",
+      url: "http://localhost:3101/opportunities",
+      reuseExistingServer: true,
+      timeout: 180_000,
+    },
+    // Sample event pages for "Fill from link" (LINK_PREVIEW_FIXTURES in .env.test.local)
+    { command: "node tests/e2e/fixtures/serve.mjs", url: "http://localhost:3102/event.html", reuseExistingServer: true },
+  ],
 });

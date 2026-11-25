@@ -13,7 +13,8 @@
     "test:db": "npm run db:local && vitest run --config vitest.db.config.ts",
     "test:e2e": "npm run db:local && playwright test",
     "test:visual": "bash scripts/visual.sh",
-    "test:visual:update": "bash scripts/visual.sh --update-snapshots"
+    "test:visual:update": "bash scripts/visual.sh --update-snapshots",
+    "import:opportunities": "tsx scripts/import-opportunities.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -33,6 +34,7 @@
     "eslint-config-next": "16.4.6",
     "supabase": "^3.2.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^4.1.12"
   }

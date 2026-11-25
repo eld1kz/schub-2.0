@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Screenshot tests (npm run test:visual, or test:visual:update to accept changes). Resets the local Supabase to the
-# seed, serves the app on port 3102 with today fixed (FIXED_TODAY) so dates don't move, and runs
+# seed, serves the app on port 3103 with today fixed (FIXED_TODAY) so dates don't move, and runs
 # playwright.visual.config.ts in the Playwright Docker image, whose fonts and rendering are the same everywhere.
 # Extra arguments go to `playwright test`.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PORT=3102
+PORT=3103
 API_PORT=$(sed -n '/^\[api\]/,/^\[/s/^port = \([0-9]*\)/\1/p' supabase/config.toml)
 VERSION=$(node -p 'require("@playwright/test/package.json").version')
 

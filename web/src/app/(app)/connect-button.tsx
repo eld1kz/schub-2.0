@@ -5,7 +5,7 @@ import { connect } from "@/app/actions";
 import { SignInButton } from "./sign-in";
 import { ErrorText, buttonClass } from "@/components/ui";
 
-// `className` styles the button: outlined by default, `btn` for the main action on a profile.
+// `className` styles the button: secondary by default, primary for the main action on a profile.
 // When the request isn't sent (the daily cap), the reason shows under the button.
 export function ConnectButton({ profileId, status, isGuest, className = buttonClass({ variant: "secondary" }) }: { profileId: string; status?: string; isGuest: boolean; className?: string }) {
   const [result, action, pending] = useActionState(connect.bind(null, profileId), {});
