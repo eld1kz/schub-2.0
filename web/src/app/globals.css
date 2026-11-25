@@ -1,27 +1,33 @@
 @import "tailwindcss";
 
-/* Direction A ("Document"): neutral inks and rules, one indigo accent */
+/* Direction A ("Document"): neutral inks and rules, one indigo accent. Each color is light-dark(light, dark): it
+   follows the color scheme, which is the visitor's system setting here, and can be set on any part of a page
+   (scheme-only-light, scheme-only-dark), as /design does to show both side by side. The colors are declared again
+   on those, because the build turns light-dark() into variables that resolve where they're declared. */
 :root {
-  --background: #ffffff;
-  --foreground: #141416;
-  --ink2: #3b3c41;
-  --muted: #5c5d64;
-  --border: #e7e6e2;
-  --line2: #cfcec9;
-  --chip: #f2f2ef;
-  --accent: oklch(0.49 0.2 275);
-  --accent-soft: oklch(0.95 0.03 275);
-  --on-accent: #ffffff;
-  /* The ring around people who are open to a team */
-  --open: oklch(0.62 0.17 150);
-  /* Errors and destructive actions */
-  --danger: #dc2626;
-  /* Behind modals and sheets */
-  --scrim: rgb(20 20 24 / 0.45);
-  /* Soft shadow under the landing page's sample frames */
-  --frame-shadow: rgb(0 0 0 / 0.06);
-  /* Native controls (date pickers, scrollbars) follow the theme */
   color-scheme: light dark;
+}
+:root,
+.scheme-only-light,
+.scheme-only-dark {
+  --background: light-dark(#ffffff, #141416);
+  --foreground: light-dark(#141416, #f2f2f0);
+  --ink2: light-dark(#3b3c41, #cdcdd1);
+  --muted: light-dark(#5c5d64, #a0a0a8);
+  --border: light-dark(#e7e6e2, #2a2a2e);
+  --line2: light-dark(#cfcec9, #3d3d43);
+  --chip: light-dark(#f2f2ef, #232327);
+  --accent: light-dark(oklch(0.49 0.2 275), oklch(0.75 0.13 275));
+  --accent-soft: light-dark(oklch(0.95 0.03 275), oklch(0.31 0.07 275));
+  --on-accent: light-dark(#ffffff, #111114);
+  /* The ring around people who are open to a team */
+  --open: light-dark(oklch(0.62 0.17 150), oklch(0.72 0.17 150));
+  /* Errors and destructive actions */
+  --danger: light-dark(#dc2626, #f87171);
+  /* Behind modals and sheets */
+  --scrim: light-dark(rgb(20 20 24 / 0.45), rgb(0 0 0 / 0.6));
+  /* Soft shadow under the landing page's sample frames */
+  --frame-shadow: light-dark(rgb(0 0 0 / 0.06), rgb(0 0 0 / 0.4));
 }
 
 @theme inline {
@@ -121,25 +127,6 @@
   --container-statement: 820px;
   --container-page: 1176px;
   --container-wide: 1440px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #141416;
-    --foreground: #f2f2f0;
-    --ink2: #cdcdd1;
-    --muted: #a0a0a8;
-    --border: #2a2a2e;
-    --line2: #3d3d43;
-    --chip: #232327;
-    --accent: oklch(0.75 0.13 275);
-    --accent-soft: oklch(0.31 0.07 275);
-    --on-accent: #111114;
-    --open: oklch(0.72 0.17 150);
-    --danger: #f87171;
-    --scrim: rgb(0 0 0 / 0.6);
-    --frame-shadow: rgb(0 0 0 / 0.4);
-  }
 }
 
 /* Named layouts: the grid columns pages are built on, so no page writes its own (DESIGN.md) */
