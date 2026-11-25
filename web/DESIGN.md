@@ -191,8 +191,9 @@ spacing step also goes in `STEPS` in `eslint-rules/design-tokens.mjs`, and a typ
 - **Screenshots:**
   - What's covered: `tests/visual` takes the landing page, a profile as its owner and as a visitor, Find teams,
     a team page, opportunities and People. Each at 1440 and 390 wide, light and dark.
-  - How it runs: `npm run test:visual` resets the local database to the seed, serves the app with the date fixed
-    (`FIXED_TODAY`), and compares against `tests/visual/__screenshots__`. It runs in the Playwright Docker image,
+  - How it runs: `npm run test:visual` resets the local database to the seed and serves the app, both with the
+    same fixed day (`SEED_TODAY` and `FIXED_TODAY` in `scripts/visual.sh`), and compares against
+    `tests/visual/__screenshots__`. It runs in the Playwright Docker image,
     so fonts render the same on every machine and in CI.
   - After an intended change: `npm run test:visual:update`, then review the images.
 - **CI:** `.github/workflows/ci.yml` runs lint, types, unit, database, end-to-end and screenshot tests on every

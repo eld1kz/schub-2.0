@@ -23,8 +23,9 @@ for m in "${MIGRATIONS[@]}"; do
   echo "Applying $m.sql"
   run_sql "supabase/$m.sql"
 done
+# The seed's dates are relative to today; SEED_TODAY (YYYY-MM-DD) pins today, as the screenshot tests do
 echo "Seeding"
-run_sql supabase/seed.local.sql
+docker exec -i -e PGOPTIONS="-c schub.seed_today=${SEED_TODAY:-}" "$DB_CONTAINER" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/seed.local.sql
 
 # Only the two public values the app needs, the sign-in methods to show (email works against the
 # local inbox) and where the sample event pages are; the tests read the rest from `supabase status`

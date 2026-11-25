@@ -99,7 +99,7 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read` → `people-discover` →
 `notification-limits` → `participant-notes` → `display-name` →
 `own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites` → `shared-projects` → `team-entries` → `opportunity-engine`. `seed_opportunities.sql` and
-`fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
+`fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only; its dates are relative to today (`SEED_TODAY` pins today, as the screenshot tests do). New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
 Tables:

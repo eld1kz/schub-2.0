@@ -144,6 +144,8 @@ describe("the importer", () => {
     (await service.from("opportunities").select("title, city, needs_review, status").eq("external_id", externalId).maybeSingle()).data;
 
   it("adds new events, skips past ones and ones already listed, and keeps going when a source fails", async () => {
+    // The seed's dates are relative to today, so read when the seeded event starts
+    const seeded = (await service.from("opportunities").select("starts_at").eq("id", "00000000-0000-4000-9000-000000000001").single()).data?.starts_at as string;
     const runs: SourceRun[] = [
       {
         source: "hackclub",
@@ -152,7 +154,7 @@ describe("the importer", () => {
           event({}),
           event({ external_id: "test-past", title: "Importer Past Hack", starts_at: "2026-01-01", ends_at: "2026-01-02" }),
           // The seeded "Placeholder Hack Seoul 2027": same title, start date and site
-          event({ external_id: "test-dup", title: "Placeholder Hack Seoul 2027!", starts_at: "2027-01-15", url: "https://www.example.com/other" }),
+          event({ external_id: "test-dup", title: "Placeholder Hack Seoul 2027!", starts_at: seeded, url: "https://www.example.com/other" }),
         ],
       },
       { source: "kaggle", needsReview: false, load: async () => Promise.reject(new Error("Kaggle is down")) },

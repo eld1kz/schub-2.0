@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { id, service, signInAs } from "./auth";
 
 // Filters, sorting, "for you", Review imports and "Fill from link" (supabase/opportunity-engine.sql).
-// Upcoming and listed in the seed: "Mock AI Challenge Winter" (online, English, deadline 2026-11-30), "Placeholder Hack
+// Upcoming and listed in the seed: "Mock AI Challenge Winter" (online, English, deadline in 10 days), "Placeholder Hack
 // Seoul 2027" (Seoul, Korean and English, 3 people looking), "Notreal Startup Grant" (online), "Sample Hack Club Jam"
 // (Boston, imported), "Tokyo Sample Ideathon" (only people in Japan; the newest). "Sample Luma Builders Night" is an
 // import waiting for review. Student 01 is in Seoul and speaks Korean and English; 20 is the admin.

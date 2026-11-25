@@ -3,32 +3,49 @@
 --
 -- Fixed ids so tests can refer to people: student NN is 00000000-0000-4000-8000-0000000000NN.
 -- Tests use 01 as "user A", 02 as "user B" and 20 as the admin.
+--
+-- Every date is relative to today, so the data never goes stale: an event 10 days away is always 10 days away.
+-- scripts/db-local.sh can pin today (SEED_TODAY, passed as schub.seed_today) so the screenshot tests always see
+-- the same dates. With today pinned to 2026-11-20, the dates come out as the comments next to them say.
+
+create temp table seed_today as
+  select coalesce(nullif(current_setting('schub.seed_today', true), ''), current_date::text)::date as d;
+-- n days from today
+create function pg_temp.day(n int) returns date language sql stable as $$ select d + n from pg_temp.seed_today $$;
+-- The 1st of the month n months from this one (experience periods and awards are stored as the 1st)
+create function pg_temp.month(n int) returns date language sql stable as $$
+  select (date_trunc('month', d) + make_interval(months => n))::date from pg_temp.seed_today;
+$$;
+-- The 1st of the month a day is in
+create function pg_temp.month_of(day date) returns date language sql immutable as $$ select date_trunc('month', day)::date $$;
+-- This year plus n
+create function pg_temp.year(n int) returns int language sql stable as $$ select extract(year from d)::int + n from pg_temp.seed_today $$;
 
 -- Students ----------------------------------------------------------------------------
 
 create temp table fake_students (n int, name text, uni text, grad int, headline text, skills text[], interests text[], goals text[]);
 
 insert into fake_students values
-  (1,  'Minji Placeholder', 'Korea University', 2027, 'Frontend, mostly React',           '{React,TypeScript,Next.js,Figma}',            '{edtech,design}',        '{"Hackathon team"}'),
-  (2,  'Jisoo Sampleton',   'Korea University', 2026, 'Backend and infra',                '{Python,FastAPI,PostgreSQL,Docker}',          '{fintech,edtech}',       '{"Hackathon team","Startup co-founder"}'),
-  (3,  'Doyun Testwell',    'Korea University', 2028, 'ML student',                       '{Python,"Machine Learning",NLP}',             '{ai,health}',            '{"Side project collaborator"}'),
-  (4,  'Seoyeon Mockford',  'Korea University', 2027, 'Product designer',                 '{Figma,"UI/UX Design"}',                      '{design,edtech}',        '{"Hackathon team"}'),
-  (5,  'Haneul Fakename',   'Korea University', 2025, 'iOS developer',                    '{Swift,Kotlin}',                              '{mobile}',               '{"Internship / job referral"}'),
-  (6,  'Joon Dummyson',     'Korea University', 2029, '',                                 '{JavaScript}',                                '{}',                     '{}'),
-  (7,  'Yuna Fixture',      'Seoul National University', 2026, 'Data science',            '{Python,"Data Science",SQL}',                 '{climate,ai}',           '{"Hackathon team"}'),
-  (8,  'Taeho Stubbs',      'Seoul National University', 2027, 'Go and Rust',            '{Go,Rust,Redis}',                             '{infra}',                '{"Side project collaborator"}'),
-  (9,  'Ara Lorem',         'Seoul National University', 2028, 'Frontend learner',        '{Vue,JavaScript}',                            '{edtech}',               '{"Hackathon team"}'),
-  (10, 'Minho Ipsum',       'Seoul National University', 2027, 'Designer who codes',      '{Figma,React}',                               '{design,games}',         '{"Hackathon team"}'),
-  (11, 'Sora Examplova',    'Seoul National University', 2026, 'Growth and marketing',    '{Marketing,"Business Development"}',          '{fintech}',              '{"Startup co-founder"}'),
-  (12, 'Woojin Seedling',   'Seoul National University', 2029, 'Java backend',           '{Java,SQL,AWS}',                              '{fintech}',              '{"Internship / job referral"}'),
-  (13, 'Eunbi Notreal',     'Seoul National University', 2028, 'Blockchain tinkerer',     '{Solidity,Blockchain}',                       '{crypto}',               '{"Side project collaborator"}'),
-  (14, 'Kai Testerson',     'KAIST', 2027, 'Robotics and vision',                         '{"Computer Vision","C++",Python}',            '{robotics,ai}',          '{"Hackathon team"}'),
-  (15, 'Dana Mockingbird',  'KAIST', 2026, 'Full stack',                                  '{TypeScript,Node.js,PostgreSQL,React}',       '{edtech,health}',        '{"Hackathon team","Startup co-founder"}'),
-  (16, 'Hyun Fakerly',      'KAIST', 2028, 'Mobile apps',                                 '{Flutter,Swift}',                             '{mobile,health}',        '{"Hackathon team"}'),
-  (17, 'Rin Sandbox',       'KAIST', 2027, 'Frontend',                                    '{React,TypeScript}',                          '{games}',                '{"Side project collaborator"}'),
-  (18, 'Jaden Prototype',   'KAIST', 2026, 'Product manager',                             '{"Product Management",Finance}',              '{fintech}',              '{"Startup co-founder"}'),
-  (19, 'Nari Demoson',      'KAIST', 2029, 'ML on the side',                              '{"Machine Learning",Python,GCP}',             '{ai,climate}',           '{"Hackathon team"}'),
-  (20, 'Admin Testaccount', 'KAIST', 2026, 'Runs the opportunity list',                   '{Python}',                                    '{}',                     '{}');
+  (1,  'Minji Placeholder', 'Korea University', pg_temp.year(+1), 'Frontend, mostly React',           '{React,TypeScript,Next.js,Figma}',            '{edtech,design}',        '{"Hackathon team"}'),
+  (2,  'Jisoo Sampleton',   'Korea University', pg_temp.year(0), 'Backend and infra',                '{Python,FastAPI,PostgreSQL,Docker}',          '{fintech,edtech}',       '{"Hackathon team","Startup co-founder"}'),
+  (3,  'Doyun Testwell',    'Korea University', pg_temp.year(+2), 'ML student',                       '{Python,"Machine Learning",NLP}',             '{ai,health}',            '{"Side project collaborator"}'),
+  (4,  'Seoyeon Mockford',  'Korea University', pg_temp.year(+1), 'Product designer',                 '{Figma,"UI/UX Design"}',                      '{design,edtech}',        '{"Hackathon team"}'),
+  (5,  'Haneul Fakename',   'Korea University', pg_temp.year(-1), 'iOS developer',                    '{Swift,Kotlin}',                              '{mobile}',               '{"Internship / job referral"}'),
+  (6,  'Joon Dummyson',     'Korea University', pg_temp.year(+3), '',                                 '{JavaScript}',                                '{}',                     '{}'),
+  (7,  'Yuna Fixture',      'Seoul National University', pg_temp.year(0), 'Data science',            '{Python,"Data Science",SQL}',                 '{climate,ai}',           '{"Hackathon team"}'),
+  (8,  'Taeho Stubbs',      'Seoul National University', pg_temp.year(+1), 'Go and Rust',            '{Go,Rust,Redis}',                             '{infra}',                '{"Side project collaborator"}'),
+  (9,  'Ara Lorem',         'Seoul National University', pg_temp.year(+2), 'Frontend learner',        '{Vue,JavaScript}',                            '{edtech}',               '{"Hackathon team"}'),
+  (10, 'Minho Ipsum',       'Seoul National University', pg_temp.year(+1), 'Designer who codes',      '{Figma,React}',                               '{design,games}',         '{"Hackathon team"}'),
+  (11, 'Sora Examplova',    'Seoul National University', pg_temp.year(0), 'Growth and marketing',    '{Marketing,"Business Development"}',          '{fintech}',              '{"Startup co-founder"}'),
+  (12, 'Woojin Seedling',   'Seoul National University', pg_temp.year(+3), 'Java backend',           '{Java,SQL,AWS}',                              '{fintech}',              '{"Internship / job referral"}'),
+  (13, 'Eunbi Notreal',     'Seoul National University', pg_temp.year(+2), 'Blockchain tinkerer',     '{Solidity,Blockchain}',                       '{crypto}',               '{"Side project collaborator"}'),
+  (14, 'Kai Testerson',     'KAIST', pg_temp.year(+1), 'Robotics and vision',                         '{"Computer Vision","C++",Python}',            '{robotics,ai}',          '{"Hackathon team"}'),
+  (15, 'Dana Mockingbird',  'KAIST', pg_temp.year(0), 'Full stack',                                  '{TypeScript,Node.js,PostgreSQL,React}',       '{edtech,health}',        '{"Hackathon team","Startup co-founder"}'),
+  (16, 'Hyun Fakerly',      'KAIST', pg_temp.year(+2), 'Mobile apps',                                 '{Flutter,Swift}',                             '{mobile,health}',        '{"Hackathon team"}'),
+  (17, 'Rin Sandbox',       'KAIST', pg_temp.year(+1), 'Frontend',                                    '{React,TypeScript}',                          '{games}',                '{"Side project collaborator"}'),
+  (18, 'Jaden Prototype',   'KAIST', pg_temp.year(0), 'Product manager',                             '{"Product Management",Finance}',              '{fintech}',              '{"Startup co-founder"}'),
+  (19, 'Nari Demoson',      'KAIST', pg_temp.year(+3), 'ML on the side',                              '{"Machine Learning",Python,GCP}',             '{ai,climate}',           '{"Hackathon team"}'),
+  (20, 'Admin Testaccount', 'KAIST', pg_temp.year(0), 'Runs the opportunity list',                   '{Python}',                                    '{}',                     '{}');
 
 create function pg_temp.fake_id(n int) returns uuid language sql immutable as $$
   select ('00000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid;
@@ -104,21 +121,21 @@ insert into admins (user_id) values (pg_temp.fake_id(20));
 -- Experience and projects -------------------------------------------------------------
 
 insert into experiences (user_id, role, company, type, location, remote, start_date, end_date, description, skills) values
-  (pg_temp.fake_id(1),  'Frontend intern',     'Fakecorp Seoul',     'Internship',     'Seoul', false, '2025-03-01', '2025-11-01', 'Built pages nobody will ever see.', '{React,TypeScript}'),
-  (pg_temp.fake_id(1),  'Web lead',            'KU Placeholder Club', 'Club / Society', 'Seoul', false, '2025-12-01', null,        'Runs the club website.',            '{Next.js}'),
-  (pg_temp.fake_id(2),  'Backend developer',   'Sample Labs',        'Part-time',      '',      true,  '2024-06-01', null,         '',                                   '{Python,FastAPI}'),
-  (pg_temp.fake_id(3),  'Research assistant',  'Mock NLP Lab',       'Research',       'Seoul', false, '2025-09-01', null,        'Fake research on fake data.',        '{NLP}'),
-  (pg_temp.fake_id(7),  'Data intern',         'Testbank',           'Internship',     'Seoul', false, '2025-07-01', '2025-08-01', '',                                   '{SQL}'),
-  (pg_temp.fake_id(8),  'Volunteer dev',       'Open Nothing',       'Volunteer',      '',      true,  '2023-01-01', '2024-12-01', '',                                   '{Go}'),
-  (pg_temp.fake_id(14), 'Vision engineer',     'Robo Dummy Inc',     'Full-time',      'Daejeon', false, '2024-02-01', null,      'Robots that only exist here.',       '{"Computer Vision"}'),
-  (pg_temp.fake_id(15), 'Freelance developer', 'Self',               'Freelance',      '',      true,  '2023-05-01', null,         '',                                   '{React,Node.js}'),
-  (pg_temp.fake_id(18), 'PM intern',           'Example Fintech',    'Internship',     'Seoul', false, '2026-01-01', '2026-06-01', '',                                   '{"Product Management"}');
+  (pg_temp.fake_id(1),  'Frontend intern',     'Fakecorp Seoul',     'Internship',     'Seoul', false, pg_temp.month(-20), pg_temp.month(-12), 'Built pages nobody will ever see.', '{React,TypeScript}'),
+  (pg_temp.fake_id(1),  'Web lead',            'KU Placeholder Club', 'Club / Society', 'Seoul', false, pg_temp.month(-11), null,        'Runs the club website.',            '{Next.js}'),
+  (pg_temp.fake_id(2),  'Backend developer',   'Sample Labs',        'Part-time',      '',      true,  pg_temp.month(-29), null,         '',                                   '{Python,FastAPI}'),
+  (pg_temp.fake_id(3),  'Research assistant',  'Mock NLP Lab',       'Research',       'Seoul', false, pg_temp.month(-14), null,        'Fake research on fake data.',        '{NLP}'),
+  (pg_temp.fake_id(7),  'Data intern',         'Testbank',           'Internship',     'Seoul', false, pg_temp.month(-16), pg_temp.month(-15), '',                                   '{SQL}'),
+  (pg_temp.fake_id(8),  'Volunteer dev',       'Open Nothing',       'Volunteer',      '',      true,  pg_temp.month(-46), pg_temp.month(-23), '',                                   '{Go}'),
+  (pg_temp.fake_id(14), 'Vision engineer',     'Robo Dummy Inc',     'Full-time',      'Daejeon', false, pg_temp.month(-33), null,      'Robots that only exist here.',       '{"Computer Vision"}'),
+  (pg_temp.fake_id(15), 'Freelance developer', 'Self',               'Freelance',      '',      true,  pg_temp.month(-42), null,         '',                                   '{React,Node.js}'),
+  (pg_temp.fake_id(18), 'PM intern',           'Example Fintech',    'Internship',     'Seoul', false, pg_temp.month(-10), pg_temp.month(-5), '',                                   '{"Product Management"}');
 
 insert into projects (user_id, title, tagline, description, role, built_at, result, year, url, repo_url, skills) values
-  (pg_temp.fake_id(1),  'Fake Study Planner', 'Plans studies that never happen', 'A made-up project.', 'Frontend', 'Placeholder Hack 2025', 'Winner', 2025, 'https://example.com/planner', 'https://github.com/fake-student-1/planner', '{React,Next.js}'),
-  (pg_temp.fake_id(2),  'Mock Ledger',        'A ledger for fake money',        '',                    'Backend',  '',                      '',       2026, '',                            'https://github.com/fake-student-2/ledger',  '{Python,PostgreSQL}'),
-  (pg_temp.fake_id(7),  'Sample Climate Map', 'Maps made-up emissions',         '',                    'Data',     'SNU Test Challenge',    'Finalist', 2025, 'https://example.com/climate', '',                                     '{"Data Science"}'),
-  (pg_temp.fake_id(14), 'Dummy Drone',        'Flies in simulation only',       '',                    'Vision',   '',                      '',       2024, '',                            '',                                         '{"Computer Vision"}');
+  (pg_temp.fake_id(1),  'Fake Study Planner', 'Plans studies that never happen', 'A made-up project.', 'Frontend', 'Placeholder Hack 2025', 'Winner', pg_temp.year(-1), 'https://example.com/planner', 'https://github.com/fake-student-1/planner', '{React,Next.js}'),
+  (pg_temp.fake_id(2),  'Mock Ledger',        'A ledger for fake money',        '',                    'Backend',  '',                      '',       pg_temp.year(0), '',                            'https://github.com/fake-student-2/ledger',  '{Python,PostgreSQL}'),
+  (pg_temp.fake_id(7),  'Sample Climate Map', 'Maps made-up emissions',         '',                    'Data',     'SNU Test Challenge',    'Finalist', pg_temp.year(-1), 'https://example.com/climate', '',                                     '{"Data Science"}'),
+  (pg_temp.fake_id(14), 'Dummy Drone',        'Flies in simulation only',       '',                    'Vision',   '',                      '',       pg_temp.year(-2), '',                            '',                                         '{"Computer Vision"}');
 
 -- Opportunities: past and upcoming ------------------------------------------------------
 -- The automatic checks reject past dates and more than 5 a day, so they're off while seeding.
@@ -126,13 +143,13 @@ insert into projects (user_id, title, tagline, description, role, built_at, resu
 alter table opportunities disable trigger opportunities_check;
 
 insert into opportunities (id, title, type, organizer, location, online, url, starts_at, deadline, ends_at, description, status, submitted_by) values
-  ('00000000-0000-4000-9000-000000000001', 'Placeholder Hack Seoul 2027',      'hackathon',   'Fake Org',        'Seoul',   false, 'https://example.com/hack-seoul-2027',  '2027-01-15', '2027-01-05', '2027-01-16', 'An upcoming fake hackathon.',      'live',    pg_temp.fake_id(20)),
-  ('00000000-0000-4000-9000-000000000002', 'Mock AI Challenge Winter',         'competition', 'Sample Society',  '',        true,  'https://example.com/ai-winter',       '2026-12-10', '2026-11-30', '2026-12-20', 'Upcoming, online.',                'live',    pg_temp.fake_id(7)),
-  ('00000000-0000-4000-9000-000000000003', 'Notreal Startup Grant',            'grant',       'Test Foundation', '',        true,  'https://example.com/grant',           null,         '2027-03-01', null,         '',                                 'live',    pg_temp.fake_id(15)),
-  ('00000000-0000-4000-9000-000000000004', 'Placeholder Hack 2025',            'hackathon',   'Fake Org',        'Seoul',   false, 'https://example.com/hack-2025',       '2025-05-10', '2025-05-01', '2025-05-11', 'A past fake hackathon.',           'live',    pg_temp.fake_id(20)),
-  ('00000000-0000-4000-9000-000000000005', 'SNU Test Challenge',               'competition', 'Mock Club',       'Seoul',   false, 'https://example.com/snu-challenge',   '2025-10-01', null,         '2025-10-03', 'Past.',                            'live',    pg_temp.fake_id(8)),
-  ('00000000-0000-4000-9000-000000000006', 'Fake Internship Fair',             'internship',  'Example Corp',    'Daejeon', false, 'https://example.com/fair',            '2027-02-01', '2027-01-20', null,         'Reported three times, so hidden.', 'live',    pg_temp.fake_id(12)),
-  ('00000000-0000-4000-9000-000000000007', 'Removed Sample Event',             'other',       'Nobody',          '',        true,  'https://example.com/removed',         '2027-04-01', null,         null,         'An admin removed it.',             'removed', pg_temp.fake_id(13));
+  ('00000000-0000-4000-9000-000000000001', 'Placeholder Hack Seoul 2027',      'hackathon',   'Fake Org',        'Seoul',   false, 'https://example.com/hack-seoul-2027',  pg_temp.day(56), pg_temp.day(46), pg_temp.day(57), 'An upcoming fake hackathon.',      'live',    pg_temp.fake_id(20)),
+  ('00000000-0000-4000-9000-000000000002', 'Mock AI Challenge Winter',         'competition', 'Sample Society',  '',        true,  'https://example.com/ai-winter',       pg_temp.day(20), pg_temp.day(10), pg_temp.day(30), 'Upcoming, online.',                'live',    pg_temp.fake_id(7)),
+  ('00000000-0000-4000-9000-000000000003', 'Notreal Startup Grant',            'grant',       'Test Foundation', '',        true,  'https://example.com/grant',           null,         pg_temp.day(101), null,         '',                                 'live',    pg_temp.fake_id(15)),
+  ('00000000-0000-4000-9000-000000000004', 'Placeholder Hack 2025',            'hackathon',   'Fake Org',        'Seoul',   false, 'https://example.com/hack-2025',       pg_temp.day(-559), pg_temp.day(-568), pg_temp.day(-558), 'A past fake hackathon.',           'live',    pg_temp.fake_id(20)),
+  ('00000000-0000-4000-9000-000000000005', 'SNU Test Challenge',               'competition', 'Mock Club',       'Seoul',   false, 'https://example.com/snu-challenge',   pg_temp.day(-415), null,         pg_temp.day(-413), 'Past.',                            'live',    pg_temp.fake_id(8)),
+  ('00000000-0000-4000-9000-000000000006', 'Fake Internship Fair',             'internship',  'Example Corp',    'Daejeon', false, 'https://example.com/fair',            pg_temp.day(73), pg_temp.day(61), null,         'Reported three times, so hidden.', 'live',    pg_temp.fake_id(12)),
+  ('00000000-0000-4000-9000-000000000007', 'Removed Sample Event',             'other',       'Nobody',          '',        true,  'https://example.com/removed',         pg_temp.day(132), null,         null,         'An admin removed it.',             'removed', pg_temp.fake_id(13));
 
 -- Place, languages and who can join (opportunity-engine.sql); 4, 5 and 7 keep only the old typed-in location
 update opportunities set country = 'KR', city = 'Seoul', languages = '{Korean,English}' where id = '00000000-0000-4000-9000-000000000001';
@@ -142,13 +159,13 @@ update opportunities set country = 'KR', city = 'Daejeon', languages = '{Korean}
 insert into opportunities (id, title, type, organizer, url, starts_at, deadline, ends_at, description, status, submitted_by,
                            online, country, city, languages, eligibility, eligibility_note, inferred, source, external_id, imported_at, needs_review) values
   -- Imported and live: Hack Club events are for students
-  ('00000000-0000-4000-9000-000000000008', 'Sample Hack Club Jam',       'hackathon',   'Hack Club',       'https://example.com/hackclub-jam',   '2027-02-10', null,         '2027-02-11', '', 'live', null,
+  ('00000000-0000-4000-9000-000000000008', 'Sample Hack Club Jam',       'hackathon',   'Hack Club',       'https://example.com/hackclub-jam',   pg_temp.day(82), null,         pg_temp.day(83), '', 'live', null,
    false, 'US', 'Boston', '{English}', 'students', 'High school students', '{languages}', 'hackclub', 'hc-sample-1', now(), false),
   -- Imported from Luma, waiting for an admin's review
-  ('00000000-0000-4000-9000-000000000009', 'Sample Luma Builders Night', 'other',       'Sample Calendar', 'https://example.com/luma-night',     '2027-01-20', null,         null,         '', 'live', null,
+  ('00000000-0000-4000-9000-000000000009', 'Sample Luma Builders Night', 'other',       'Sample Calendar', 'https://example.com/luma-night',     pg_temp.day(61), null,         null,         '', 'live', null,
    false, 'KR', 'Seoul', '{English}', 'anyone', '', '{country,languages}', 'luma', 'luma-sample-1', now(), true),
   -- Added by a person: only people in Japan can join
-  ('00000000-0000-4000-9000-000000000010', 'Tokyo Sample Ideathon',      'competition', 'Example Japan',   'https://example.com/tokyo-ideathon', '2027-03-05', '2027-02-20', null,         '', 'live', pg_temp.fake_id(10),
+  ('00000000-0000-4000-9000-000000000010', 'Tokyo Sample Ideathon',      'competition', 'Example Japan',   'https://example.com/tokyo-ideathon', pg_temp.day(105), pg_temp.day(92), null,         '', 'live', pg_temp.fake_id(10),
    false, 'JP', 'Tokyo', '{Japanese}', 'country', 'Residents of Japan', '{}', null, null, null, false);
 
 -- A different day for each, so Newest has an order: the higher the number, the newer
@@ -231,12 +248,12 @@ insert into connections (sender_id, receiver_id, status) values
 -- Awards with confirmed, pending and declined teammates ---------------------------------------
 
 insert into awards (id, user_id, placement, prize_name, opportunity_id, event_name, awarded_on, project_id, proof_url, description) values
-  ('00000000-0000-4000-b000-000000000001', pg_temp.fake_id(1),  'Winner',            'Grand prize', '00000000-0000-4000-9000-000000000004', 'Placeholder Hack 2025', '2025-05-01',
+  ('00000000-0000-4000-b000-000000000001', pg_temp.fake_id(1),  'Winner',            'Grand prize', '00000000-0000-4000-9000-000000000004', 'Placeholder Hack 2025', pg_temp.month_of(pg_temp.day(-559)),
      (select id from projects where title = 'Fake Study Planner'), 'https://example.com/results-2025', 'Won with a fake planner.'),
-  ('00000000-0000-4000-b000-000000000002', pg_temp.fake_id(7),  'Finalist',          '',            '00000000-0000-4000-9000-000000000005', 'SNU Test Challenge',    '2025-10-01', null, '', ''),
-  ('00000000-0000-4000-b000-000000000003', pg_temp.fake_id(2),  '2nd',               '',            null,                                   'Made-up Datathon',      '2026-03-01', null, '', ''),
-  ('00000000-0000-4000-b000-000000000004', pg_temp.fake_id(15), 'Track winner',      'Best Health', null,                                   'Sample Health Hack',    '2026-06-01', null, '', ''),
-  ('00000000-0000-4000-b000-000000000005', pg_temp.fake_id(12), 'Honorable mention', '',            null,                                   'Notreal Code Jam',      '2024-11-01', null, '', '');
+  ('00000000-0000-4000-b000-000000000002', pg_temp.fake_id(7),  'Finalist',          '',            '00000000-0000-4000-9000-000000000005', 'SNU Test Challenge',    pg_temp.month_of(pg_temp.day(-415)), null, '', ''),
+  ('00000000-0000-4000-b000-000000000003', pg_temp.fake_id(2),  '2nd',               '',            null,                                   'Made-up Datathon',      pg_temp.month(-8), null, '', ''),
+  ('00000000-0000-4000-b000-000000000004', pg_temp.fake_id(15), 'Track winner',      'Best Health', null,                                   'Sample Health Hack',    pg_temp.month(-5), null, '', ''),
+  ('00000000-0000-4000-b000-000000000005', pg_temp.fake_id(12), 'Honorable mention', '',            null,                                   'Notreal Code Jam',      pg_temp.month(-24), null, '', '');
 
 insert into award_teammates (award_id, user_id, status) values
   ('00000000-0000-4000-b000-000000000001', pg_temp.fake_id(3),  'confirmed'),
