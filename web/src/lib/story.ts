@@ -42,8 +42,8 @@ const particle = (word: string, withBatchim: string, without: string) => {
 
 // Words on the images that aren't the team's own
 export const storyText = {
-  en: { ownProject: "OWN PROJECT", scan: "Scan to join on Schub", moreRoles: (n: number) => `+ ${n} more`, morePeople: () => "more", andMore: (names: string, n: number) => `${names} + ${n}` },
-  ko: { ownProject: "자체 프로젝트", scan: "스캔해서 Schub에서 지원하기", moreRoles: (n: number) => `+ ${n}개 더`, morePeople: (n: number) => `외 ${n}명`, andMore: (names: string, n: number) => `${names} 외 ${n}명` },
+  en: { lead: "Lead", ownProject: "OWN PROJECT", scan: "Scan to join on Schub", moreRoles: (n: number) => `+ ${n} more`, morePeople: () => "more", andMore: (names: string, n: number) => `${names} + ${n}` },
+  ko: { lead: "팀장", ownProject: "자체 프로젝트", scan: "스캔해서 Schub에서 지원하기", moreRoles: (n: number) => `+ ${n}개 더`, morePeople: (n: number) => `외 ${n}명`, andMore: (names: string, n: number) => `${names} 외 ${n}명` },
 };
 
 // The big line, and the roles listed under it when there are too many to say
@@ -145,7 +145,8 @@ export function storyVersion(team: {
   team_applications: { user_id: string; role: string; status: string }[];
 }) {
   const accepted = team.team_applications.filter((a) => a.status === "accepted").map((a) => `${a.user_id}:${a.role}`).sort();
-  const key = JSON.stringify([team.title, team.roles, team.owner_id, team.opportunity?.id ?? null, accepted]);
+  // The first value is the drawing's own version, for when the layout changes
+  const key = JSON.stringify([2, team.title, team.roles, team.owner_id, team.opportunity?.id ?? null, accepted]);
   let hash = 5381;
   for (let i = 0; i < key.length; i++) hash = (hash * 33) ^ key.charCodeAt(i);
   return (hash >>> 0).toString(36);

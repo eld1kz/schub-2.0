@@ -111,7 +111,7 @@ test("enter an existing team, adding an open role; members are notified and stat
   await expect(actions.getByText("Your team: Full Sample Team")).toBeVisible();
   const row = teamRow(page, "Full Sample Team");
   await expect(row.getByText("Going", { exact: true })).toBeVisible();
-  await expect(row.getByText("Needs: Designer")).toBeVisible();
+  await expect(row.getByRole("listitem").filter({ hasText: "Designer, open" })).toBeVisible();
 
   // Taeho hears about it
   await taeho.goto("/teams");
@@ -158,7 +158,7 @@ test("after an event, teams still only going drop off its list and stale open ro
   const row = teamRow(page, "Mock Team With Pending");
   await expect(row.getByText("Submitted", { exact: true })).toBeVisible();
   await expect(row.getByText("Not recruiting: the event is over")).toBeVisible();
-  await expect(row.getByText(/Needs:/)).toHaveCount(0);
+  await expect(row.getByRole("listitem").filter({ hasText: /, open$/ })).toHaveCount(0);
   // Nothing left to do about it
   await expect(bar(page, "Placeholder Hack 2025")).toHaveCount(0);
 

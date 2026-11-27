@@ -18,6 +18,8 @@ import { SignInButton } from "../../sign-in";
 import { EditDialog } from "../../u/[id]/edit-dialog";
 
 import { ShareTeamButton } from "../../share-team";
+import { TeamRowSlots } from "../../team-row-slots";
+import { toSlots } from "../../to-slots";
 import { Avatar, Chip, ChipList, Row, Section, Textarea, buttonClass, ToastProvider, AnswerButtons, SubmitButton, ButtonLink, EmptyState } from "@/components/ui";
 import { PersonLink } from "../../person-link";
 
@@ -211,6 +213,9 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
               <Avatar url={owner?.avatar_url ?? ""} name={owner?.name ?? ""} size="xs" ring={owner?.open_to_collaborate ? "open" : null} />
               {isOwner ? "you" : owner?.name || "Unnamed"}
             </PersonLink>
+          </div>
+          <div className="mt-2">
+            <TeamRowSlots slots={toSlots({ owner_id: t.owner_id, roles, owner, team_applications: applications }, userId, connections)} size="lg" closed={over} />
           </div>
           {/* Everyone can share a team; for its owner it's the main thing to do here */}
           <div className="mt-2">

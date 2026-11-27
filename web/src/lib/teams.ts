@@ -152,3 +152,18 @@ export async function teamsWaiting(supabase: Client, userId: string) {
   ]);
   return (applications.count ?? 0) + (invites.count ?? 0);
 }
+
+// The team's slots (TeamSlots): its owner, then one per role in the team's order, filled by whoever was accepted for
+// it, then anyone accepted for a role that's no longer listed
+export function teamSlots<P>(team: { roles: string[]; owner: P | null; team_applications: { role: string; status: string; person: P | null }[] }, ownerRole = "Lead") {
+  const accepted = team.team_applications.filter((a) => a.status === "accepted");
+  const unlisted = [...new Set(accepted.map((a) => a.role).filter((r) => !team.roles.includes(r)))];
+  return [
+    { id: "owner", role: ownerRole, filled: true, person: team.owner },
+    ...[...team.roles, ...unlisted].flatMap((role) => {
+      const people = accepted.filter((a) => a.role === role);
+      if (people.length === 0) return [{ id: `role:${role}`, role, filled: false, person: null as P | null }];
+      return people.map((a, i) => ({ id: i === 0 ? `role:${role}` : `role:${role}:${i}`, role, filled: true, person: a.person }));
+    }),
+  ];
+}

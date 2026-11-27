@@ -3,11 +3,13 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
 import { answerInvite, withdrawApplication } from "@/app/actions";
-import { teamSummaries, teamSummaryColumns } from "@/lib/teams";
+import { openRoles, recruitingRoles, teamSummaries, teamSummaryColumns, withCurrentEvent, type TeamSummary } from "@/lib/teams";
 import { today } from "@/lib/opportunities";
 import { awardedIds } from "@/lib/awards";
 import { myConnections } from "@/lib/connections";
 import { TeamList } from "../../../team-list";
+import { TeamRowSlots } from "../../../team-row-slots";
+import { toSlots } from "../../../to-slots";
 import { Row, AnswerButtons, SubmitButton, ButtonLink, EmptyState } from "@/components/ui";
 
 export const instant = false;
@@ -20,7 +22,7 @@ type MyApplication = {
   // "invite": the team's owner invited you
   direction: "application" | "invite";
   created_at: string;
-  team: { id: string; title: string; owner: { name: string } | null } | null;
+  team: TeamSummary | null;
 };
 
 const declinedFor = 14 * 24 * 60 * 60 * 1000;
@@ -34,11 +36,12 @@ function Heading({ title, count }: { title: string; count: number }) {
 }
 
 // One of your teams or applications: the team, a line about you on it, and an action on the right
-function TeamRow({ teamId, title, children, action }: { teamId: string; title: string; children: ReactNode; action?: ReactNode }) {
+function TeamRow({ teamId, title, children, action, slots }: { teamId: string; title: string; children: ReactNode; action?: ReactNode; slots?: ReactNode }) {
   return (
     <Row center flush actions={action} href={`/teams/${teamId}`}>
       <Link href={`/teams/${teamId}`} data-row-main className="w-fit text-base font-semibold hover:text-accent">{title}</Link>
       <p className="text-sm text-ink2">{children}</p>
+      {slots && <div className="py-1">{slots}</div>}
     </Row>
   );
 }
@@ -50,7 +53,7 @@ export default async function YourTeamsPage() {
     supabase.from("teams").select(teamSummaryColumns).eq("owner_id", userId).order("created_at", { ascending: false }),
     supabase
       .from("team_applications")
-      .select("id, team_id, role, status, direction, created_at, team:teams(id, title, owner:profiles(name))")
+      .select(`id, team_id, role, status, direction, created_at, team:teams(${teamSummaryColumns})`)
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
     // The decline notification says when an application was declined
@@ -65,6 +68,12 @@ export default async function YourTeamsPage() {
     declinedAt.set(n.link, Math.max(declinedAt.get(n.link) ?? 0, Date.parse(n.created_at)));
   }
   const now = new Date().getTime();
+  const day = today();
+  const slots = (team: TeamSummary | null) => {
+    if (!team) return null;
+    const current = withCurrentEvent(team, day);
+    return <TeamRowSlots slots={toSlots(team, userId, connections)} closed={recruitingRoles(current, day).length === 0 && openRoles(team).length > 0} />;
+  };
   const memberOf = mine.filter((a) => a.status === "accepted");
   const invitations = mine.filter((a) => a.direction === "invite" && a.status === "pending");
   // Declined ones drop off 14 days after the decline (or after applying, if the notification is missing)
@@ -89,6 +98,7 @@ export default async function YourTeamsPage() {
             <TeamRow
               key={a.id}
               teamId={a.team_id}
+              slots={slots(a.team)}
               title={a.team?.title ?? ""}
               action={
                 <AnswerButtons
@@ -116,7 +126,7 @@ export default async function YourTeamsPage() {
         <section>
           <Heading title="Member of" count={memberOf.length} />
           {memberOf.map((a) => (
-            <TeamRow key={a.id} teamId={a.team_id} title={a.team?.title ?? ""}>
+            <TeamRow key={a.id} teamId={a.team_id} slots={slots(a.team)} title={a.team?.title ?? ""}>
               <span className="text-foreground">{a.role}</span> · Started by {a.team?.owner?.name || "Unnamed"}
             </TeamRow>
           ))}
@@ -130,6 +140,7 @@ export default async function YourTeamsPage() {
             <TeamRow
               key={a.id}
               teamId={a.team_id}
+              slots={slots(a.team)}
               title={a.team?.title ?? ""}
               action={a.status === "pending" && (
                 <form action={withdrawApplication.bind(null, a.team_id)}><SubmitButton variant="quiet" size="sm">Withdraw</SubmitButton></form>

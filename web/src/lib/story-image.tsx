@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { publicClient } from "@/lib/supabase/server";
 import { photoUrl } from "@/lib/portfolio";
-import { currentEntry, entryColumns, openRoles, type Entry } from "@/lib/teams";
-import { today } from "@/lib/opportunities";
+import { currentEntry, entryColumns, openRoles, teamSlots, type Entry } from "@/lib/teams";
+import { hasEnded, today } from "@/lib/opportunities";
 import { clampLines, textWidth, eventLine, firstName, fitSize, headline, qrPath, storyLang, storyText, type Lang, type StoryTheme } from "@/lib/story";
 
 // The shareable team images: a 1080x1920 story and a 1200x630 link preview. Satori draws them from
@@ -56,6 +56,9 @@ export type StoryData = {
   event: ReturnType<typeof eventLine>;
   eventTitle: string | null;
   members: Member[];
+  // The owner, then each role: who's in it, if anyone. `closed`: the event is over.
+  slots: { role: string; filled: boolean; member: Member | null }[];
+  closed: boolean;
 };
 
 // The member's photo (uploaded, else from Google or GitHub) as a data URL, since the renderer won't fetch addresses
@@ -95,6 +98,8 @@ export async function loadStory(id: string): Promise<StoryData | null> {
   const accepted = team.team_applications.filter((a) => a.status === "accepted");
   const people = [team.owner, ...accepted.map((a) => a.person)].filter((p): p is Person => p !== null);
   const lang = storyLang([team.title, ...team.roles]);
+  const faces = new Map(await Promise.all(people.map(async (p) => [p, { name: firstName(p.name), photo: await photo(p.avatar_url) }] as const)));
+  const slots = teamSlots({ roles: team.roles, owner: team.owner, team_applications: accepted }, storyText[lang].lead);
   return {
     id: team.id,
     lang,
@@ -102,7 +107,9 @@ export async function loadStory(id: string): Promise<StoryData | null> {
     open: openRoles({ roles: team.roles, team_applications: accepted }),
     event: eventLine(event, today(), lang),
     eventTitle: event?.title ?? null,
-    members: await Promise.all(people.map(async (p) => ({ name: firstName(p.name), photo: await photo(p.avatar_url) }))),
+    members: [...faces.values()],
+    slots: slots.map((s) => ({ role: s.role, filled: s.filled, member: s.person ? (faces.get(s.person) ?? null) : null })),
+    closed: event !== null && hasEnded(event, today()),
   };
 }
 
@@ -148,7 +155,37 @@ function Qr({ url, size }: { url: string; size: number }) {
   return <img src={`data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`} alt="" width={size} height={size} style={{ borderRadius: 16 }} />;
 }
 
-const allText = (s: StoryData) => [s.title, s.event.name, s.event.left ?? "", storyText[s.lang].scan, ...s.open, ...s.members.map((m) => m.name)].join(" ");
+const allText = (s: StoryData) => [storyText[s.lang].lead, storyText[s.lang].morePeople(0), ...s.slots.map((x) => x.role), s.title, s.event.name, s.event.left ?? "", storyText[s.lang].scan, ...s.open, ...s.members.map((m) => m.name)].join(" ");
+
+// A team's slots, as TeamSlots draws them: five to a row, at most two rows
+const SEAT = { width: 164, box: 128, face: 112, text: 24, perRow: 5, rows: 2 };
+
+function Seats({ s, c }: { s: StoryData; c: Palette }) {
+  const room = SEAT.perRow * SEAT.rows;
+  const shown = s.slots.length > room ? s.slots.slice(0, room - 1) : s.slots;
+  const extra = s.slots.length - shown.length;
+  const label = (text: string, color: string) => (
+    <div style={{ display: "flex", justifyContent: "center", textAlign: "center", fontSize: SEAT.text, lineHeight: 1.2, color }}>{clampLines(text, SEAT.text, SEAT.width - 16, 2)}</div>
+  );
+  const tile = { display: "flex", width: SEAT.width, height: SEAT.box, borderRadius: 12, alignItems: "center", justifyContent: "center" } as const;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", columnGap: 21, rowGap: 20 }}>
+      {shown.map((slot, i) => (
+        <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: SEAT.width }}>
+          {slot.filled ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+              <div style={tile}><Face m={slot.member ?? { name: "", photo: null }} c={c} size={SEAT.face} /></div>
+              {label(slot.role, c.ink2)}
+            </div>
+          ) : (
+            <div style={{ ...tile, border: `3px dashed ${c.line}`, padding: "0 8px" }}>{label(slot.role, s.closed ? c.muted : c.ink2)}</div>
+          )}
+        </div>
+      ))}
+      {extra > 0 && <div style={{ ...tile, border: `2px solid ${c.line}`, fontSize: 34, color: c.ink2 }}>+{extra}</div>}
+    </div>
+  );
+}
 
 // Instagram puts its own buttons in the top and bottom 250px, so everything sits between them
 const STORY = { width: 1080, height: 1920, safe: 250, side: 88 };
@@ -156,12 +193,10 @@ const STORY = { width: 1080, height: 1920, safe: 250, side: 88 };
 export async function storyImage(s: StoryData, theme: StoryTheme, joinUrl: string) {
   const c = palettes[theme];
   const width = STORY.width - STORY.side * 2;
-  const { line, list } = headline(s.open, s.eventTitle, s.lang);
-  const size = fitSize(line, width, list.length > 0 ? 2 : 3, 132, 72);
-  const shown = list.slice(0, 4);
-  // Up to 4 faces; with more, 3 and a "+N"
-  const faces = s.members.length > 4 ? s.members.slice(0, 3) : s.members;
-  const extra = s.members.length - faces.length;
+  const { line } = headline(s.open, s.eventTitle, s.lang);
+  // Two rows of seats leave the headline two lines
+  const lines = s.slots.length > SEAT.perRow ? 2 : 3;
+  const size = fitSize(line, width, lines, 132, 72);
 
   return new ImageResponse(
     (
@@ -172,37 +207,15 @@ export async function storyImage(s: StoryData, theme: StoryTheme, joinUrl: strin
         <div style={{ display: "flex", flexDirection: "column" }}>
           <EventLine s={s} c={c} size={32} width={width} />
           <div style={{ display: "flex", marginTop: 28, fontSize: size, fontWeight: 600, lineHeight: 1.04, letterSpacing: -size * 0.03 }}>{line}</div>
-          {shown.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", marginTop: 36 }}>
-              {shown.map((role) => (
-                <div key={role} style={{ display: "flex", fontSize: 38, lineHeight: 1.25, padding: "11px 0", borderTop: `2px solid ${c.line}` }}>{clampLines(role, 38, width, 1)}</div>
-              ))}
-              {list.length > shown.length && <div style={{ display: "flex", fontSize: 30, lineHeight: 1.25, color: c.muted, paddingTop: 11, borderTop: `2px solid ${c.line}` }}>{storyText[s.lang].moreRoles(list.length - shown.length)}</div>}
-            </div>
-          )}
-          {/* With the roles listed there's room for two lines of pitch, so the bottom stays clear of Instagram's buttons */}
-          <div style={{ display: "flex", marginTop: 40, fontSize: 42, lineHeight: 1.32, color: c.ink2 }}>{clampLines(s.title, 42, width, shown.length > 0 ? 2 : 3)}</div>
+          <div style={{ display: "flex", marginTop: 48 }}>
+            <Seats s={s} c={c} />
+          </div>
+          <div style={{ display: "flex", marginTop: 40, fontSize: 42, lineHeight: 1.32, color: c.ink2 }}>{clampLines(s.title, 42, width, 2)}</div>
         </div>
         <div style={{ display: "flex", flexGrow: 1, minHeight: 72 }} />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: `2px solid ${c.line}`, paddingTop: 40 }}>
-          <div style={{ display: "flex", gap: 22 }}>
-            {faces.map((m, i) => (
-              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, width: 124 }}>
-                <Face m={m} c={c} size={104} />
-                <div style={{ display: "flex", fontSize: 28, color: c.ink2 }}>{clampLines(m.name, 28, 124, 1)}</div>
-              </div>
-            ))}
-            {extra > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, width: 124 }}>
-                <div style={{ display: "flex", width: 104, height: 104, borderRadius: 104, border: `2px solid ${c.line}`, alignItems: "center", justifyContent: "center", fontSize: 34, color: c.ink2 }}>+{extra}</div>
-                <div style={{ display: "flex", fontSize: 28, color: c.ink2 }}>{storyText[s.lang].morePeople(extra)}</div>
-              </div>
-            )}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 16 }}>
-            <Qr url={joinUrl} size={216} />
-            <div style={{ display: "flex", fontSize: 26, fontWeight: 600 }}>{storyText[s.lang].scan}</div>
-          </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `2px solid ${c.line}`, paddingTop: 40 }}>
+          <div style={{ display: "flex", fontSize: 34, fontWeight: 600 }}>{storyText[s.lang].scan}</div>
+          <Qr url={joinUrl} size={216} />
         </div>
       </div>
     ),
