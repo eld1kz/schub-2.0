@@ -61,6 +61,16 @@ export default async function TeamPage(props: PageProps<"/teams/[id]">) {
   const award = ((awards.data ?? []) as unknown as Award[]).filter((a) => formedOnSchub(a) && confirmed.has(a.user_id)).sort(byRank)[0];
   // The database's own rule (supabase/shared-projects.sql): a hidden event can't be read here, but still counts
   const canRecord = t.owner_id === userId && !sharedProject ? Boolean((await supabase.rpc("team_project_open", { team: id })).data) : false;
+  // Contact details of the owner and members, where you may see them (supabase/team-contact.sql)
+  const memberIds = [t.owner_id, ...applications.filter((a) => a.status === "accepted").map((a) => a.user_id)];
+  const contacts = Object.fromEntries(
+    await Promise.all(
+      (isGuest ? [] : memberIds).map(async (member) => {
+        const { data } = await supabase.rpc("contact_for", { profile_id: member });
+        return [member, (data as { telegram: string; email: string }[] | null)?.[0]] as const;
+      }),
+    ),
+  );
   return (
     <TeamView
       team={t}
@@ -68,6 +78,7 @@ export default async function TeamPage(props: PageProps<"/teams/[id]">) {
       userId={userId}
       isGuest={isGuest}
       connections={connections}
+      contacts={contacts}
       shareVersion={version}
       suggestions={suggestions}
       sharedProject={sharedProject}

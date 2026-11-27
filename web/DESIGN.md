@@ -155,7 +155,7 @@ CSS transitions only, no animation library. Hover and press take 120ms or less, 
 | `CommandPalette` | The ⌘K search |
 | `Kbd` | A key shown on what it presses. Only for shortcuts that exist; no single-letter ones |
 | `RowKeys` | Mounted once: the linked rows' highlight and Up / Down |
-| `TeamSlots` | A team as equal seats: filled (photo, role under it) and open (dashed, role inside). `lg` on the team page. In the app use `TeamRowSlots` with `toSlots`; the story image draws the same |
+| `TeamSlots` | A team as equal seats: filled (photo, role under it) and open (dashed, role inside). `lg` on the team page, where it is the team's only list: a grid with names, and `details` under each member. In the app use `TeamRowSlots` with `toSlots`; the story image draws the same |
 | `useFormCheck`, `FormErrors`, `FieldError`, `CheckedForm` | Every form: Save is never disabled; pressing it shows what's missing under each field (`data-field`, `data-missing`) |
 | `Tabs` | Underlined tabs, one route each. `count`, `alert` (a count waiting on you, in the accent), `scroll` when they may not fit on a phone |
 | `Button`, `ButtonLink`, `ButtonAnchor`, `buttonClass` | See below. `ButtonLink` for a page in the app, `ButtonAnchor` for another site (new tab), `buttonClass()` for something else that should look like a button |

@@ -46,28 +46,21 @@ function Applicant({ id, person, you }: { id: string; person: { name: string; av
   );
 }
 
-// A team member in the spotlight: photo, name, headline and role. Your connections get the accent ring and a label;
-// other people open to a team get the green one.
-function Member({ id, person, role, you, connection }: { id: string; person: { name: string; headline: string; avatar_url: string; open_to_collaborate: boolean } | null; role: string; you: boolean; connection: boolean }) {
+type Contact = { telegram: string; email: string };
+
+const contactLink = "w-full text-meta font-medium break-words text-accent hover:underline";
+
+// What goes under a member's slot: their headline, whether you're connected, and how to reach them when you may
+// (contact_for returns nothing otherwise)
+function MemberDetails({ headline, connection, contact }: { headline?: string; connection: boolean; contact?: Contact }) {
   return (
-    <article className="flex items-start gap-3 border-b border-border py-4 first:pt-0">
-      <PersonLink id={id} aria-hidden tabIndex={-1} className="shrink-0">
-        <Avatar
-          url={person?.avatar_url ?? ""}
-          name={person?.name ?? ""}
-          size="xl"
-          ring={connection ? "connection" : person?.open_to_collaborate ? "open" : null}
-        />
-      </PersonLink>
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <PersonLink id={id} className="text-base font-semibold hover:text-accent">{you ? "You" : person?.name || "Unnamed"}</PersonLink>
-          {connection && <span className="text-meta font-medium text-accent">Your connection</span>}
-        </div>
-        {person?.headline && <p className="text-sm leading-snug text-ink2">{person.headline}</p>}
-      </div>
-      <span className="shrink-0 pt-0.5 text-sm text-ink2">{role}</span>
-    </article>
+    <>
+      {headline && <p className="text-meta leading-snug text-ink2">{headline}</p>}
+      {connection && <p className="text-meta font-medium text-accent">Your connection</p>}
+      {contact?.telegram && <a href={`https://t.me/${encodeURIComponent(contact.telegram)}`} target="_blank" rel="noreferrer" className={contactLink}>t.me/{contact.telegram}</a>}
+      {/* A long address wraps before the @ rather than mid-word */}
+      {contact?.email && <a href={`mailto:${contact.email}`} className={contactLink}>{contact.email.split("@")[0]}<wbr />@{contact.email.split("@")[1]}</a>}
+    </>
   );
 }
 
@@ -120,17 +113,19 @@ export type Team = {
 
 // The team page for whoever is looking: open roles to apply for, the team, and applicants for the owner
 // `connections`: your accepted connections, marked among the members; empty when signed out
+// `contacts`: members' contact details you're allowed to see, by user id
 // `shareVersion`: storyVersion of the team, for the share image's address
 // `suggestions`: for the owner, people to invite per open role (lib/invites.ts)
 // `sharedProject`: what the team built (lib/shared-projects.ts), shown with `award`, the team's best award.
 // `results`: awards linked to the team, best first, shown next to the event they're for
 // `canRecord`: the owner may record it now (the event has ended, or there is none)
-export function TeamView({ team: t, applications, userId, isGuest, connections, shareVersion, suggestions = {}, sharedProject = null, award, results = [], canRecord = false }: {
+export function TeamView({ team: t, applications, userId, isGuest, connections, contacts = {}, shareVersion, suggestions = {}, sharedProject = null, award, results = [], canRecord = false }: {
   team: Team;
   applications: Application[];
   userId: string;
   isGuest: boolean;
   connections: Set<string>;
+  contacts?: Record<string, Contact | undefined>;
   shareVersion: string;
   suggestions?: Record<string, Candidate[]>;
   sharedProject?: SharedProject | null;
@@ -143,7 +138,6 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
   const isOwner = t.owner_id === userId;
   // A declined invitation doesn't count: you can still apply (applyToTeam clears it)
   const mine = applications.find((a) => a.user_id === userId && !(a.direction === "invite" && a.status === "declined"));
-  const members = applications.filter((a) => a.status === "accepted");
   const pending = applications.filter((a) => a.status === "pending" && a.direction === "application" && a.user_id !== userId);
   // The owner's invitations still waiting for an answer
   const invited = applications.filter((a) => a.status === "pending" && a.direction === "invite" && a.user_id !== userId);
@@ -161,6 +155,14 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
   const stale = invited.filter((i) => !open.includes(i.role));
   // Applicants grouped by the role they applied for, in the team's order
   const byRole = roles.map((role) => ({ role, people: pending.filter((a) => a.role === role) })).filter((g) => g.people.length > 0);
+
+  const headlines = new Map(applications.map((a) => [a.user_id, a.person?.headline]));
+  headlines.set(t.owner_id, owner?.headline);
+  // The team itself: a slot per role, with each member's details under theirs
+  const slots = toSlots({ owner_id: t.owner_id, roles, owner, team_applications: applications }, userId, connections).map((s) => ({
+    ...s,
+    details: s.member && <MemberDetails headline={headlines.get(s.member.id)} connection={connections.has(s.member.id)} contact={contacts[s.member.id]} />,
+  }));
 
   const teamId = t.id;
   const teamTitle = t.title;
@@ -207,16 +209,6 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
               {t.work_mode && <span><span className="text-muted">Work mode:</span> <span className="font-medium text-foreground">{workModeLabel(t.work_mode)}</span></span>}
             </p>
           )}
-          <div className="mt-1 flex items-center gap-2 text-sm text-ink2">
-            Started by
-            <PersonLink id={t.owner_id} className="flex items-center gap-2 font-medium text-foreground hover:text-accent">
-              <Avatar url={owner?.avatar_url ?? ""} name={owner?.name ?? ""} size="xs" ring={owner?.open_to_collaborate ? "open" : null} />
-              {isOwner ? "you" : owner?.name || "Unnamed"}
-            </PersonLink>
-          </div>
-          <div className="mt-2">
-            <TeamRowSlots slots={toSlots({ owner_id: t.owner_id, roles, owner, team_applications: applications }, userId, connections)} size="lg" closed={over} />
-          </div>
           {/* Everyone can share a team; for its owner it's the main thing to do here */}
           <div className="mt-2">
             <ShareTeamButton teamId={t.id} title={t.title} version={shareVersion} variant={isOwner ? "primary" : "outline"} />
@@ -230,11 +222,11 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
             </div>
           )}
           {mine?.status === "accepted" && (
-            <p className="mt-2 text-sm">
-              <span className="font-semibold">You&apos;re on this team as {mine.role}.</span>{" "}
-              <Link href={`/u/${t.owner_id}`} className="font-medium text-accent hover:underline">See how to reach {owner?.name || "the owner"}</Link>
-            </p>
+            <p className="mt-2 text-sm font-semibold">You&apos;re on this team as {mine.role}.</p>
           )}
+          <section aria-label="Team" className="mt-4">
+            <TeamRowSlots slots={slots} size="lg" closed={over} />
+          </section>
         </header>
 
         <Section title="Open roles" count={recruiting.length}>
@@ -310,15 +302,6 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
             )}
           </Section>
         )}
-
-        <Section title="Team">
-          <div className="flex flex-col">
-            <Member id={t.owner_id} person={owner} role="Started it" you={isOwner} connection={connections.has(t.owner_id)} />
-            {members.map((m) => (
-              <Member key={m.id} id={m.user_id} person={m.person} role={m.role} you={m.user_id === userId} connection={connections.has(m.user_id)} />
-            ))}
-          </div>
-        </Section>
 
         {isOwner && (
           <Section id="applications" title="Applications" count={pending.length}>
