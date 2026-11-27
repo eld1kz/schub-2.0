@@ -1,5 +1,6 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ComponentProps } from "react";
 import Link from "next/link";
+import { Kbd } from "./kbd";
 import { CheckIcon, Spinner } from "./spinner";
 
 // Buttons (DESIGN.md). primary: the one main action in a place, in the accent. secondary: outlined, for the
@@ -14,12 +15,13 @@ export type ButtonVariant = "primary" | "secondary" | "quiet" | "danger" | "acce
 export type ButtonSize = "xs" | "sm" | "md" | "touch" | "lg";
 
 // A loading button is disabled too, but doesn't look it
-const base = "pressable relative shrink-0 items-center justify-center gap-2 whitespace-nowrap font-semibold [&:disabled:not([aria-busy])]:opacity-40";
+const base = "pressable relative shrink-0 items-center justify-center gap-2 whitespace-nowrap font-medium [&:disabled:not([aria-busy])]:opacity-40";
 const variants: Record<ButtonVariant, string> = {
-  primary: "rounded-md bg-accent text-on-accent shadow-raised enabled:active:shadow-pressed hover:bg-accent-hover",
-  secondary: "rounded-md border border-line2 bg-background hover:border-muted hover:bg-chip",
-  quiet: "font-normal text-ink2 hover:text-foreground",
-  danger: "rounded-md bg-danger text-background hover:bg-danger-hover",
+  primary: "rounded-md border border-accent-hover bg-accent text-on-accent hover:bg-accent-hover",
+  secondary: "rounded-md border border-line2 bg-surface hover:border-foreground hover:bg-background",
+  // Its edge appears with the fill; the text stays on the page's lines
+  quiet: "-mx-2 rounded-md border border-transparent px-2 font-normal text-ink2 hover:bg-chip hover:text-foreground",
+  danger: "rounded-md border border-danger-hover bg-danger text-background hover:bg-danger-hover",
   accent: "rounded-md border border-accent text-accent hover:bg-accent-soft",
   bare: "",
 };
@@ -36,15 +38,19 @@ export function buttonClass({ variant = "primary", size = "md", full = false, sh
 type Style = { variant?: ButtonVariant; size?: ButtonSize; full?: boolean; showFrom?: "sm" };
 
 // `pending`: a spinner over the faded label, at the same width. `done`: a check, for the moment after it worked.
+// `shortcut`: a key that already does what the button does ("Esc"), shown on it from sm up.
 // Either way it can't be pressed again. SubmitButton and ActionButton set them; /design sets them by hand.
-export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & Style & { pending?: boolean; done?: boolean };
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & Style & { pending?: boolean; done?: boolean; shortcut?: "Esc" };
 
-export function Button({ variant, size, full, showFrom, pending, done, className = "", type = "submit", disabled, children, ...props }: ButtonProps) {
+export function Button({ variant, size, full, showFrom, pending, done, shortcut, className = "", type = "submit", disabled, children, ...props }: ButtonProps) {
   const busy = pending || done;
   return (
-    <button type={type} className={`${buttonClass({ variant, size, full, showFrom })} ${className}`} disabled={disabled || busy} aria-busy={busy || undefined} {...props}>
+    <button type={type} className={`${buttonClass({ variant, size, full, showFrom })} ${className}`} disabled={disabled || busy} aria-busy={busy || undefined} aria-keyshortcuts={shortcut ? "Escape" : undefined} {...props}>
       {pending === undefined && done === undefined ? (
-        children
+        <>
+          {children}
+          {shortcut && <Kbd>{shortcut}</Kbd>}
+        </>
       ) : (
         <>
           {/* Lays its children out as the button would; stays in place, unseen, so the width and the name hold */}

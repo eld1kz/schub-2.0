@@ -1,9 +1,9 @@
-import Link from "next/link";
+import { Inbox, UserPlus } from "lucide-react";
 import { requireUser } from "@/lib/supabase/server";
 import { respond, withdrawRequest } from "@/app/actions";
 import { awardedIds } from "@/lib/awards";
 import { PersonRow } from "../person-row";
-import { AnswerButtons, SubmitButton } from "@/components/ui";
+import { AnswerButtons, SubmitButton, ButtonLink, EmptyState } from "@/components/ui";
 
 type Person = { name: string; headline: string; avatar_url: string; open_to_collaborate: boolean } | null;
 type Request = { id: string; sender_id: string; receiver_id: string; created_at: string; sender: Person; receiver: Person };
@@ -37,10 +37,7 @@ export default async function RequestsPage() {
 
   if (pending.length === 0) {
     return (
-      <div className="flex flex-col items-start gap-2 py-2">
-        <p className="text-base font-medium">No pending requests</p>
-        <Link href="/people" className="text-sm font-semibold text-accent hover:underline">Find people on Discover</Link>
-      </div>
+      <EmptyState icon={UserPlus} action={<ButtonLink href="/people" variant="secondary" size="sm">Find people</ButtonLink>}>No pending requests.</EmptyState>
     );
   }
 
@@ -49,7 +46,7 @@ export default async function RequestsPage() {
       <section>
         <Heading title="Received" count={received.length} />
         {received.length === 0 ? (
-          <p className="text-sm text-ink2">Nothing waiting on you.</p>
+          <EmptyState icon={Inbox} action={<ButtonLink href="/people/connections" variant="secondary" size="sm">See your connections</ButtonLink>}>Nothing waiting on you.</EmptyState>
         ) : (
           received.map((c) => (
             <PersonRow
@@ -73,7 +70,7 @@ export default async function RequestsPage() {
       <section>
         <Heading title="Sent" count={sentByMe.length} />
         {sentByMe.length === 0 ? (
-          <p className="text-sm text-ink2">No requests waiting on others.</p>
+          <EmptyState icon={UserPlus} action={<ButtonLink href="/people" variant="secondary" size="sm">Find people</ButtonLink>}>No requests waiting on others.</EmptyState>
         ) : (
           sentByMe.map((c) => (
             <PersonRow

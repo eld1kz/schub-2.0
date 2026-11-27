@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FieldError } from "../../u/[id]/edit-dialog";
-import { Combobox, FieldLabel, type ComboboxHandle } from "@/components/ui";
+import { Combobox, FieldLabel, type ComboboxHandle, FieldError } from "@/components/ui";
 
 const monthOptions = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((m, i) => ({ value: String(i + 1).padStart(2, "0"), label: m }));
 const yearsAhead = 3;
@@ -43,7 +42,7 @@ export function DateField({ name, label, onChange, error, initial = "" }: { name
   const years = [...new Set([parts.year, ...Array.from({ length: yearsAhead + 1 }, (_, i) => String(thisYear + i))].filter(Boolean))].sort().map((y) => ({ value: y, label: y }));
 
   return (
-    <fieldset>
+    <fieldset data-field={name}>
       <FieldLabel as="legend">{label}</FieldLabel>
       <input type="hidden" name={name} value={value} />
       <div className="grid grid-cols-3 gap-3">

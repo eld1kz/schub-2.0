@@ -1,3 +1,5 @@
+import { Check } from "lucide-react";
+import { Medal } from "lucide-react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { answerAwardTag } from "@/app/actions";
@@ -6,7 +8,8 @@ import { formatMonth, webLink } from "@/lib/portfolio";
 import type { AwardOptions } from "./award-fields";
 import { RemoveMeButton } from "./remove-me-button";
 import { AwardEdit } from "./section-edits";
-import { Avatar, EmptyState, MonoLabel, Section, SubmitButton } from "@/components/ui";
+import { Avatar, EmptyState, MonoLabel, Section, SubmitButton, Icon } from "@/components/ui";
+import { PersonLink } from "../../person-link";
 
 const outLink = "font-medium text-accent hover:underline";
 
@@ -28,9 +31,7 @@ export function TrustLabels({ award: a, className = "" }: { award: Award; classN
     <p className={`flex flex-wrap gap-x-4 gap-y-1 text-meta text-muted ${className}`}>
       {labels.map((l) => (
         <span key={String(l)} className="flex items-center gap-1.5">
-          <svg viewBox="0 0 16 16" aria-hidden className="h-3 w-3 fill-none stroke-current" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <path d="m3 8.5 3 3 7-7" />
-          </svg>
+          <Icon icon={Check} />
           {l}
         </span>
       ))}
@@ -49,9 +50,9 @@ function PeopleStack({ people }: { people: AwardPerson[] }) {
     <ul className="flex">
       {people.map((p) => (
         <li key={p.id} className="-mr-1.5">
-          <Link href={`/u/${p.id}`} title={p.name || "Unnamed"} className="block rounded-full border-2 border-background hover:opacity-80">
+          <PersonLink id={p.id} title={p.name || "Unnamed"} className="block rounded-full border-2 border-background hover:opacity-80">
             <Avatar url={p.avatar_url} name={p.name} size="sm" />
-          </Link>
+          </PersonLink>
         </li>
       ))}
     </ul>
@@ -75,7 +76,7 @@ export function AwardItem({ award: a, profileId, edit, waiting }: { award: Award
         {byTeammate && (
           <>
             {" · with "}
-            <Link href={`/u/${a.user_id}`} className="font-medium text-foreground hover:text-accent">{a.owner?.name || "Unnamed"}</Link>
+            <PersonLink id={a.user_id} className="font-medium text-foreground hover:text-accent">{a.owner?.name || "Unnamed"}</PersonLink>
           </>
         )}
       </p>
@@ -113,7 +114,7 @@ export function AwardsSection({ awards, profileId, canEdit, options }: { awards:
           })}
         </div>
       ) : (
-        <EmptyState title="Add an award" action={<AwardEdit options={options} trigger="button" />}>
+        <EmptyState icon={Medal} action={<AwardEdit options={options} trigger="button" />}>
           Hackathon wins, finals, track prizes. Link the event and tag your teammates so they can confirm it.
         </EmptyState>
       )}
@@ -128,7 +129,7 @@ export function PendingTags({ awards }: { awards: Award[] }) {
       {awards.map((a) => (
         <div key={a.id} className="flex flex-col gap-3 border-t border-border py-4 first:border-t-0 first:pt-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
           <p className="text-base leading-normal">
-            <Link href={`/u/${a.user_id}`} className="font-semibold hover:text-accent">{a.owner?.name || "Someone"}</Link> tagged you in{" "}
+            <PersonLink id={a.user_id} className="font-semibold hover:text-accent">{a.owner?.name || "Someone"}</PersonLink> tagged you in{" "}
             <span className="font-semibold">{placementLabel(a.placement)}</span>, <EventName award={a} />.
           </p>
           <div className="flex shrink-0 gap-2">

@@ -1,9 +1,10 @@
-import Link from "next/link";
+import { UserSearch } from "lucide-react";
 import { withdrawInvite } from "@/app/actions";
 import { knownRoles } from "@/lib/roles";
 import { ROLE_SKILLS, type Candidate } from "@/lib/invites";
 import { InviteButton } from "./invite-button";
-import { Avatar, MonoLabel, SubmitButton } from "@/components/ui";
+import { Avatar, MonoLabel, SubmitButton, ButtonLink, EmptyState } from "@/components/ui";
+import { PersonLink } from "../../person-link";
 
 export type PendingInvite = { id: string; user_id: string; role: string; person: { name: string; avatar_url: string; open_to_collaborate: boolean } | null };
 
@@ -21,7 +22,13 @@ function why(role: string, c: Candidate) {
 // `showRole`: the invites are for several roles (the ones filled meanwhile), so each says which.
 export function InvitePanel({ teamId, role, invites, suggestions, showRole = false }: { teamId: string; role: string; invites: PendingInvite[]; suggestions: Candidate[]; showRole?: boolean }) {
   if (invites.length === 0 && suggestions.length === 0) {
-    return <p className="text-meta text-muted sm:pl-4">Nobody to suggest for this role yet. People open to a team, and your connections, show up here to invite.</p>;
+    return (
+      <div className="pb-4 sm:pl-4">
+        <EmptyState icon={UserSearch} action={<ButtonLink href="/people" variant="secondary" size="sm">Browse people</ButtonLink>}>
+          Nobody to suggest yet: people open to a team, and your connections, show up here.
+        </EmptyState>
+      </div>
+    );
   }
   return (
     <div className="flex flex-col gap-3 pb-4 sm:pl-4">
@@ -29,11 +36,11 @@ export function InvitePanel({ teamId, role, invites, suggestions, showRole = fal
         <ul className="flex flex-col gap-2">
           {invites.map((i) => (
             <li key={i.id} className="flex items-center justify-between gap-3">
-              <Link href={`/u/${i.user_id}`} className="flex min-w-0 items-center gap-2 hover:text-accent">
+              <PersonLink id={i.user_id} className="flex min-w-0 items-center gap-2 hover:text-accent">
                 <Avatar url={i.person?.avatar_url ?? ""} name={i.person?.name ?? ""} size="sm" ring={i.person?.open_to_collaborate ? "open" : null} />
                 <span className="truncate text-sm font-medium">{i.person?.name || "Unnamed"}</span>
                 <span className="shrink-0 text-meta text-accent">{showRole ? `Invited as ${i.role}` : "Invited"}</span>
-              </Link>
+              </PersonLink>
               <form action={withdrawInvite.bind(null, teamId, i.id)}>
                 <SubmitButton variant="bare" aria-label={`Withdraw the invitation to ${i.person?.name || "Unnamed"}`} className="h-9 text-meta text-ink2 hover:text-foreground">Withdraw</SubmitButton>
               </form>
@@ -47,13 +54,13 @@ export function InvitePanel({ teamId, role, invites, suggestions, showRole = fal
           <ul className="flex flex-col gap-2">
             {suggestions.map((c) => (
               <li key={c.id} className="flex items-center justify-between gap-3">
-                <Link href={`/u/${c.id}`} className="flex min-w-0 items-center gap-2 hover:opacity-80">
+                <PersonLink id={c.id} className="flex min-w-0 items-center gap-2 hover:opacity-80">
                   <Avatar url={c.avatar_url} name={c.name} size="md" ring={c.open_to_collaborate ? "open" : null} />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold">{c.name}</span>
                     {why(role, c) && <span className="block truncate text-meta text-ink2">{why(role, c)}</span>}
                   </span>
-                </Link>
+                </PersonLink>
                 <InviteButton teamId={teamId} personId={c.id} personName={c.name} role={role} />
               </li>
             ))}

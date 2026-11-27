@@ -1,5 +1,7 @@
 "use client";
 
+import { Icon } from "./icon";
+import { ChevronDown } from "lucide-react";
 import { useEffect, useId, useImperativeHandle, useRef, useState, type KeyboardEvent, type Ref } from "react";
 import { ComboboxPanel, type ComboboxOption } from "./combobox-panel";
 import { inputClass, inputHeight } from "./field";
@@ -261,9 +263,7 @@ export function Combobox({ id, name, label, labelled = false, placeholder, value
         className={`relative ${inputClass} ${inputHeight(small)} flex cursor-pointer items-center justify-between gap-1 pr-2 text-left peer-focus:border-accent peer-focus:ring-1 peer-focus:ring-accent disabled:cursor-default disabled:opacity-40 ${selected ? "" : "text-muted"}`}
       >
         <span className="min-w-0 truncate">{current?.label ?? placeholder}</span>
-        <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4 shrink-0 fill-none stroke-muted" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-          <path d="m4 6 4 4 4-4" />
-        </svg>
+        <Icon icon={ChevronDown} className="text-muted" />
       </button>
       {!sheet && popupShown && (
         <div ref={popup} popover="manual" inert={!open} className="motion-popover fixed inset-auto m-0 flex flex-col overflow-hidden rounded-md border border-line2 bg-background p-0 text-foreground shadow-modal">

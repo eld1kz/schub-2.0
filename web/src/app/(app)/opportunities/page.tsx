@@ -166,10 +166,7 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
       <OpportunitySearch
         empty={
           emptyCountry ? (
-            <>
-              No events in {emptyCountry} yet ·{" "}
-              <Link href="/opportunities/new" className="font-medium text-accent hover:underline">Add one</Link>
-            </>
+            `No events in ${emptyCountry} yet.`
           ) : all.length === 0 ? (
             "No upcoming opportunities yet."
           ) : showingForYou ? (
@@ -180,6 +177,7 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
             "No upcoming opportunities match these filters."
           )
         }
+        emptyAction={<ButtonLink href="/opportunities/new" variant="secondary" size="sm">Add one</ButtonLink>}
         header={<OpportunityHeader />}
         rows={shown.map((o) => ({ id: o.id, title: o.title, node: <OpportunityRow o={o} day={day} going={goingTo.get(o.id)} actions={actions(o)} /> }))}
       />

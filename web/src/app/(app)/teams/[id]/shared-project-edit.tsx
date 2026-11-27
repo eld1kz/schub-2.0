@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { deleteSharedProject, saveSharedProject } from "@/app/actions";
 import { SHARED_PROJECT_PITCH_MAX, SHARED_PROJECT_RESULT_MAX, SHARED_PROJECT_TITLE_MAX, type SharedProject } from "@/lib/shared-projects";
-import { EditDialog, FieldError } from "../../u/[id]/edit-dialog";
-import { FieldLabel, Input } from "@/components/ui";
+import { EditDialog } from "../../u/[id]/edit-dialog";
+import { FieldLabel, Input, FieldError } from "@/components/ui";
 
 function Field({ label, name, children }: { label: string; name: string; children: ReactNode }) {
   return (
-    <label className="block">
+    <label className="block" data-missing={name === "title" ? "Add a name." : undefined}>
       <FieldLabel as="span" quiet>{label}</FieldLabel>
       {children}
       <FieldError field={name} />

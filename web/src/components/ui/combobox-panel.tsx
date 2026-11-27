@@ -1,5 +1,7 @@
 "use client";
 
+import { Icon } from "./icon";
+import { Check } from "lucide-react";
 import type { KeyboardEvent, Ref } from "react";
 import { inputClass, inputHeight } from "./field";
 
@@ -51,9 +53,7 @@ export function ComboboxPanel({ id, label, options, selected, active, query, sea
       onClick={() => onChoose?.(option.value)}
       className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-base sm:min-h-9 sm:text-sm ${index === active ? "bg-chip" : ""}`}
     >
-      <svg viewBox="0 0 16 16" aria-hidden className={`h-4 w-4 shrink-0 fill-none stroke-accent ${option.value === selected ? "" : "invisible"}`} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="m3 8.5 3.5 3.5L13 4.5" />
-      </svg>
+      <Icon icon={Check} className={`text-accent ${option.value === selected ? "" : "invisible"}`} />
       <span className={`min-w-0 flex-1 break-words ${option.value === selected ? "font-medium" : ""}`}>{option.label}</span>
       {option.hint && <span className="shrink-0 text-meta text-muted tabular-nums">{option.hint}</span>}
     </div>

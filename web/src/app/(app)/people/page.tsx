@@ -1,3 +1,4 @@
+import { UserSearch } from "lucide-react";
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
 import { matchReason, matchScore } from "@/lib/match";
@@ -8,7 +9,7 @@ import { PersonRow } from "./person-row";
 import { PeopleFilters } from "./people-filters";
 import { peopleHref, readPeopleQuery } from "./people-query";
 import { suitedModes, workStyleLine } from "@/lib/languages";
-import { Chip, ChipList } from "@/components/ui";
+import { Chip, ChipList, ButtonLink, EmptyState } from "@/components/ui";
 
 const chipCount = 12;
 const pageSize = 20;
@@ -89,14 +90,12 @@ export default async function PeoplePage(props: PageProps<"/people">) {
       </nav>
 
       {matches.length === 0 ? (
-        <div className="flex flex-col items-start gap-2 border-t border-border py-8">
-          <p className="text-base font-medium">{filtered ? "No one matches these filters" : "No one new to discover right now"}</p>
-          {filtered ? (
-            <Link href="/people" className="text-sm font-semibold text-accent hover:underline">Clear filters</Link>
-          ) : (
-            <p className="text-sm text-ink2">You&apos;ve connected with or asked everyone here so far.</p>
-          )}
-        </div>
+        <EmptyState
+          icon={UserSearch}
+          action={<ButtonLink href={filtered ? "/people" : "/people/connections"} variant="secondary" size="sm">{filtered ? "Clear filters" : "See your connections"}</ButtonLink>}
+        >
+          {filtered ? "No one matches these filters." : "You've connected with or asked everyone here so far."}
+        </EmptyState>
       ) : (
         <div className="flex flex-col">
           {matches.map((p) => {

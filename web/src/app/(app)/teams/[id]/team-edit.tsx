@@ -1,8 +1,8 @@
 import { updateTeam } from "@/app/actions";
 import { LANGUAGES, WORK_MODES, workModeLabel } from "@/lib/languages";
 import { openRoles } from "@/lib/teams";
-import { CheckChip, Combobox, FieldLabel, Input, Textarea } from "@/components/ui";
-import { EditDialog, FieldError } from "../../u/[id]/edit-dialog";
+import { CheckChip, Combobox, FieldLabel, Input, Textarea, FieldError } from "@/components/ui";
+import { EditDialog } from "../../u/[id]/edit-dialog";
 import { RoleFields } from "../new/role-fields";
 import type { Application, Team } from "./team-view";
 
@@ -12,7 +12,7 @@ export function TeamEdit({ team: t, applications }: { team: Team; applications: 
   return (
     <EditDialog title="Edit team" trigger="edit" label="Edit team" note="Removing a role declines its pending applications and invitations" save={updateTeam.bind(null, t.id)} tall>
       <div className="space-y-4 py-6">
-        <div>
+        <div data-missing="The name should be 3 to 120 characters.">
           <FieldLabel htmlFor="title" required>What are you building?</FieldLabel>
           <Input id="title" name="title" defaultValue={t.title} required minLength={3} maxLength={120} />
           <FieldError field="title" />
@@ -21,10 +21,7 @@ export function TeamEdit({ team: t, applications }: { team: Team; applications: 
           <FieldLabel htmlFor="description" optional>More about it</FieldLabel>
           <Textarea id="description" name="description" rows={4} defaultValue={t.description} maxLength={2000} />
         </div>
-        <div>
-          <RoleFields initial={{ roles: t.roles, notes: t.role_notes }} locked={t.roles.filter((r) => !open.includes(r))} />
-          <FieldError field="roles" />
-        </div>
+        <RoleFields initial={{ roles: t.roles, notes: t.role_notes }} locked={t.roles.filter((r) => !open.includes(r))} />
         <fieldset>
           <FieldLabel as="legend" optional="optional, one or more">Team language</FieldLabel>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">

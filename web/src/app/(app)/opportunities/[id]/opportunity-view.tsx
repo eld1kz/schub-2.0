@@ -1,3 +1,4 @@
+import { Medal, UserSearch } from "lucide-react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { matchScore, type MatchableProfile } from "@/lib/match";
@@ -14,7 +15,8 @@ import { TeamList } from "../../team-list";
 import { PersonRow } from "../../people/person-row";
 import { Placement, TrustLabels, awardPeople } from "../../u/[id]/awards";
 import { EventActions } from "../event-actions";
-import { Avatar, ButtonAnchor, Chip, ChipList, Combobox, EmptyState, MonoLabel, PageHeader, ToastProvider, SubmitButton } from "@/components/ui";
+import { Avatar, ButtonAnchor, Chip, ChipList, Combobox, EmptyState, MonoLabel, PageHeader, ToastProvider, SubmitButton, ButtonLink } from "@/components/ui";
+import { PersonLink } from "../../person-link";
 
 export type Opportunity = {
   id: string;
@@ -95,10 +97,10 @@ function PlacedAward({ award: a }: { award: Award }) {
         <ul className="flex flex-wrap gap-x-4 gap-y-2">
           {awardPeople(a).map((p) => (
             <li key={p.id}>
-              <Link href={`/u/${p.id}`} className="flex items-center gap-2 text-base font-medium hover:text-accent">
+              <PersonLink id={p.id} className="flex items-center gap-2 text-base font-medium hover:text-accent">
                 <Avatar url={p.avatar_url} name={p.name} size="xs" />
                 {p.name || "Unnamed"}
-              </Link>
+              </PersonLink>
             </li>
           ))}
         </ul>
@@ -203,7 +205,9 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
         <section className="mt-12">
           <SectionHeader title="Schub teams that placed" count={placed.length} />
           {placed.length === 0 ? (
-            <EmptyState>No results added yet. Placed here? Add it to the Awards section of your profile.</EmptyState>
+            <EmptyState icon={Medal} action={!isGuest && <ButtonLink href={`/u/${userId}#awards`} variant="secondary" size="sm">Add your award</ButtonLink>}>
+              No results added yet.
+            </EmptyState>
           ) : (
             <div className="flex flex-col pt-4">
               {placed.map((a) => <PlacedAward key={a.id} award={a} />)}
@@ -220,14 +224,17 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
           awarded={awarded}
           connections={connections}
           event={o.id}
-          empty={over ? "No teams got further than saying they were going." : "No teams yet. Have one? Enter it above, or create one and list the roles you need."}
+          emptyAction={!over && <ButtonLink href={isGuest ? `/login?next=${encodeURIComponent(`/teams/new?opportunity=${o.id}`)}` : `/teams/new?opportunity=${o.id}`} variant="secondary" size="sm">Post a team</ButtonLink>}
+          empty={over ? "No teams got further than saying they were going." : "No teams yet. Have one? Enter it above, or post one with the roles you need."}
         />
       </section>
 
       <section id="looking" className="mt-12 scroll-mt-6">
         <SectionHeader title="Looking for a team" count={others.length} />
         {others.length === 0 ? (
-          <EmptyState>{mine ? "Nobody else yet. You're the first." : "Nobody yet. Be the first."}</EmptyState>
+          <EmptyState icon={UserSearch} action={<ButtonLink href="/people" variant="secondary" size="sm">Browse people</ButtonLink>}>
+            {mine ? "Nobody else is looking yet. You're the first." : "Nobody is looking for a team here yet."}
+          </EmptyState>
         ) : (
           <div className="flex flex-col pt-4">
             {others.map((p) => (

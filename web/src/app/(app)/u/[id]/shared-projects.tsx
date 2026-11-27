@@ -7,6 +7,7 @@ import { builtWith, type SharedProject } from "@/lib/shared-projects";
 import type { Award } from "@/lib/awards";
 import { Placement } from "./awards";
 import { Avatar, SubmitButton } from "@/components/ui";
+import { PersonLink } from "../../person-link";
 
 const outLink = "text-accent hover:underline";
 
@@ -20,9 +21,9 @@ export function BuiltWith({ project, except }: { project: SharedProject; except?
       <ul className="flex">
         {people.map((p) => (
           <li key={p.id} className="-mr-1.5">
-            <Link href={`/u/${p.id}`} title={p.name || "Unnamed"} aria-label={p.name || "Unnamed"} className="block rounded-full border-2 border-background hover:opacity-80">
+            <PersonLink id={p.id} title={p.name || "Unnamed"} aria-label={p.name || "Unnamed"} className="block rounded-full border-2 border-background hover:opacity-80">
               <Avatar url={p.avatar_url} name={p.name} size="sm" />
-            </Link>
+            </PersonLink>
           </li>
         ))}
       </ul>

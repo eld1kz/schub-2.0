@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, type ReactNode } from "react";
-import { ActionButton, AnswerButtons, Button, Pop, Tabs, ToastProvider, useToast, type ButtonVariant } from "@/components/ui";
+import { ActionButton, AnswerButtons, Avatar, Button, CommandPalette, HoverCard, Pop, Tabs, ToastProvider, useToast, type ButtonVariant } from "@/components/ui";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // Stand-ins for server actions: one that works and one the server turns down
@@ -78,5 +78,38 @@ export function ToastDemo({ children }: { children?: ReactNode }) {
         {children}
       </div>
     </ToastProvider>
+  );
+}
+
+// A person preview with sample content; in the app PersonLink loads it
+export function HoverDemo() {
+  return (
+    <p className="text-base text-ink2">
+      Rest the mouse on{" "}
+      <HoverCard
+        card={
+          <div className="flex w-72 items-center gap-3 rounded-lg border border-line2 bg-background p-4 shadow-float">
+            <Avatar url="" name="Jiwoo Park" size="xl" ring="open" />
+            <span className="min-w-0 flex-1 text-base font-semibold">Jiwoo Park</span>
+            <ConnectDemo />
+          </div>
+        }
+      >
+        <a href="#hover" className="font-semibold text-accent">a person</a>
+      </HoverCard>{" "}
+      or Tab to them.
+    </p>
+  );
+}
+
+export function PaletteDemo() {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const options = [{ value: "teams", label: "Teams", group: "Go to" }, { value: "people", label: "People", group: "Go to" }].filter((o) => o.label.toLowerCase().includes(query.toLowerCase()));
+  return (
+    <div>
+      <Button type="button" variant="secondary" onClick={() => setOpen(true)}>Open the palette</Button>
+      <CommandPalette open={open} onClose={() => setOpen(false)} label="examples" query={query} onQuery={setQuery} options={options} onChoose={() => setOpen(false)} />
+    </div>
   );
 }

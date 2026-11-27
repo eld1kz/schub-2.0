@@ -41,7 +41,7 @@ test("delete your account from Settings: signed out, profile gone, the team hand
   await expect(page.getByText("This profile doesn't exist.")).toBeVisible();
 
   await page.goto(`/teams/${fintech}`);
-  await expect(page.getByText("Started by")).toContainText("Rin Sandbox");
+  await expect(page.getByRole("region", { name: "Team", exact: true }).getByRole("listitem").filter({ hasText: "Lead" })).toContainText("Rin Sandbox");
 
   const { data: files } = await service().storage.from("media").list(id(18));
   expect(files ?? []).toEqual([]);

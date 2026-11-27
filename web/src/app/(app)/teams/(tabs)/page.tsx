@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ButtonLink } from "@/components/ui";
 import { requireUser } from "@/lib/supabase/server";
 import { recruitingRoles, teamRank, teamSummaries, teamSummaryColumns, type TeamSummary } from "@/lib/teams";
 import { today } from "@/lib/opportunities";
@@ -56,13 +56,13 @@ export default async function TeamsPage(props: PageProps<"/teams">) {
   // A role from the URL that no team lists any more still shows as selected
   const options = role && !roles.includes(selectedRole) ? [...roles, role] : roles;
   const withOpenRoles = all.filter((t) => recruiting(t).length > 0).length;
-  const empty = filtered ? (
-    <>
-      No teams match these filters.{lang || mode ? " Only teams that set a language or work mode show up for those." : ""}{" "}
-      <Link href="/teams" className="font-semibold text-accent hover:underline">Clear filters</Link>
-    </>
+  const empty = filtered
+    ? `No teams match these filters.${lang || mode ? " Only teams that set a language or work mode show up for those." : ""}`
+    : "No teams to join yet. Post yours and list the roles you need.";
+  const emptyAction = filtered ? (
+    <ButtonLink href="/teams" variant="secondary" size="sm">Clear filters</ButtonLink>
   ) : (
-    "No teams to join yet. Post yours and list the roles you need."
+    <ButtonLink href="/teams/new" variant="secondary" size="sm">Post a team</ButtonLink>
   );
 
   return (
@@ -71,7 +71,7 @@ export default async function TeamsPage(props: PageProps<"/teams">) {
         {withOpenRoles} {withOpenRoles === 1 ? "team has" : "teams have"} open roles. Teams for opportunities where you&apos;re looking for a team come first, then teams your connections are on, then the rest, newest first.
       </p>
       <TeamFilters roles={options} filters={{ role: selectedRole, status, lang, mode }} />
-      <TeamList teams={teams} userId={userId} awarded={awarded} applied={applied} connections={connections} empty={empty} />
+      <TeamList teams={teams} userId={userId} awarded={awarded} applied={applied} connections={connections} empty={empty} emptyAction={emptyAction} />
     </div>
   );
 }

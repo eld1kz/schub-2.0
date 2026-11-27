@@ -1,3 +1,4 @@
+import { Users } from "lucide-react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { SOON_DAYS, daysUntil, nextDate, today } from "@/lib/opportunities";
@@ -7,14 +8,15 @@ import { workModeLabel } from "@/lib/languages";
 import { AwardMark } from "./award-mark";
 import { EntryStatusLabel } from "./entry-status";
 import { ShareTeamButton } from "./share-team";
-import { Avatar, EmptyState, MonoLabel, Row, buttonClass } from "@/components/ui";
+import { PersonLink } from "./person-link";
+import { TeamRowSlots } from "./team-row-slots";
+import { toSlots } from "./to-slots";
+import { EmptyState, MonoLabel, Row, buttonClass } from "@/components/ui";
 
-// Overlapping avatars: each sits above the next, so the lead's ring is never covered
-const stack = ["z-30", "z-20", "z-10", "z-0"];
 const daysLeft = (n: number) => (n === 0 ? "Today" : n === 1 ? "1 day left" : `${n} days left`);
 
-// Teams as ruled rows that lead with the event: the event and time left, the title as the pitch, the roles it needs,
-// then who's on it. The button sits on the right from sm up; on phones the title is the way in.
+// Teams as rows that lead with the event: the event and time left, the title as the pitch, then its slots
+// (filled and open) and who leads it. The button sits on the right from sm up; on phones the title is the way in.
 // `awarded`: people with an award, who get a small medal after their name
 // `applied`: teams you've already applied to, whose button reads "Applied"
 // `connections`: your accepted connections. A team with one on it leads with them, ringed in the accent.
@@ -23,7 +25,7 @@ const daysLeft = (n: number) => (n === 0 ? "Today" : n === 1 ? "1 day left" : `$
 // repeat the page title, and its open roles only until the event is over.
 // Elsewhere a row shows the team's current event, and no open roles once that's over.
 // `share`: a share icon on each row, opening the share dialog (Your teams > Running)
-export function TeamList({ teams, userId, awarded, applied, connections = new Set(), event, share = false, empty }: {
+export function TeamList({ teams, userId, awarded, applied, connections = new Set(), event, share = false, empty, emptyAction }: {
   teams: TeamSummary[];
   userId: string;
   awarded: Set<string>;
@@ -32,8 +34,9 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
   event?: string;
   share?: boolean;
   empty: ReactNode;
+  emptyAction?: ReactNode;
 }) {
-  if (teams.length === 0) return <EmptyState>{empty}</EmptyState>;
+  if (teams.length === 0) return <EmptyState icon={Users} action={emptyAction}>{empty}</EmptyState>;
   const day = today();
   return (
     <div>
@@ -43,7 +46,7 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
         const mine = t.owner_id === userId;
         // Owners see every application to their team; everyone else only sees accepted ones and their own
         const toReview = mine ? t.team_applications.filter((a) => a.status === "pending" && a.direction === "application").length : 0;
-        const { lead, connected, others, ordered, universities } = memberSummary(teamMembers(t), connections);
+        const { lead, connected, others, universities } = memberSummary(teamMembers(t), connections);
         const next = t.opportunity ? nextDate(t.opportunity, day).date : null;
         const days = next ? daysUntil(next, day) : null;
         const leadName = lead ? (lead.id === userId ? "You" : lead.name || "Unnamed") : "";
@@ -77,36 +80,20 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
               )}
             </MonoLabel>}
             <h3 className="text-lg leading-snug font-semibold text-pretty">
-              <Link href={`/teams/${t.id}`} className="hover:text-accent">{t.title}</Link>
+              <Link href={`/teams/${t.id}`} data-row-main className="hover:text-accent">{t.title}</Link>
             </h3>
-            <p className="text-sm sm:text-base">
-              {open.length > 0 ? (
-                <><span className="text-muted">Needs:</span> {open.join(", ")}</>
-              ) : (
-                // Roles still open, but the event they were for is over
-                <span className="text-muted">{openRoles(t).length > 0 ? "Not recruiting: the event is over" : "All roles filled"}</span>
-              )}
-            </p>
+            <div className="py-1">
+              <TeamRowSlots slots={toSlots(t, userId, connections)} closed={open.length === 0 && openRoles(t).length > 0} />
+            </div>
+            {/* Roles still open, but the event they were for is over */}
+            {open.length === 0 && openRoles(t).length > 0 && <p className="text-sm text-muted">Not recruiting: the event is over</p>}
             {(t.languages.length > 0 || t.work_mode) && (
               <p className="text-meta text-ink2 sm:text-sm">{[t.languages.join(", "), workModeLabel(t.work_mode)].filter(Boolean).join(" · ")}</p>
             )}
             {lead && (
               <div className="mt-1 flex items-center gap-2 text-meta text-ink2 sm:text-sm">
-                <span className="flex shrink-0 -space-x-1.5">
-                  {ordered.slice(0, 4).map((m, i) => (
-                    <Avatar
-                      key={m.id}
-                      url={m.avatar_url}
-                      name={m.name}
-                      size="xs"
-                      stacked
-                      ring={connections.has(m.id) ? "connection" : m.open_to_collaborate ? "open" : null}
-                      className={stack[i]}
-                    />
-                  ))}
-                </span>
                 <span className="min-w-0">
-                  <span className="font-medium text-foreground">{leadName}</span>
+                  {lead.id === userId ? <span className="font-medium text-foreground">{leadName}</span> : <PersonLink id={lead.id} className="font-medium text-foreground hover:text-accent">{leadName}</PersonLink>}
                   {lead.id !== userId && awarded.has(lead.id) && <> <AwardMark /></>}
                   {connected ? (
                     <>, <span className="font-medium text-accent">your connection</span>{others > 0 && `, + ${others} ${others === 1 ? "other" : "others"}`}</>

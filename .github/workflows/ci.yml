@@ -19,8 +19,9 @@ jobs:
     name: Lint, types, unit tests
     runs-on: ubuntu-latest
     env:
-      # next.config.ts builds the image domain from it; typegen only reads the config and never connects
+      # next.config.ts requires both; typegen only reads the config and never connects
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: unused
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

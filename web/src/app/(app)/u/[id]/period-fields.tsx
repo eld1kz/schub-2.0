@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { formatPeriod } from "@/lib/portfolio";
-import { FieldError } from "./edit-dialog";
-import { Combobox, FieldLabel, type ComboboxHandle } from "@/components/ui";
+import { Combobox, FieldLabel, type ComboboxHandle, FieldError } from "@/components/ui";
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const firstYear = 1990;
@@ -45,7 +44,7 @@ export function PeriodFields({ start, end, current }: { start?: string; end?: st
         <input type="checkbox" name="current" checked={isCurrent} onChange={(e) => setCurrent(e.target.checked)} className="h-4.5 w-4.5 accent-accent" />
         I currently work here
       </label>
-      <fieldset>
+      <fieldset data-field="start" data-missing="Pick the month and year it started.">
         <FieldLabel as="legend" required>Start date</FieldLabel>
         <input type="hidden" name="start" value={startValue} />
         <div className="grid grid-cols-2 gap-3">
@@ -55,7 +54,7 @@ export function PeriodFields({ start, end, current }: { start?: string; end?: st
         <FieldError field="start" />
       </fieldset>
       {!isCurrent && (
-        <fieldset>
+        <fieldset data-field="end" data-missing="Pick the month and year it ended.">
           <FieldLabel as="legend" required>End date</FieldLabel>
           <input type="hidden" name="end" value={endValue} />
           <div className="grid grid-cols-2 gap-3">

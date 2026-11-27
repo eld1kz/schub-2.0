@@ -13,7 +13,7 @@ test("signed-out visitors get the landing page with live data", async ({ page })
 
   // The hero preview: sample data, labelled as such, and not interactive
   const preview = main.locator("figure");
-  await expect(preview).toContainText("Needs: iOS developer, Designer");
+  for (const role of ["iOS developer", "Designer"]) await expect(preview.getByRole("listitem").filter({ hasText: `${role}, open` })).toBeVisible();
   await expect(preview).toContainText("Confirmed by teammates");
   await expect(preview).toContainText("Preview with sample data, not real people");
   await expect(main.locator("[data-sample]").first()).toBeVisible();

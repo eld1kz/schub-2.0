@@ -69,3 +69,20 @@ test("the owner edits the team", async ({ browser }) => {
   await expect(page.getByRole("group", { name: "Frontend" })).toBeHidden();
   await context.close();
 });
+
+// Team 4 "Testerson Robotics": owner 14, members 16 and 01
+test("the team page shows each member once, with contact details only to those allowed", async ({ context, page }) => {
+  const team = "00000000-0000-4000-a000-000000000004";
+  const members = page.getByRole("region", { name: "Team", exact: true });
+  const contact = members.getByRole("link", { name: "t.me/fake_student_14" });
+
+  await page.goto(`/teams/${team}`);
+  await expect(members.getByRole("listitem").filter({ hasText: "Lead" })).toContainText("Kai Testerson");
+  await expect(contact).toHaveCount(0);
+
+  await signInAs(context, 1);
+  await page.reload();
+  await expect(contact).toBeVisible();
+  await expect(page.getByRole("main").getByRole("link", { name: /Kai Testerson/ })).toHaveCount(1);
+  await expect(page.getByText("Started by")).toHaveCount(0);
+});

@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { Pencil } from "lucide-react";
+import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import type { SaveResult } from "@/app/actions";
-import { Button, CloseIcon, ErrorText, IconButton, Modal, ModalGrabber, buttonClass, useToast } from "@/components/ui";
+import { Button, CloseIcon, ErrorText, IconButton, Modal, ModalGrabber, buttonClass, useToast, Icon, FormErrors, useFormCheck } from "@/components/ui";
 
 type Props = {
   title: string;
@@ -18,8 +19,6 @@ type Props = {
   remove?: () => Promise<SaveResult>;
   // Phones: full height, with Save pinned at the bottom instead of in the top bar
   tall?: boolean;
-  // Save stays disabled until every required field is filled and valid
-  requireValid?: boolean;
   // Text of the Save button, and of the toast after it worked
   submit?: string;
   done?: string;
@@ -28,39 +27,20 @@ type Props = {
   children: ReactNode;
 };
 
-type SaveError = { message: string; field?: string };
-
-// A save error that names a field is shown under that field (see useFieldError); others at the end of the form
-const FieldErrorContext = createContext<SaveError | null>(null);
-
-export function useFieldError(field: string) {
-  const error = useContext(FieldErrorContext);
-  return error?.field === field ? error.message : "";
-}
-
-// A short error under a field, from the last save or from the field's own check (`message`)
-export function FieldError({ field, message }: { field: string; message?: string }) {
-  const saved = useFieldError(field);
-  const text = message || saved;
-  return text ? <ErrorText under>{text}</ErrorText> : null;
-}
-
 function PencilIcon() {
   return (
-    <svg viewBox="0 0 16 16" aria-hidden className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth={1.5}>
-      <path d="M10.5 2.5l3 3L5 14H2v-3z" />
-    </svg>
+    <Icon icon={Pencil} />
   );
 }
 
 // One section's form in a modal: a bottom sheet on phones, near the top of the screen from sm up.
 // The native modal dialog traps focus, closes on Escape and hands focus back to the trigger.
-export function EditDialog({ title, trigger, label, cta = label, note, save, remove, tall = false, requireValid = false, submit = "Save", done = "Saved", optimistic = false, children }: Props) {
+export function EditDialog({ title, trigger, label, cta = label, note, save, remove, tall = false, submit = "Save", done = "Saved", optimistic = false, children }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const form = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
-  const [error, setError] = useState<SaveError | null>(null);
-  const [valid, setValid] = useState(!requireValid);
+  const [error, setError] = useState<{ message: string; field?: string } | null>(null);
+  // What pressing Save found missing
+  const { missing, check, recheck, clear } = useFormCheck();
   const [saving, startSave] = useTransition();
   // The check on Save, shown briefly before the dialog closes
   const [saved, setSaved] = useState(false);
@@ -72,8 +52,7 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
     dialog.current?.showModal();
     // Start on the first field rather than the close button
     dialog.current?.querySelector<HTMLElement>("input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([data-combobox-value]), textarea")?.focus();
-    checkValid();
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // The check is cleared on opening, not closing, so it stays while the dialog fades out
   function show() {
@@ -83,14 +62,10 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
   const close = () => dialog.current?.close();
   const noun = title.replace(/^(Edit|Add) /i, "").toLowerCase();
 
-  // After the fields' own effects have run, since some set custom validity there
-  function checkValid() {
-    if (requireValid) setTimeout(() => setValid(form.current?.checkValidity() ?? false));
-  }
-
   // Not a form `action`: React would reset the fields after it, even when the save failed
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!check(e.currentTarget)) return;
     const formData = new FormData(e.currentTarget);
     if (optimistic) setSaved(true);
     startSave(async () => {
@@ -150,19 +125,20 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
         onClose={() => {
           setOpen(false);
           setError(null);
+          clear();
         }}
         tall={tall}
         scroll={false}
       >
           <form
-            ref={form}
             onSubmit={onSubmit}
-            // Any edit clears the last save error and rechecks what's required
-            onInput={() => {
+            noValidate
+            // Any edit clears the last save error, and messages for what's no longer missing
+            onInput={(e) => {
               setError(null);
-              checkValid();
+              recheck(e.currentTarget);
             }}
-            onChange={checkValid}
+            onClick={(e) => recheck(e.currentTarget)}
             className={`flex max-h-inherit flex-col ${tall ? "h-full sm:h-auto" : ""}`}
           >
             {!tall && <ModalGrabber />}
@@ -173,14 +149,14 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
               {tall ? (
                 <span aria-hidden className="w-12 sm:hidden" />
               ) : (
-                <Button variant="bare" disabled={!valid} pending={saving && !saved} done={saved} className="text-base font-semibold text-accent sm:hidden [&:disabled:not([aria-busy])]:opacity-40">
+                <Button variant="bare" pending={saving && !saved} done={saved} className="text-base font-semibold text-accent sm:hidden">
                   {submit}
                 </Button>
               )}
               <IconButton label="Close" onClick={close} className="hidden sm:grid"><CloseIcon /></IconButton>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-0">
-              <FieldErrorContext value={error}>{children}</FieldErrorContext>
+              <FormErrors missing={missing} saved={error}>{children}</FormErrors>
               {error && !error.field && <ErrorText size="sm" className="pb-4">{error.message}</ErrorText>}
             </div>
             <div className={`${tall || note || remove ? "flex" : "hidden sm:flex"} shrink-0 items-center gap-4 border-t border-border px-4 py-4 sm:px-6`}>
@@ -191,8 +167,8 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
                 </Button>
               )}
               <div className={`${tall ? "flex flex-1 justify-end" : "hidden sm:flex"} ml-auto gap-2`}>
-                <button type="button" onClick={close} className={buttonClass({ variant: "secondary", showFrom: "sm" })}>Cancel</button>
-                <Button size={tall ? "touch" : "md"} full={tall && !remove} disabled={!valid} pending={saving && !saved} done={saved}>
+                <Button type="button" variant="secondary" showFrom="sm" shortcut="Esc" onClick={close}>Cancel</Button>
+                <Button size={tall ? "touch" : "md"} full={tall && !remove} pending={saving && !saved} done={saved}>
                   {submit}
                 </Button>
               </div>

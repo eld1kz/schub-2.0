@@ -3,10 +3,9 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { searchPeople, type PersonResult } from "@/app/actions";
 import { AWARD_DESCRIPTION_MAX, AWARD_TEAMMATES_MAX, PLACEMENTS, placementLabel, type Award } from "@/lib/awards";
-import { FieldError } from "./edit-dialog";
 import { nextOnEnter } from "./experience-fields";
 import { monthOptions, yearOptions } from "./period-fields";
-import { Avatar, Combobox, Field, FieldLabel, Input, Textarea, type ComboboxHandle } from "@/components/ui";
+import { Avatar, Combobox, Field, FieldLabel, Input, Textarea, type ComboboxHandle, FieldError } from "@/components/ui";
 
 export type AwardOptions = { opportunities: { id: string; title: string }[]; projects: { id: string; title: string }[] };
 
@@ -50,10 +49,10 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
   const future = month !== "" && year !== "" && `${year}-${month}` > thisMonth;
   const found = (people ?? []).filter((p) => !teammates.some((t) => t.id === p.id));
 
-  // Save stays off until an event is chosen. Picking one is a click, which the dialog doesn't see,
-  // so an input event tells it to check again.
+  // An award needs an event. Choosing one is a click on a list that then goes away, so an input event tells the
+  // dialog to check again.
   useEffect(() => {
-    eventInput.current?.setCustomValidity(event ? "" : "Choose the event");
+    eventInput.current?.setCustomValidity(event ? "" : "Choose the event or type its name.");
     root.current?.dispatchEvent(new Event("input", { bubbles: true }));
   }, [event]);
 
@@ -91,6 +90,7 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
   return (
     <div ref={root} onKeyDown={nextOnEnter} className="space-y-4 py-6">
       <Field id="award-event" label="Event" required>
+        <div data-field="event">
         {event ? (
           <div className="flex h-11 items-center justify-between gap-3 rounded-md border border-line2 px-3 sm:h-10">
             <input type="hidden" name="opportunity_id" value={event.id} />
@@ -135,11 +135,14 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
             )}
           </>
         )}
+        </div>
         <FieldError field="event" />
       </Field>
 
       <Field id="award-placement" label="Placement" required>
+        <div data-missing="Choose a placement.">
         <Combobox id="award-placement" label="Placement" labelled name="placement" placeholder="Choose a placement" value={placement} onChange={setPlacement} options={placementOptions} ref={placementRef} />
+        </div>
         <FieldError field="placement" />
       </Field>
 
@@ -147,7 +150,7 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
         <Input id="award-prize" name="prize_name" defaultValue={a?.prize_name} maxLength={100} placeholder="Best use of AI track" />
       </Field>
 
-      <fieldset>
+      <fieldset data-field="awarded_on" data-missing="Pick the month and year.">
         <FieldLabel as="legend" required>Date</FieldLabel>
         <input type="hidden" name="awarded_on" value={month && year ? `${year}-${month}` : ""} />
         <div className="grid grid-cols-2 gap-3">

@@ -9,7 +9,7 @@ import { GlobalSearch } from "./global-search";
 import { NavTabs, TabBar } from "./nav-tabs";
 import { AccountMenu } from "./account-menu";
 import { SentryUser } from "./sentry-user";
-import { Avatar, SubmitButton } from "@/components/ui";
+import { Avatar, SubmitButton, RowKeys } from "@/components/ui";
 
 function Header({ counts = {}, profileHref = "/profile", account }: { counts?: Record<string, number>; profileHref?: string; account?: ReactNode }) {
   return (
@@ -77,6 +77,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <Suspense fallback={<Header />}><NavWithCounts /></Suspense>
+      <RowKeys />
       <div className="mx-auto max-w-page px-4 sm:px-6">
         <Suspense><ProfileNudge /></Suspense>
         {/* Room at the bottom for the phone tab bar */}

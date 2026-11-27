@@ -13,7 +13,7 @@ import { PhotoField } from "./photo-field";
 import { ExperienceFields } from "./experience-fields";
 import { GitHubIcon, LinkedInIcon, WebsiteIcon } from "./link-icons";
 import type { ProfileData } from "./profile-view";
-import { Avatar, CheckChip, Combobox, FieldLabel, Input, Switch, Textarea } from "@/components/ui";
+import { Avatar, CheckChip, Combobox, FieldLabel, Input, Switch, Textarea, FieldError } from "@/components/ui";
 
 // The owner's edit modals, one per profile section. Each saves only its own fields.
 
@@ -29,12 +29,16 @@ function Group({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function Field({ label, className = "", children }: { label: string; className?: string; children: ReactNode }) {
+// `name`: of a field that can be wrong, so what's missing shows under it; `missing` words it when it's empty
+function Field({ label, name, missing, className = "", children }: { label: string; name?: string; missing?: string; className?: string; children: ReactNode }) {
   return (
-    <label className={`block ${className}`}>
-      <FieldLabel as="span" quiet>{label}</FieldLabel>
-      {children}
-    </label>
+    <div className={className} data-missing={missing}>
+      <label className="block">
+        <FieldLabel as="span" quiet>{label}</FieldLabel>
+        {children}
+      </label>
+      {name && <FieldError field={name} />}
+    </div>
   );
 }
 
@@ -55,7 +59,7 @@ export function HeroEdit({ profile: p }: { profile: ProfileData }) {
         <div className="flex gap-4">
           <PhotoField current={<Avatar url={p.avatar_url} name={p.name} size="2xl" square />} />
           <div className="min-w-0 flex-1 space-y-3">
-            <Field label="Name"><Input name="name" defaultValue={p.name} required maxLength={80} className="font-semibold" /></Field>
+            <Field label="Name" name="name" missing="Add your name."><Input name="name" defaultValue={p.name} required maxLength={80} className="font-semibold" /></Field>
             <Field label="Headline"><Input name="headline" defaultValue={p.headline} maxLength={100} placeholder="CS student building a campus marketplace" /></Field>
           </div>
         </div>
@@ -63,7 +67,7 @@ export function HeroEdit({ profile: p }: { profile: ProfileData }) {
       <Group label="School">
         <div className="grid grid-cols-fill-short gap-3">
           <Field label="University"><Input name="university" defaultValue={p.university} maxLength={120} /></Field>
-          <Field label="Grad year"><Input name="graduation_year" type="number" defaultValue={p.graduation_year || ""} /></Field>
+          <Field label="Grad year" name="graduation_year"><Input name="graduation_year" type="number" defaultValue={p.graduation_year || ""} /></Field>
         </div>
       </Group>
       <Group label="Work style">
@@ -166,7 +170,7 @@ export function ContactEdit({ contact, trigger }: { contact?: { telegram: string
       <Group label="Contact">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Telegram username"><Input name="telegram" defaultValue={contact?.telegram} maxLength={32} placeholder="username" /></Field>
-          <Field label="Contact email"><Input name="email" type="email" defaultValue={contact?.email} maxLength={254} /></Field>
+          <Field label="Contact email" name="email"><Input name="email" type="email" defaultValue={contact?.email} maxLength={254} /></Field>
         </div>
       </Group>
     </EditDialog>
@@ -183,7 +187,6 @@ export function ExperienceEdit({ experience: e, trigger }: { experience?: Experi
       save={saveExperience.bind(null, e?.id ?? null)}
       remove={e && deleteExperience.bind(null, e.id)}
       tall
-      requireValid
     >
       <ExperienceFields experience={e} />
     </EditDialog>
@@ -200,7 +203,6 @@ export function AwardEdit({ award: a, options, trigger }: { award?: Award; optio
       save={saveAward.bind(null, a?.id ?? null)}
       remove={a && deleteAward.bind(null, a.id)}
       tall
-      requireValid
     >
       <AwardFields award={a} {...options} />
     </EditDialog>
@@ -218,14 +220,14 @@ export function ProjectEdit({ project: p, trigger }: { project?: Project; trigge
       remove={p && deleteProject.bind(null, p.id)}
     >
       <Group label="Project">
-        <Field label="Name"><Input name="title" defaultValue={p?.title} required maxLength={80} /></Field>
+        <Field label="Name" name="title" missing="Add a name."><Input name="title" defaultValue={p?.title} required maxLength={80} /></Field>
         <Field label="One line about it"><Input name="tagline" defaultValue={p?.tagline} maxLength={140} placeholder="Swap used textbooks with students on your campus" /></Field>
         <Field label={p?.image_url ? "Image (choose a file to replace the current one)" : "Image"}><Input name="image" type="file" accept="image/jpeg,image/png,image/webp" /></Field>
       </Group>
       <Group label="Your part">
         <div className="grid grid-cols-fill-short gap-3">
           <Field label="Your role"><Input name="role" defaultValue={p?.role} maxLength={60} placeholder="Frontend and design" /></Field>
-          <Field label="Year"><Input name="year" type="number" min={2000} max={2100} defaultValue={p?.year ?? ""} /></Field>
+          <Field label="Year" name="year"><Input name="year" type="number" min={2000} max={2100} defaultValue={p?.year ?? ""} /></Field>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Built at (optional)"><Input name="built_at" defaultValue={p?.built_at} maxLength={100} placeholder="HackNU 2026" /></Field>

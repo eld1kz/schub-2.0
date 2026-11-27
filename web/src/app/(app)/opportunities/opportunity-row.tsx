@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { SOON_DAYS, daysLabel, daysUntil, nextDate, opportunityTypes, placeLabel, type OpportunityType } from "@/lib/opportunities";
 import { goingLabel, type Going } from "@/lib/connections";
-import { MonoLabel, RowArrow, linkedRowClass } from "@/components/ui";
+import { MonoLabel, RowMark, linkedRowClass } from "@/components/ui";
 
 export const columns = "lg:grid lg:grid-cols-opportunity lg:items-center lg:gap-6";
 
@@ -35,7 +35,7 @@ export function OpportunityRow({ o, day, going, actions }: { o: OpportunityRowDa
   const urgent = days !== null && days <= SOON_DAYS;
   const left = days !== null && <span className={`text-meta ${urgent ? "font-semibold text-accent" : "text-muted"}`}>{daysLabel(days)}</span>;
   return (
-    <article className={`group relative flex flex-col gap-1 border-b border-border py-4 ${linkedRowClass} ${columns}`}>
+    <article data-row="" className={`group flex flex-col gap-1 py-3 ${linkedRowClass} ${columns}`}>
       <span className="flex items-center justify-between gap-2">
         <MonoLabel>
           {opportunityTypes[o.type]}
@@ -44,7 +44,7 @@ export function OpportunityRow({ o, day, going, actions }: { o: OpportunityRowDa
         <span className="lg:hidden">{urgent && left}</span>
       </span>
       <span className="flex min-w-0 flex-col gap-0.5">
-        <Link href={`/opportunities/${o.id}`} className="text-base leading-snug font-semibold group-hover:text-accent after:absolute after:inset-0">{o.title}</Link>
+        <Link href={`/opportunities/${o.id}`} data-row-main className="text-base leading-snug font-semibold group-hover:text-accent after:absolute after:inset-0">{o.title}</Link>
         {/* Phones: organizer, place and date on one line under the title */}
         <span className="text-meta text-ink2 lg:text-sm">
           <span className="lg:hidden">{[o.organizer, placeLabel(o), o.languages.join(", "), next.label].filter(Boolean).join(" · ")}</span>
@@ -68,7 +68,7 @@ export function OpportunityRow({ o, day, going, actions }: { o: OpportunityRowDa
         )}
       </span>
       {actions && <div className="mt-2 lg:col-span-full lg:col-start-2 lg:mt-0">{actions}</div>}
-      <RowArrow />
+      <RowMark />
     </article>
   );
 }

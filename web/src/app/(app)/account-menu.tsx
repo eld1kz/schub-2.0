@@ -9,7 +9,11 @@ export function AccountMenu({ avatar, children }: { avatar: ReactNode; children:
   const ref = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
 
+  // Only when the page changes, not when this first runs: the menu may have been opened before the script arrived
+  const openedOn = useRef(pathname);
   useEffect(() => {
+    if (openedOn.current === pathname) return;
+    openedOn.current = pathname;
     ref.current?.removeAttribute("open");
   }, [pathname]);
 
@@ -22,7 +26,7 @@ export function AccountMenu({ avatar, children }: { avatar: ReactNode; children:
   }, []);
 
   return (
-    <details ref={ref} className="motion-menu relative">
+    <details ref={ref} className="motion-menu relative" suppressHydrationWarning>
       <summary aria-label="Account menu" className="block cursor-pointer list-none rounded-full hover:opacity-80 [&::-webkit-details-marker]:hidden">
         {avatar}
       </summary>

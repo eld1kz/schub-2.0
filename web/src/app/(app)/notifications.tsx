@@ -1,6 +1,7 @@
+import { Bell } from "lucide-react";
 import { markAllRead, openNotification } from "@/app/actions";
 import { NotificationMenu } from "./notification-menu";
-import { SubmitButton } from "@/components/ui";
+import { SubmitButton, ButtonLink, EmptyState } from "@/components/ui";
 
 export type Notification = { id: string; message: string; read: boolean; created_at: string };
 
@@ -17,7 +18,9 @@ export function Notifications({ items, unread }: { items: Notification[]; unread
         )}
       </div>
       {items.length === 0 ? (
-        <p className="px-4 py-6 text-center text-muted">Nothing yet.</p>
+        <div className="px-4">
+          <EmptyState icon={Bell} action={<ButtonLink href="/people" variant="secondary" size="sm">Find people</ButtonLink>}>Nothing yet.</EmptyState>
+        </div>
       ) : (
         <ul className="max-h-96 divide-y divide-border overflow-y-auto">
           {items.map((n) => (

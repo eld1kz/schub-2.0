@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { AwardMark } from "../award-mark";
 import { Avatar, Row } from "@/components/ui";
+import { PersonLink } from "../person-link";
 
 // One person in a People tab: avatar, name and headline, details under them, and actions on the right
 export function PersonRow({ id, name, headline, avatarUrl, awarded = false, open = false, children, actions }: {
@@ -22,13 +22,13 @@ export function PersonRow({ id, name, headline, avatarUrl, awarded = false, open
       href={`/u/${id}`}
       actions={actions}
       media={
-        <Link href={`/u/${id}`} aria-hidden tabIndex={-1}>
+        <PersonLink id={id} aria-hidden tabIndex={-1}>
           <Avatar url={avatarUrl} name={name} size="xl" ring={open ? "open" : null} />
-        </Link>
+        </PersonLink>
       }
     >
       <span className="flex items-center gap-1.5">
-        <Link href={`/u/${id}`} className="w-fit text-base font-semibold hover:text-accent">{name || "Unnamed"}</Link>
+        <PersonLink id={id} data-row-main className="w-fit text-base font-semibold hover:text-accent">{name || "Unnamed"}</PersonLink>
         {awarded && <AwardMark />}
       </span>
       {headline && <p className="text-sm leading-snug text-ink2">{headline}</p>}

@@ -43,7 +43,7 @@ test("invite someone suggested for a role, withdraw, invite again; they accept f
 
   // On the team page Designer is filled and Minho is a member
   await page.reload();
-  const members = page.locator("section").filter({ has: page.getByRole("heading", { name: "Team", exact: true }) });
+  const members = page.getByRole("region", { name: "Team", exact: true });
   await expect(members.getByRole("link", { name: "Minho Ipsum" })).toBeVisible();
   await expect(page.getByRole("button", { name: /as Designer$/ })).toHaveCount(0);
 
