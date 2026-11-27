@@ -2,8 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import type { SaveResult } from "@/app/actions";
-import { useToast } from "./toast";
-import { CloseIcon, ErrorText, IconButton, Modal, ModalGrabber, buttonClass } from "@/components/ui";
+import { Button, CloseIcon, ErrorText, IconButton, Modal, ModalGrabber, buttonClass, useToast } from "@/components/ui";
 
 type Props = {
   title: string;
@@ -24,6 +23,8 @@ type Props = {
   // Text of the Save button, and of the toast after it worked
   submit?: string;
   done?: string;
+  // Show the check as soon as Save is pressed (Apply), taking it back if it fails
+  optimistic?: boolean;
   children: ReactNode;
 };
 
@@ -54,13 +55,15 @@ function PencilIcon() {
 
 // One section's form in a modal: a bottom sheet on phones, near the top of the screen from sm up.
 // The native modal dialog traps focus, closes on Escape and hands focus back to the trigger.
-export function EditDialog({ title, trigger, label, cta = label, note, save, remove, tall = false, requireValid = false, submit = "Save", done = "Saved", children }: Props) {
+export function EditDialog({ title, trigger, label, cta = label, note, save, remove, tall = false, requireValid = false, submit = "Save", done = "Saved", optimistic = false, children }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const form = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<SaveError | null>(null);
   const [valid, setValid] = useState(!requireValid);
   const [saving, startSave] = useTransition();
+  // The check on Save, shown briefly before the dialog closes
+  const [saved, setSaved] = useState(false);
   const [deleting, startDelete] = useTransition();
   const toast = useToast();
 
@@ -72,6 +75,11 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
     checkValid();
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // The check is cleared on opening, not closing, so it stays while the dialog fades out
+  function show() {
+    setSaved(false);
+    setOpen(true);
+  }
   const close = () => dialog.current?.close();
   const noun = title.replace(/^(Edit|Add) /i, "").toLowerCase();
 
@@ -84,9 +92,16 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    if (optimistic) setSaved(true);
     startSave(async () => {
       const result = await save(formData);
-      if (result.error) return setError({ message: result.error, field: result.field });
+      if (result.error) {
+        setSaved(false);
+        return setError({ message: result.error, field: result.field });
+      }
+      // The page behind changes once this finishes, so the check is seen first
+      setSaved(true);
+      await new Promise((resolve) => setTimeout(resolve, 500));
       close();
       toast(done);
     });
@@ -104,22 +119,22 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
 
   const triggers = {
     edit: (
-      <IconButton label={label} onClick={() => setOpen(true)}>
+      <IconButton label={label} onClick={show}>
         <PencilIcon />
       </IconButton>
     ),
     link: (
-      <button type="button" onClick={() => setOpen(true)} className="text-left text-sm font-semibold text-accent hover:underline">
+      <button type="button" onClick={show} className="text-left text-sm font-semibold text-accent hover:underline">
         + {cta}
       </button>
     ),
     button: (
-      <button type="button" onClick={() => setOpen(true)} className={buttonClass({ variant: "accent", size: "touch", full: true })}>
+      <button type="button" onClick={show} className={buttonClass({ variant: "accent", size: "touch", full: true })}>
         + {cta}
       </button>
     ),
     action: (
-      <button type="button" onClick={() => setOpen(true)} className={buttonClass({ variant: "secondary", size: "sm" })}>
+      <button type="button" onClick={show} className={buttonClass({ variant: "secondary", size: "sm" })}>
         {cta}
       </button>
     ),
@@ -158,9 +173,9 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
               {tall ? (
                 <span aria-hidden className="w-12 sm:hidden" />
               ) : (
-                <button disabled={saving || !valid} className="text-base font-semibold text-accent disabled:opacity-40 sm:hidden">
-                  {saving ? "Saving..." : submit}
-                </button>
+                <Button variant="bare" disabled={!valid} pending={saving && !saved} done={saved} className="text-base font-semibold text-accent sm:hidden [&:disabled:not([aria-busy])]:opacity-40">
+                  {submit}
+                </Button>
               )}
               <IconButton label="Close" onClick={close} className="hidden sm:grid"><CloseIcon /></IconButton>
             </div>
@@ -171,15 +186,15 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
             <div className={`${tall || note || remove ? "flex" : "hidden sm:flex"} shrink-0 items-center gap-4 border-t border-border px-4 py-4 sm:px-6`}>
               {note && <p className="text-meta text-ink2">{note}</p>}
               {remove && (
-                <button type="button" onClick={onDelete} disabled={deleting} className={`text-sm text-ink2 hover:text-danger disabled:opacity-60 ${tall ? "" : "ml-auto sm:ml-0"}`}>
-                  {deleting ? "Deleting..." : `Delete ${noun}`}
-                </button>
+                <Button type="button" variant="bare" onClick={onDelete} pending={deleting} className={`text-sm text-ink2 hover:text-danger ${tall ? "" : "ml-auto sm:ml-0"}`}>
+                  Delete {noun}
+                </Button>
               )}
               <div className={`${tall ? "flex flex-1 justify-end" : "hidden sm:flex"} ml-auto gap-2`}>
                 <button type="button" onClick={close} className={buttonClass({ variant: "secondary", showFrom: "sm" })}>Cancel</button>
-                <button disabled={saving || !valid} className={buttonClass({ size: tall ? "touch" : "md", full: tall && !remove })}>
-                  {saving ? "Saving..." : submit}
-                </button>
+                <Button size={tall ? "touch" : "md"} full={tall && !remove} disabled={!valid} pending={saving && !saved} done={saved}>
+                  {submit}
+                </Button>
               </div>
             </div>
           </form>

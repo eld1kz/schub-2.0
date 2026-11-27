@@ -19,6 +19,7 @@ export function PersonRow({ id, name, headline, avatarUrl, awarded = false, open
   return (
     <Row
       flush
+      href={`/u/${id}`}
       actions={actions}
       media={
         <Link href={`/u/${id}`} aria-hidden tabIndex={-1}>

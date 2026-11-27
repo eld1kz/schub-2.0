@@ -10,6 +10,7 @@ const db = vi.hoisted(() => {
         return q;
       },
       eq: () => q,
+      select: () => q,
       then: (resolve: (result: { data: null; error: null }) => void) => resolve({ data: null, error: null }),
     };
     return q;

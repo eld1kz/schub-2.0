@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/supabase/server";
 import { respond, withdrawRequest } from "@/app/actions";
 import { awardedIds } from "@/lib/awards";
 import { PersonRow } from "../person-row";
-import { buttonClass } from "@/components/ui";
+import { AnswerButtons, SubmitButton } from "@/components/ui";
 
 type Person = { name: string; headline: string; avatar_url: string; open_to_collaborate: boolean } | null;
 type Request = { id: string; sender_id: string; receiver_id: string; created_at: string; sender: Person; receiver: Person };
@@ -61,10 +61,7 @@ export default async function RequestsPage() {
               open={c.sender?.open_to_collaborate}
               awarded={awarded.has(c.sender_id)}
               actions={
-                <>
-                  <form action={respond.bind(null, c.id, "accepted")}><button className={buttonClass({ size: "sm" })}>Accept</button></form>
-                  <form action={respond.bind(null, c.id, "declined")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
-                </>
+                <AnswerButtons accept={respond.bind(null, c.id, "accepted")} decline={respond.bind(null, c.id, "declined")} />
               }
             >
               <p className="text-meta text-muted">Sent {sent(c.created_at)}</p>
@@ -87,7 +84,7 @@ export default async function RequestsPage() {
               avatarUrl={c.receiver?.avatar_url ?? ""}
               open={c.receiver?.open_to_collaborate}
               awarded={awarded.has(c.receiver_id)}
-              actions={<form action={withdrawRequest.bind(null, c.id)}><button className="h-9 text-sm text-ink2 hover:text-foreground">Withdraw</button></form>}
+              actions={<form action={withdrawRequest.bind(null, c.id)}><SubmitButton variant="quiet" size="sm">Withdraw</SubmitButton></form>}
             >
               <p className="text-meta text-muted">Sent {sent(c.created_at)} · waiting for a reply</p>
             </PersonRow>

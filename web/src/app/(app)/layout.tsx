@@ -9,7 +9,7 @@ import { GlobalSearch } from "./global-search";
 import { NavTabs, TabBar } from "./nav-tabs";
 import { AccountMenu } from "./account-menu";
 import { SentryUser } from "./sentry-user";
-import { Avatar } from "@/components/ui";
+import { Avatar, SubmitButton } from "@/components/ui";
 
 function Header({ counts = {}, profileHref = "/profile", account }: { counts?: Record<string, number>; profileHref?: string; account?: ReactNode }) {
   return (
@@ -53,7 +53,7 @@ async function NavWithCounts() {
       <AccountMenu avatar={<Avatar url={me.data?.avatar_url ?? ""} name={name} size="md" />}>
         <Link href={`/u/${userId}`} className={menuItem}>Your profile</Link>
         <Link href="/settings" className={menuItem}>Settings</Link>
-        <form action={signOut} className="border-t border-border pt-1 mt-1"><button className={`${menuItem} w-full text-left`}>Sign out</button></form>
+        <form action={signOut} className="border-t border-border pt-1 mt-1"><SubmitButton variant="bare" className={`${menuItem} w-full text-left`}>Sign out</SubmitButton></form>
       </AccountMenu>
     </span>
   );

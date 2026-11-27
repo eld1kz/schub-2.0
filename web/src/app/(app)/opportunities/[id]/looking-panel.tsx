@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { findTeam, lookForTeam, stopLooking } from "@/app/actions";
 import { EditDialog } from "../../u/[id]/edit-dialog";
-import { ErrorText, FieldLabel, Input, buttonClass } from "@/components/ui";
+import { ErrorText, FieldLabel, Input, SubmitButton, Button } from "@/components/ui";
 
 const noteMax = 300;
 
@@ -27,7 +27,7 @@ export function FindTeamButton({ opportunityId, onPage }: { opportunityId: strin
 
   return (
     <span className="flex flex-col gap-1">
-      <button type="button" onClick={onClick} disabled={saving} className={buttonClass({ size: "sm" })}>{saving ? "Adding you..." : "Find a team"}</button>
+      <Button type="button" onClick={onClick} size="sm" pending={saving}>Find a team</Button>
       {error && <ErrorText as="span">{error}</ErrorText>}
     </span>
   );
@@ -49,7 +49,7 @@ export function LookingNote({ opportunityId, note }: { opportunityId: string; no
         </div>
       </EditDialog>
       <form action={stopLooking.bind(null, opportunityId)}>
-        <button className="text-sm text-ink2 hover:text-foreground">Leave</button>
+        <SubmitButton variant="bare" className="text-sm text-ink2 hover:text-foreground">Leave</SubmitButton>
       </form>
       <p className="basis-full text-sm text-ink2">{note ? <>&ldquo;{note}&rdquo;</> : "No note yet. Add one so teams know what you'd bring."}</p>
     </div>

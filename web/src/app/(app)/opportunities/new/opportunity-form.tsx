@@ -8,7 +8,7 @@ import { FieldError } from "../../u/[id]/edit-dialog";
 import { DateField } from "./date-field";
 import { LinkField } from "./link-field";
 import { PlaceFields, type PlaceValues } from "./place-fields";
-import { Combobox, ErrorText, Field, Input, PageHeader, Textarea, buttonClass, type ComboboxOption } from "@/components/ui";
+import { Combobox, ErrorText, Field, Input, PageHeader, Textarea, type ComboboxOption, Button } from "@/components/ui";
 
 const typeOptions = Object.entries(opportunityTypes).map(([value, label]) => ({ value, label }));
 
@@ -98,7 +98,7 @@ export function OpportunityForm({ edit, countries }: { edit?: { id: string; valu
       </div>
 
       <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row-reverse sm:items-center sm:justify-between">
-        <button disabled={saving} className={buttonClass({ size: "touch", full: true })}>{saving ? "Checking the link..." : submit}</button>
+        <Button size="touch" full pending={saving}>{submit}</Button>
         {error && !error.field && <ErrorText size="sm">{error.message}</ErrorText>}
       </div>
     </form>

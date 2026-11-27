@@ -55,7 +55,7 @@ export function DeleteAccount({ blocked }: { blocked: string }) {
           {state.error && <ErrorText size="sm">{state.error}</ErrorText>}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="secondary" size="touch" onClick={() => dialog.current?.close()}>Cancel</Button>
-            <Button variant="danger" size="touch" disabled={typed !== "DELETE" || deleting}>
+            <Button variant="danger" size="touch" disabled={typed !== "DELETE"} pending={deleting}>
               {deleting ? "Deleting..." : "Delete my account"}
             </Button>
           </div>

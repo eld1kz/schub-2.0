@@ -16,9 +16,8 @@ import { TeamEdit } from "./team-edit";
 import { SignInButton } from "../../sign-in";
 import { EditDialog } from "../../u/[id]/edit-dialog";
 
-import { ToastProvider } from "../../u/[id]/toast";
 import { ShareTeamButton } from "../../share-team";
-import { Avatar, Chip, ChipList, Row, Section, Textarea, buttonClass } from "@/components/ui";
+import { Avatar, Chip, ChipList, Row, Section, Textarea, buttonClass, ToastProvider, AnswerButtons, SubmitButton } from "@/components/ui";
 
 type Person = { name: string; headline: string; university: string; skills: string[]; avatar_url: string; open_to_collaborate: boolean } | null;
 export type Application = {
@@ -77,6 +76,7 @@ function ApplyButton({ teamId, teamTitle, role }: { teamId: string; teamTitle: s
       cta="Apply for this role"
       submit="Send application"
       done="Application sent"
+      optimistic
       save={applyToTeam.bind(null, teamId)}
       tall
     >
@@ -173,7 +173,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
       return (
         <span className="flex items-center gap-4">
           <span className="text-sm font-medium text-accent">You applied</span>
-          <form action={withdrawApplication.bind(null, teamId)}><button className="text-sm text-ink2 hover:text-foreground">Withdraw</button></form>
+          <form action={withdrawApplication.bind(null, teamId)}><SubmitButton variant="bare" className="text-sm text-ink2 hover:text-foreground">Withdraw</SubmitButton></form>
         </span>
       );
     }
@@ -219,10 +219,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
               <p className="text-base">
                 <span className="font-semibold">{owner?.name || "The owner"} invited you to join as {mine.role}.</span>
               </p>
-              <div className="flex shrink-0 gap-2">
-                <form action={answerInvite.bind(null, mine.id, "accepted")}><button className={buttonClass({ size: "sm" })}>Accept</button></form>
-                <form action={answerInvite.bind(null, mine.id, "declined")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
-              </div>
+              <AnswerButtons accept={answerInvite.bind(null, mine.id, "accepted")} decline={answerInvite.bind(null, mine.id, "declined")} />
             </div>
           )}
           {mine?.status === "accepted" && (
@@ -336,10 +333,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
                         key={a.id}
                         stack
                         actions={
-                          <>
-                            <form action={respondToApplication.bind(null, t.id, a.id, "accepted")}><button className={buttonClass({ size: "sm" })}>Accept</button></form>
-                            <form action={respondToApplication.bind(null, t.id, a.id, "declined")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
-                          </>
+                          <AnswerButtons accept={respondToApplication.bind(null, t.id, a.id, "accepted")} decline={respondToApplication.bind(null, t.id, a.id, "declined")} />
                         }
                       >
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -363,7 +357,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
 
         {isOwner && (
           <form action={deleteTeam.bind(null, t.id)} className="border-t border-line2 pt-6">
-            <button className="text-sm text-ink2 hover:text-danger">Delete team</button>
+            <SubmitButton variant="bare" className="text-sm text-ink2 hover:text-danger">Delete team</SubmitButton>
           </form>
         )}
       </div>

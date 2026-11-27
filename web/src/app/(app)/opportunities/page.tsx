@@ -8,9 +8,8 @@ import { OpportunitySearch } from "./opportunity-search";
 import { OpportunityHeader, OpportunityRow, type OpportunityRowData } from "./opportunity-row";
 import { connectionsGoing, myConnections } from "@/lib/connections";
 import { eventState, myTeams } from "@/lib/teams";
-import { ToastProvider } from "../u/[id]/toast";
 import { EventActions } from "./event-actions";
-import { ButtonLink, PageHeader, Tabs, buttonClass } from "@/components/ui";
+import { ButtonLink, PageHeader, Tabs, ToastProvider, SubmitButton } from "@/components/ui";
 import { OpportunityFilters } from "./opportunity-filters";
 
 export const instant = false;
@@ -117,8 +116,8 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
                 <span className="text-ink2"> · {(o.opportunity_reports as { reason: string }[]).map((r) => r.reason).join(", ")}</span>
               </div>
               <div className="flex gap-2">
-                <form action={setOpportunityStatus.bind(null, o.id, "live")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Restore</button></form>
-                <form action={setOpportunityStatus.bind(null, o.id, "removed")}><button className={buttonClass({ size: "sm" })}>Remove</button></form>
+                <form action={setOpportunityStatus.bind(null, o.id, "live")}><SubmitButton variant="secondary" size="sm">Restore</SubmitButton></form>
+                <form action={setOpportunityStatus.bind(null, o.id, "removed")}><SubmitButton size="sm">Remove</SubmitButton></form>
               </div>
             </div>
           ))}
@@ -137,9 +136,9 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
                 </span>
               </div>
               <div className="flex shrink-0 gap-2">
-                <form action={reviewImport.bind(null, o.id, "approve")}><button className={buttonClass({ size: "sm" })}>Approve</button></form>
+                <form action={reviewImport.bind(null, o.id, "approve")}><SubmitButton size="sm">Approve</SubmitButton></form>
                 <ButtonLink href={`/opportunities/${o.id}/edit`} variant="secondary" size="sm">Edit</ButtonLink>
-                <form action={reviewImport.bind(null, o.id, "reject")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Reject</button></form>
+                <form action={reviewImport.bind(null, o.id, "reject")}><SubmitButton variant="secondary" size="sm">Reject</SubmitButton></form>
               </div>
             </div>
           ))}

@@ -28,6 +28,7 @@ Each color is a `light-dark(light, dark)` pair. It follows the visitor's system 
 | `border` | Light rules between rows |
 | `line2` | Section rules, input and button outlines |
 | `chip` | Chip and avatar fill, hover on quiet buttons |
+| `accent-hover`, `danger-hover` | A filled button under the pointer |
 | `accent`, `accent-soft`, `on-accent` | The one accent: primary buttons, links, the current tab, picked chips. Text on it is `on-accent` |
 | `open` | The ring around people open to a team |
 | `danger` | Errors and destructive actions |
@@ -92,6 +93,7 @@ Element sizes (`h-*`, `w-*`) can use any quarter step (`h-4.5`, `h-15`).
   - `shadow-modal`: modals
   - `shadow-frame`: the landing page's sample frames
   - `shadow-tab`: the line under the current tab
+  - `shadow-raised`, `shadow-pressed`: the primary button's depth, at rest and held down
 - **Aspect:** `aspect-photo` (3:2) for project images.
 
 ### Named layouts
@@ -115,6 +117,22 @@ Grid columns are named in `globals.css` instead of written in brackets:
 There are also `grid-rows-auto-fill` (a row at its own height, then the rest), `h-story-sheet` / `h-story-page` (the
 story image), `align-icon` (an inline icon on the text baseline) and `max-h-inherit`.
 
+## Motion
+
+CSS transitions only, no animation library. Hover and press take 120ms or less, opening 150ms, closing 100ms.
+`ease-spring` is the release of a press. Under `prefers-reduced-motion` everything changes at once and nothing moves
+(one rule at the end of `globals.css`; a spinner fades in and out instead of turning). The components do this themselves; pages add nothing.
+
+| Class | Use |
+|---|---|
+| `pressable` | Hover color changes, and sinking when pressed (every button) |
+| `motion-dialog` | `Modal`: sheet slides up, box fades and scales in |
+| `motion-popover` | The `Combobox` popup |
+| `motion-menu` | A `<details>` dropdown |
+| `motion-in` | A list that appears under a field |
+| `motion-toast` | The toast |
+| `skeleton`, `animate-pop`, `animate-spin` | Loading blocks, counts, spinners |
+
 ## Components
 
 | Component | Use it for |
@@ -122,9 +140,15 @@ story image), `align-icon` (an inline icon on the text baseline) and `max-h-inhe
 | `PageHeader` | The top of every page: title, a line about it, the page's action. `stack` for detail pages (the action goes under the title on phones), `ruled` for forms, `eyebrow` for a MonoLabel above |
 | `Section` | A titled section with the title in the label column (profile, team page, settings). `count`, `add` (+ Add under the title), `owner` + `edit` (the pencil), `quiet` for an empty one on your own page |
 | `SectionTitle` | A full-width title over a ruled list, on pages without a label column |
-| `Row` | One item of a ruled list: a team, a person, an application. `media` (avatar column), `actions` (right side), `stack` (actions under the content on phones), `center`, `flush` (no space above the first), `spacious` |
+| `Row` | One item of a ruled list: a team, a person, an application. `media` (avatar column), `actions` (right side), `stack` (actions under the content on phones), `center`, `flush` (no space above the first), `spacious`, `href` (the whole row links there, with a hover background and, from sm up, an arrow in the right margin; `linkedRowClass` and `RowArrow` for rows drawn by hand) |
 | `Timeline`, `TimelineEntry` | Experience: a line with a dot per entry, `current` fills the dot |
 | `EmptyState` | Nothing to show. Plain: a line where a list would be. With `title` and `action`: a dashed prompt for the owner's own empty section |
+| `SubmitButton` | The submit button of a server action's form: a spinner while it's sent, at the same width. Never a bare `<button>` there |
+| `ActionButton`, `AnswerButtons`, `useOptimisticAction` | Connect, Invite, Accept and Decline: a check at once, then the new state; on failure the button returns with the reason |
+| `ToastProvider`, `useToast` | A short message that slides in at the bottom |
+| `Skeleton`, `PageSkeleton` | A page loading, in a route's `loading.tsx` |
+| `Pop` | A count that pops in when it changes |
+| `TabUnderline` | The sliding line under hand-built tabs (the top bar); `Tabs` has it already |
 | `Tabs` | Underlined tabs, one route each. `count`, `alert` (a count waiting on you, in the accent), `scroll` when they may not fit on a phone |
 | `Button`, `ButtonLink`, `ButtonAnchor`, `buttonClass` | See below. `ButtonLink` for a page in the app, `ButtonAnchor` for another site (new tab), `buttonClass()` for something else that should look like a button |
 | `IconButton` | A square 34px button with an icon: the pencil, Close, Share in a row. Always give it a `label` |
@@ -150,6 +174,10 @@ story image), `align-icon` (an inline icon on the text baseline) and `max-h-inhe
 | `accent` | Reaching out to someone (Invite, Connect in suggestions) and the owner's "+ Add" in an empty section, outlined in the accent |
 | `quiet` | Small or undoing actions in a row: Leave, Withdraw, Cancel |
 | `danger` | Only to confirm something that can't be undone |
+| `bare` | No look of its own (a menu item, a text link); still presses and loads |
+
+`pending` shows a spinner over the faded label; `done` a check. `Modal` and `Combobox` fade out before their content
+goes.
 
 Sizes:
 

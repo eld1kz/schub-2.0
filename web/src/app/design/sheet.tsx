@@ -16,14 +16,17 @@ import {
   Input,
   MonoLabel,
   PageHeader,
+  PageSkeleton,
   Row,
   Section,
   SectionTitle,
+  Skeleton,
   Switch,
   Tabs,
   Textarea,
   Timeline,
   TimelineEntry,
+  ToastMessage,
   ToggleChip,
   type AvatarSize,
   type ButtonSize,
@@ -31,6 +34,7 @@ import {
   type ComboboxOption,
 } from "@/components/ui";
 import { ModalDemo } from "./modal-demo";
+import { AnswerDemo, ConnectDemo, LoadingDemo, PopDemo, TabsDemo, ToastDemo } from "./motion-demo";
 
 const variants: ButtonVariant[] = ["primary", "secondary", "accent", "quiet", "danger"];
 const sizes: ButtonSize[] = ["xs", "sm", "md", "touch", "lg"];
@@ -125,6 +129,61 @@ export function Sheet({ scheme }: { scheme: "light" | "dark" }) {
             <IconButton label="Close"><CloseIcon /></IconButton>
             {pencil}
           </div>
+        </div>
+      </Section>
+
+      <Section title="Button states">
+        <div className="flex flex-col gap-4">
+          <p className="text-meta text-muted">Hover, press and Tab to them above. Below: loading and done held still, then live ones to press.</p>
+          {variants.map((v) => (
+            <div key={v} className="flex flex-wrap items-center gap-3">
+              <MonoLabel className="w-20">{v}</MonoLabel>
+              <Button type="button" variant={v} pending>Save changes</Button>
+              <Button type="button" variant={v} done>Save changes</Button>
+              <LoadingDemo variant={v} />
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Optimistic">
+        <div className="flex flex-col items-start gap-4">
+          <div className="flex flex-wrap items-start gap-3">
+            <ConnectDemo />
+            <ConnectDemo fail />
+          </div>
+          <p className="text-meta text-muted">Accept works; Decline is turned down and comes back with the reason.</p>
+          <AnswerDemo />
+        </div>
+      </Section>
+
+      <Section title="Counts">
+        <PopDemo />
+      </Section>
+
+      <Section title="Toast">
+        <ToastDemo>
+          <ToastMessage>Profile saved</ToastMessage>
+        </ToastDemo>
+      </Section>
+
+      <Section title="Menu">
+        <details className="motion-menu relative">
+          <summary className="w-fit cursor-pointer text-sm font-semibold text-accent">Open a menu</summary>
+          <div className="absolute left-0 z-10 mt-2 flex w-48 flex-col rounded-md border border-border bg-background py-1 text-sm shadow-modal">
+            <span className="px-4 py-2">Your profile</span>
+            <span className="px-4 py-2">Settings</span>
+          </div>
+        </details>
+      </Section>
+
+      <Section title="Loading">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <Skeleton className="h-4 w-60" />
+          </div>
+          <PageSkeleton rows={2} />
         </div>
       </Section>
 
@@ -244,6 +303,7 @@ export function Sheet({ scheme }: { scheme: "light" | "dark" }) {
 
       <Section title="Tabs">
         <div className="flex flex-col gap-6">
+          <TabsDemo />
           <Tabs
             label="Example tabs"
             tabs={[
@@ -265,6 +325,10 @@ export function Sheet({ scheme }: { scheme: "light" | "dark" }) {
 
       <Section title="Rows">
         <div>
+          <Row href="/design" actions={<Button type="button" variant="secondary" size="sm">Ask to join</Button>}>
+            <p className="text-lg font-semibold">A row that links somewhere</p>
+            <p className="text-sm text-ink2">Hover it: a soft background and an arrow</p>
+          </Row>
           <SectionTitle title="Teams recruiting" count={2} action={<Button type="button" variant="secondary" size="sm">Post a team</Button>} />
           <Row actions={<Button type="button" variant="secondary" size="sm">Ask to join</Button>}>
             <MonoLabel as="p">Imagine Cup 2027</MonoLabel>

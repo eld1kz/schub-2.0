@@ -4,6 +4,7 @@ import { useEffect, useId, useImperativeHandle, useRef, useState, type KeyboardE
 import { ComboboxPanel, type ComboboxOption } from "./combobox-panel";
 import { inputClass, inputHeight } from "./field";
 import { Modal, ModalGrabber, ModalHeader } from "./modal";
+import { useLinger } from "./use-linger";
 
 // What a form can do with one: send the focus to it, or block submitting with a message
 export type ComboboxHandle = { focus: () => void; setCustomValidity: (message: string) => void };
@@ -49,6 +50,8 @@ export function Combobox({ id, name, label, labelled = false, placeholder, value
 
   // null while closed; `sheet` is decided on opening, by the screen's width
   const [open, setOpen] = useState<{ sheet: boolean } | null>(null);
+  // Which of the two it was last opened as, which it still is while closing
+  const [sheet, setSheet] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const shown = query ? rows.filter((o) => plain(o.label).includes(plain(query.trim()))) : rows;
@@ -60,6 +63,7 @@ export function Combobox({ id, name, label, labelled = false, placeholder, value
   const search = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const typed = useRef({ text: "", at: 0 });
+  const popupShown = useLinger(open !== null && !open.sheet, popup);
 
   useImperativeHandle(ref, () => ({
     focus: () => trigger.current?.focus(),
@@ -70,7 +74,9 @@ export function Combobox({ id, name, label, labelled = false, placeholder, value
     if (disabled) return;
     setQuery(from.query ?? "");
     setActive(from.index ?? (from.query ? 0 : Math.max(0, rows.findIndex((o) => o.value === selected))));
-    setOpen({ sheet: !window.matchMedia("(min-width: 640px)").matches });
+    const small = !window.matchMedia("(min-width: 640px)").matches;
+    setSheet(small);
+    setOpen({ sheet: small });
   }
 
   function close() {
@@ -106,6 +112,7 @@ export function Combobox({ id, name, label, labelled = false, placeholder, value
       const above = at.top - 12;
       const up = below < 240 && above > below;
       const width = Math.max(at.width, 224);
+      panel.style.transformOrigin = up ? "bottom" : "top";
       Object.assign(panel.style, {
         width: `${width}px`,
         maxHeight: `${Math.min(360, up ? above : below)}px`,
@@ -122,6 +129,7 @@ export function Combobox({ id, name, label, labelled = false, placeholder, value
     window.addEventListener("scroll", place, true);
     document.addEventListener("pointerdown", outside, true);
     return () => {
+      if (panel.isConnected) panel.hidePopover();
       window.removeEventListener("resize", place);
       window.removeEventListener("scroll", place, true);
       document.removeEventListener("pointerdown", outside, true);
@@ -195,7 +203,7 @@ export function Combobox({ id, name, label, labelled = false, placeholder, value
     e.preventDefault();
   }
 
-  const panel = open && (
+  const panel = (
     <ComboboxPanel
       id={uid}
       label={label}
@@ -257,14 +265,14 @@ export function Combobox({ id, name, label, labelled = false, placeholder, value
           <path d="m4 6 4 4 4-4" />
         </svg>
       </button>
-      {open && !open.sheet && (
-        <div ref={popup} popover="manual" className="fixed inset-auto m-0 flex flex-col overflow-hidden rounded-md border border-line2 bg-background p-0 text-foreground shadow-modal">
+      {!sheet && popupShown && (
+        <div ref={popup} popover="manual" inert={!open} className="motion-popover fixed inset-auto m-0 flex flex-col overflow-hidden rounded-md border border-line2 bg-background p-0 text-foreground shadow-modal">
           {panel}
         </div>
       )}
-      {open?.sheet && (
+      {sheet && (
         <Modal
-          open
+          open={open !== null}
           dialogRef={dialog}
           label={`Pick: ${label}`}
           onClose={() => {

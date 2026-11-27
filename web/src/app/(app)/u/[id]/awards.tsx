@@ -6,7 +6,7 @@ import { formatMonth, webLink } from "@/lib/portfolio";
 import type { AwardOptions } from "./award-fields";
 import { RemoveMeButton } from "./remove-me-button";
 import { AwardEdit } from "./section-edits";
-import { Avatar, EmptyState, MonoLabel, Section, buttonClass } from "@/components/ui";
+import { Avatar, EmptyState, MonoLabel, Section, SubmitButton } from "@/components/ui";
 
 const outLink = "font-medium text-accent hover:underline";
 
@@ -132,8 +132,8 @@ export function PendingTags({ awards }: { awards: Award[] }) {
             <span className="font-semibold">{placementLabel(a.placement)}</span>, <EventName award={a} />.
           </p>
           <div className="flex shrink-0 gap-2">
-            <form action={answerAwardTag.bind(null, a.id, "confirmed")}><button className={buttonClass({ size: "sm" })}>Confirm</button></form>
-            <form action={answerAwardTag.bind(null, a.id, "declined")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
+            <form action={answerAwardTag.bind(null, a.id, "confirmed")}><SubmitButton size="sm">Confirm</SubmitButton></form>
+            <form action={answerAwardTag.bind(null, a.id, "declined")}><SubmitButton variant="secondary" size="sm">Decline</SubmitButton></form>
           </div>
         </div>
       ))}

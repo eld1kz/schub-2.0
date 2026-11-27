@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createIdea, createPost } from "@/app/actions";
-import { Combobox, Input, Textarea, buttonClass } from "@/components/ui";
+import { Combobox, Input, Textarea, SubmitButton } from "@/components/ui";
 
 type Author = { id: string; name: string; university: string } | null;
 type Item =
@@ -26,7 +26,7 @@ export default async function FeedPage() {
         <form action={createPost} className="space-y-2">
           <h2 className="text-sm font-medium">Post an update</h2>
           <Textarea name="content" rows={4} placeholder="What are you working on?" required maxLength={2000} />
-          <button className={buttonClass()}>Post</button>
+          <SubmitButton>Post</SubmitButton>
         </form>
         <form action={createIdea} className="space-y-2">
           <h2 className="text-sm font-medium">Share an idea</h2>
@@ -35,7 +35,7 @@ export default async function FeedPage() {
           <Input name="skills_needed" placeholder="Skills needed, comma separated" />
           <div className="flex gap-2">
             <Combobox name="stage" label="Stage" options={[{ value: "idea", label: "Idea" }, { value: "building", label: "Building" }, { value: "launched", label: "Launched" }]} />
-            <button className={buttonClass()}>Share</button>
+            <SubmitButton>Share</SubmitButton>
           </div>
         </form>
       </section>

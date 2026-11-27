@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { SOON_DAYS, daysLabel, daysUntil, nextDate, opportunityTypes, placeLabel, type OpportunityType } from "@/lib/opportunities";
 import { goingLabel, type Going } from "@/lib/connections";
-import { MonoLabel } from "@/components/ui";
+import { MonoLabel, RowArrow, linkedRowClass } from "@/components/ui";
 
 export const columns = "lg:grid lg:grid-cols-opportunity lg:items-center lg:gap-6";
 
@@ -35,7 +35,7 @@ export function OpportunityRow({ o, day, going, actions }: { o: OpportunityRowDa
   const urgent = days !== null && days <= SOON_DAYS;
   const left = days !== null && <span className={`text-meta ${urgent ? "font-semibold text-accent" : "text-muted"}`}>{daysLabel(days)}</span>;
   return (
-    <article className={`group relative flex flex-col gap-1 border-b border-border py-4 ${columns}`}>
+    <article className={`group relative flex flex-col gap-1 border-b border-border py-4 ${linkedRowClass} ${columns}`}>
       <span className="flex items-center justify-between gap-2">
         <MonoLabel>
           {opportunityTypes[o.type]}
@@ -68,6 +68,7 @@ export function OpportunityRow({ o, day, going, actions }: { o: OpportunityRowDa
         )}
       </span>
       {actions && <div className="mt-2 lg:col-span-full lg:col-start-2 lg:mt-0">{actions}</div>}
+      <RowArrow />
     </article>
   );
 }

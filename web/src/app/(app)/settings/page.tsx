@@ -3,7 +3,7 @@ import { signOut } from "@/app/actions";
 import { SignInPrompt } from "../sign-in";
 import { KeyValue } from "../u/[id]/profile-parts";
 import { DeleteAccount } from "./delete-account";
-import { PageHeader, Section, buttonClass } from "@/components/ui";
+import { PageHeader, Section, SubmitButton } from "@/components/ui";
 
 export const instant = false;
 
@@ -32,7 +32,7 @@ export default async function SettingsPage() {
             </KeyValue>
           ))}
           <form action={signOut} className="pt-2">
-            <button className={buttonClass({ variant: "secondary" })}>Sign out</button>
+            <SubmitButton variant="secondary">Sign out</SubmitButton>
           </form>
         </div>
       </Section>

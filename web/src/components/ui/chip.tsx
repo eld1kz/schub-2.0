@@ -13,7 +13,7 @@ export function ChipList({ className = "", children }: { className?: string; chi
 
 // Picked or not: role pickers, language pickers and filters. On, it takes the accent.
 export const toggleChipClass = (on: boolean) =>
-  `inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm transition-colors disabled:opacity-40 ${on ? "border-accent bg-accent-soft font-medium text-accent" : "border-line2 text-ink2 hover:border-muted hover:text-foreground"}`;
+  `pressable inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm disabled:opacity-40 ${on ? "border-accent bg-accent-soft font-medium text-accent" : "border-line2 text-ink2 hover:border-muted hover:text-foreground"}`;
 
 export function ToggleChip({ on, className = "", ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { on: boolean }) {
   return <button type="button" aria-pressed={on} className={`${toggleChipClass(on)} ${className}`} {...props} />;

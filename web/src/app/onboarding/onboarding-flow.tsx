@@ -5,7 +5,7 @@ import { completeOnboarding } from "@/app/actions";
 import { GOALS } from "@/lib/goals";
 import { LANGUAGES } from "@/lib/languages";
 import { SkillPicker } from "@/app/(app)/profile/skill-picker";
-import { CheckChip, Combobox, ErrorText, FieldLabel, Input, buttonClass } from "@/components/ui";
+import { CheckChip, Combobox, ErrorText, FieldLabel, Input, buttonClass, SubmitButton } from "@/components/ui";
 
 const years = [2025, 2026, 2027, 2028, 2029, 2030];
 const yearOptions = years.map((y) => ({ value: String(y), label: String(y) }));
@@ -123,7 +123,7 @@ export function OnboardingFlow({ needsName, university, graduationYear, skills, 
       <div className="fixed inset-x-0 bottom-0 flex items-center gap-4 border-t border-border bg-background px-4 py-4 pb-safe-4 sm:static sm:mt-8 sm:px-0 sm:pb-0 sm:pt-4">
         {step > 0 && <button type="button" onClick={back} className="text-base text-ink2 hover:text-foreground">Back</button>}
         {last ? (
-          <button className={`${buttonClass({ size: "touch" })} ml-auto flex-1 sm:flex-none`}>Finish</button>
+          <SubmitButton size="touch" className="ml-auto flex-1 sm:flex-none">Finish</SubmitButton>
         ) : (
           <button type="button" onClick={next} className={`${buttonClass({ size: "touch" })} ml-auto flex-1 sm:flex-none`}>Next</button>
         )}

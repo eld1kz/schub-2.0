@@ -4,7 +4,7 @@ import { today } from "@/lib/opportunities";
 import { SignInPrompt } from "../../sign-in";
 import { RoleFields } from "./role-fields";
 import { LANGUAGES, WORK_MODES } from "@/lib/languages";
-import { CheckChip, Combobox, ErrorText, FieldLabel, Input, PageHeader, Textarea, buttonClass } from "@/components/ui";
+import { CheckChip, Combobox, ErrorText, FieldLabel, Input, PageHeader, Textarea, SubmitButton } from "@/components/ui";
 
 export const instant = false;
 
@@ -56,7 +56,7 @@ export default async function NewTeamPage(props: PageProps<"/teams/new">) {
       </div>
 
       <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row-reverse sm:items-center sm:justify-between">
-        <button className={buttonClass({ size: "touch", full: true })}>Post team</button>
+        <SubmitButton size="touch" full>Post team</SubmitButton>
         {typeof error === "string" && <ErrorText size="sm">{error}</ErrorText>}
       </div>
     </form>
