@@ -48,6 +48,9 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # The local Supabase's ports (supabase/config.toml) are in the range Linux hands to outgoing connections, so
+      # one could be taken already ("address already in use") when it starts
+      - run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54329
       # Each starts from a fresh local database (scripts/db-local.sh)
       - run: npm run test:db
       - run: npm run test:e2e
