@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient, requireMember, requireUser } from "@/lib/supabase/server";
 import { parseList } from "@/lib/match";
@@ -19,6 +19,8 @@ import { HOURS, knownLanguages, oneOf, WORK_MODES } from "@/lib/languages";
 import { LAST_METHOD_COOKIE, enabledMethods, type OAuthProvider } from "@/lib/auth-providers";
 import { localPath } from "@/lib/redirect";
 import { SHARED_PROJECT_PITCH_MAX, SHARED_PROJECT_RESULT_MAX, SHARED_PROJECT_TITLE_MAX } from "@/lib/shared-projects";
+import { ADMIN_REASON_MAX, REPORT_NOTE_MAX, REPORT_REASONS, isReportKind, targetPath, type ReportKind } from "@/lib/reports";
+import { adminAccess, requireAdmin } from "@/lib/admin";
 
 // Where a provider or an email link sends people back to: /auth/callback, then `next`
 async function callbackUrl(next: string) {
@@ -62,14 +64,15 @@ export type SearchResults = { people: { id: string; name: string }[]; teams: { i
 const containing = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
 // Nav search: people by name, teams and listed events by title, up to 5 of each. Signed-out visitors can search too.
+// Nobody finds people or teams an admin hid (supabase/admin.sql).
 export async function searchGlobal(query: string): Promise<SearchResults> {
   const { supabase } = await requireUser();
   const q = query.trim().slice(0, 50);
   if (q.length < 2) return { people: [], teams: [], events: [] };
   const pattern = containing(q);
   const [people, teams, events] = await Promise.all([
-    supabase.from("profiles").select("id, name").ilike("name", pattern).order("name").limit(5),
-    supabase.from("teams").select("id, title").ilike("title", pattern).order("created_at", { ascending: false }).limit(5),
+    supabase.from("profiles").select("id, name").ilike("name", pattern).is("hidden_at", null).order("name").limit(5),
+    supabase.from("teams").select("id, title").ilike("title", pattern).is("hidden_at", null).order("created_at", { ascending: false }).limit(5),
     supabase.from("opportunities").select("id, title").eq("status", "live").eq("needs_review", false).ilike("title", pattern).order("created_at", { ascending: false }).limit(5),
   ]);
   return { people: people.data ?? [], teams: teams.data ?? [], events: events.data ?? [] };
@@ -580,36 +583,31 @@ export async function addOpportunity(formData: FormData): Promise<SaveResult> {
   redirect(`/opportunities/${data.id}`);
 }
 
-// Admins fix an opportunity, usually an import waiting for review. Saving counts as reviewing it: it goes live,
-// and the importer stops overwriting it (supabase/opportunity-engine.sql).
+// Admins fix an opportunity (/admin/events/[id]), often an import waiting for review. Saving counts as reviewing
+// it: it goes live, and the importer stops overwriting it. Through admin_edit_event, which logs the change
+// (supabase/admin.sql).
 export async function updateOpportunity(id: string, formData: FormData): Promise<SaveResult> {
-  const { supabase } = await requireMember();
-  const { data: admin } = await supabase.rpc("is_admin");
-  if (!admin) return { error: "Only admins can edit opportunities." };
+  const { supabase } = await requireAdmin();
   const checked = await opportunityFields(formData);
   if ("error" in checked) return checked;
-
-  const { error } = await supabase
-    .from("opportunities")
-    .update({ ...checked.fields, needs_review: false, reviewed_at: new Date().toISOString() })
-    .eq("id", id);
-  if (error) return opportunityError(error, checked.fields.deadline);
-  revalidatePath("/opportunities", "layout");
-  redirect(`/opportunities/${id}`);
+  const { error } = await supabase.rpc("admin_edit_event", { event: id, fields: checked.fields });
+  if (error) return error.code === "22023" || error.code === "P0002" ? { error: error.message } : opportunityError(error, checked.fields.deadline);
+  revalidatePath("/", "layout");
+  redirect("/admin/events");
 }
 
-// "Review imports" on /opportunities: approve puts it live; reject removes it for good, and the importer
-// won't bring it back. Only admins' update policy lets these through.
-export async function reviewImport(id: string, decision: "approve" | "reject") {
-  const { supabase } = await requireMember();
-  if (decision !== "approve" && decision !== "reject") return;
-  const reviewed = { needs_review: false, reviewed_at: new Date().toISOString() };
-  await supabase
-    .from("opportunities")
-    .update(decision === "approve" ? reviewed : { ...reviewed, status: "removed" })
-    .eq("id", id)
-    .eq("needs_review", true);
-  revalidatePath("/opportunities", "layout");
+// Imports waiting for review (/admin/imports): approving puts it on the lists; rejecting removes it for good (with a
+// reason), and the importer won't bring it back. Both logged (admin_review_import in supabase/admin.sql).
+export async function approveImport(id: string) {
+  await requireAdmin();
+  await adminCall("admin_review_import", { event: id, decision: "approve", reason: "" });
+}
+
+export async function rejectImport(id: string, _prev: SaveResult, formData: FormData): Promise<SaveResult> {
+  await requireAdmin();
+  const { reason, error, field } = reasonOf(formData, true);
+  if (error) return { error, field };
+  return adminCall("admin_review_import", { event: id, decision: "reject", reason });
 }
 
 export type LinkFill = { prefill?: Prefill; error?: string };
@@ -634,13 +632,6 @@ export async function fillFromLink(url: string): Promise<LinkFill> {
   return { prefill };
 }
 
-export async function setOpportunityStatus(id: string, status: "live" | "removed") {
-  const { supabase } = await requireMember();
-  if (status !== "live" && status !== "removed") return;
-  await supabase.from("opportunities").update({ status }).eq("id", id);
-  revalidatePath("/opportunities");
-}
-
 export async function deleteOpportunity(id: string) {
   const { supabase } = await requireMember();
   await supabase.from("opportunities").delete().eq("id", id);
@@ -648,10 +639,14 @@ export async function deleteOpportunity(id: string) {
   redirect("/opportunities");
 }
 
-export async function reportOpportunity(id: string, formData: FormData) {
-  const { supabase, userId } = await requireMember();
-  await supabase.from("opportunity_reports").insert({ opportunity_id: id, user_id: userId, reason: String(formData.get("reason")) });
-  revalidatePath(`/opportunities/${id}`);
+// "Report" on a profile, team or event page. The database refuses yourself, your own team, and a second report
+// of the same thing; 3 open reports hide an event until an admin looks (supabase/admin.sql).
+export async function report(kind: ReportKind, targetId: string, formData: FormData) {
+  const { supabase } = await requireMember();
+  const reason = field(formData, "reason");
+  if (!isReportKind(kind) || !(reason in REPORT_REASONS[kind])) return;
+  await supabase.from("reports").insert({ target_type: kind, target_id: targetId, reason, note: field(formData, "note").slice(0, REPORT_NOTE_MAX) });
+  revalidatePath(targetPath(kind, targetId));
 }
 
 // Joins, or updates your note when you've already joined
@@ -797,13 +792,6 @@ export async function setEntryStatus(teamId: string, opportunityId: string, stat
   return {};
 }
 
-// Admins feature an event, or stop featuring it (only their update policy lets it through)
-export async function setFeatured(opportunityId: string, featured: boolean) {
-  const { supabase } = await requireMember();
-  await supabase.from("opportunities").update({ featured: featured === true }).eq("id", opportunityId);
-  revalidatePath("/", "layout");
-}
-
 export async function deleteTeam(id: string) {
   const { supabase, userId } = await requireMember();
   // What the team built goes with it, and so does its image
@@ -943,4 +931,134 @@ export async function hideSharedProject(projectId: string, hidden: boolean) {
   const { supabase, userId } = await requireMember();
   await supabase.from("team_project_members").update({ hidden: hidden === true }).eq("project_id", projectId).eq("user_id", userId);
   revalidatePath("/", "layout");
+}
+
+// Two-factor authentication (/settings): an authenticator app's 6-digit codes, through Supabase Auth MFA.
+// Anyone can turn it on; admins need it to use /admin (supabase/admin.sql).
+
+export type TwoFactorSetup = { factorId?: string; uri?: string; secret?: string; error?: string };
+
+// Starts the setup: the QR code and the key to type in by hand. A setup that was never finished goes first,
+// so starting again works.
+export async function startTwoFactor(): Promise<TwoFactorSetup> {
+  const { supabase } = await requireMember();
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  for (const f of factors?.all ?? []) {
+    if (f.factor_type === "totp" && f.status === "unverified") await supabase.auth.mfa.unenroll({ factorId: f.id });
+  }
+  const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "Authenticator app" });
+  if (error || data.type !== "totp") return { error: "Couldn't start the setup. Try again." };
+  return { factorId: data.id, uri: data.totp.uri, secret: data.totp.secret };
+}
+
+const codeOf = (formData: FormData) => field(formData, "code").replace(/\s/g, "");
+const wrongCode = { error: "That code didn't work. Check the time on your phone is right and try again." };
+
+// Checks a code against an authenticator; a right one also verifies this session with it
+async function verifyCode(supabase: Supabase, factorId: string, code: string): Promise<SaveResult> {
+  if (!/^\d{6}$/.test(code)) return { error: "Enter the 6-digit code from your app." };
+  const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
+  return error ? wrongCode : {};
+}
+
+async function verifiedFactor(supabase: Supabase) {
+  const { data } = await supabase.auth.mfa.listFactors();
+  return data?.totp.find((f) => f.status === "verified") ?? null;
+}
+
+// Finishes the setup with the first code the app shows
+export async function confirmTwoFactor(factorId: string, _prev: SaveResult, formData: FormData): Promise<SaveResult> {
+  const { supabase } = await requireMember();
+  const result = await verifyCode(supabase, factorId, codeOf(formData));
+  if (!result.error) revalidatePath("/", "layout");
+  return result;
+}
+
+// Turning it off takes a current code, as Supabase asks for a session verified with the authenticator
+export async function removeTwoFactor(_prev: SaveResult, formData: FormData): Promise<SaveResult> {
+  const { supabase } = await requireMember();
+  const factor = await verifiedFactor(supabase);
+  if (!factor) return {};
+  const result = await verifyCode(supabase, factor.id, codeOf(formData));
+  if (result.error) return result;
+  const { error } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+  if (error) return { error: "Couldn't turn it off. Try again." };
+  revalidatePath("/", "layout");
+  return {};
+}
+
+// The admin area's code screen: an admin signed in without their second factor enters a code, then goes on
+export async function verifyAdminCode(next: string, _prev: SaveResult, formData: FormData): Promise<SaveResult> {
+  const { access, supabase } = await adminAccess();
+  if (access === "none") notFound();
+  const factor = await verifiedFactor(supabase);
+  if (!factor) redirect("/admin/verify");
+  const result = await verifyCode(supabase, factor.id, codeOf(formData));
+  if (result.error) return result;
+  const back = localPath(next);
+  redirect(back.startsWith("/admin") ? back : "/admin");
+}
+
+// The admin area (/admin). Every action starts with requireAdmin() and calls one database function, which checks
+// is_admin() again and writes exactly one row to the admin log in the same transaction (supabase/admin.sql).
+// Hiding, suspending and dismissing need a reason. requireAdmin() runs first, before anything sent is looked at;
+// it's cached per request, so adminCall asking again costs nothing.
+
+async function adminCall(fn: string, args: Record<string, unknown>): Promise<SaveResult> {
+  const { supabase } = await requireAdmin();
+  const { error } = await supabase.rpc(fn, args);
+  // The functions' own refusals are written for people ("Give a reason.", "Already suspended.")
+  if (error) return { error: error.code === "22023" || error.code === "P0002" ? error.message : "Couldn't do that. Try again." };
+  revalidatePath("/", "layout");
+  return {};
+}
+
+function reasonOf(formData: FormData, required: boolean): SaveResult & { reason: string } {
+  const reason = field(formData, "reason");
+  if (required && !reason) return { reason, error: "Give a reason.", field: "reason" };
+  if (reason.length > ADMIN_REASON_MAX) return { reason, error: `Keep the reason to ${ADMIN_REASON_MAX} characters.`, field: "reason" };
+  return { reason };
+}
+
+export async function adminHide(kind: ReportKind, targetId: string, _prev: SaveResult, formData: FormData): Promise<SaveResult> {
+  await requireAdmin();
+  const { reason, error, field } = reasonOf(formData, true);
+  if (error) return { error, field };
+  if (!isReportKind(kind)) return { error: "Unknown kind." };
+  return adminCall("admin_hide", { kind, target: targetId, reason });
+}
+
+export async function adminRestore(kind: ReportKind, targetId: string, _prev: SaveResult, formData: FormData): Promise<SaveResult> {
+  await requireAdmin();
+  const { reason, error, field } = reasonOf(formData, false);
+  if (error) return { error, field };
+  if (!isReportKind(kind)) return { error: "Unknown kind." };
+  return adminCall("admin_restore", { kind, target: targetId, reason });
+}
+
+// `reportId`: the report this answers; the open reports about its target close too (a team's, when its owner is suspended)
+export async function adminSuspend(personId: string, reportId: string | null, _prev: SaveResult, formData: FormData): Promise<SaveResult> {
+  await requireAdmin();
+  const { reason, error, field } = reasonOf(formData, true);
+  if (error) return { error, field };
+  return adminCall("admin_suspend", { person: personId, reason, report: reportId });
+}
+
+export async function adminUnsuspend(personId: string, _prev: SaveResult, formData: FormData): Promise<SaveResult> {
+  await requireAdmin();
+  const { reason, error, field } = reasonOf(formData, false);
+  if (error) return { error, field };
+  return adminCall("admin_unsuspend", { person: personId, reason });
+}
+
+// Nothing wrong: every open report about the same thing is dismissed
+export async function adminDismiss(reportId: string, _prev: SaveResult, formData: FormData): Promise<SaveResult> {
+  await requireAdmin();
+  const { reason, error, field } = reasonOf(formData, true);
+  if (error) return { error, field };
+  return adminCall("admin_dismiss", { report: reportId, reason });
+}
+
+export async function adminSetFeatured(eventId: string, featured: boolean) {
+  await adminCall("admin_set_featured", { event: eventId, featured: featured === true });
 }

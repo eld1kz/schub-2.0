@@ -20,7 +20,8 @@ export default async function TeamsPage(props: PageProps<"/teams">) {
   const { supabase, userId, isGuest } = await requireUser();
   const day = today();
   const [{ data }, awarded, mine, looking, connections] = await Promise.all([
-    supabase.from("teams").select(teamSummaryColumns).order("created_at", { ascending: false }),
+    // Not the ones an admin hid (supabase/admin.sql); their owners still have them in Your teams
+    supabase.from("teams").select(teamSummaryColumns).is("hidden_at", null).order("created_at", { ascending: false }),
     awardedIds(supabase),
     supabase.from("team_applications").select("team_id, status, direction").eq("user_id", userId),
     supabase.from("opportunity_participants").select("opportunity_id").eq("user_id", userId),

@@ -1,7 +1,7 @@
 // Who can read what, table by table, and who can see contact details.
 import { beforeAll, describe, expect, it } from "vitest";
 import {
-  A, ADMIN, B, accessToken, expectSees, guest, id, rows, signInAs, signedOut, url, type Client,
+  A, ADMIN, B, accessToken, adminWithoutCode, expectSees, guest, id, rows, signInAs, signInAsAdmin, signedOut, url, type Client,
 } from "./helpers";
 
 // A signed-out visitor has no id; nothing matches this one
@@ -16,7 +16,7 @@ const tables: Record<string, string> = {
   ideas: "id",
   connections: "id, sender_id, receiver_id, status",
   opportunities: "id, status, needs_review, submitted_by",
-  opportunity_reports: "opportunity_id, user_id",
+  reports: "id, target_type, target_id, reporter_id, status",
   opportunity_participants: "opportunity_id, user_id",
   teams: "id, owner_id",
   team_applications: "id, team_id, user_id, status",
@@ -27,6 +27,8 @@ const tables: Record<string, string> = {
   award_teammates: "award_id, user_id, status",
   notifications: "id, user_id",
   admins: "user_id",
+  suspensions: "user_id",
+  admin_actions: "id",
 };
 
 let teamOwner: Map<unknown, unknown>;
@@ -40,7 +42,7 @@ function allowedFor(me: string, admin: boolean): Record<string, (r: Record<strin
     ideas: everything,
     connections: (r) => r.sender_id === me || r.receiver_id === me,
     opportunities: (r) => (r.status === "live" && !r.needs_review) || r.submitted_by === me || admin,
-    opportunity_reports: (r) => r.user_id === me || admin,
+    reports: (r) => r.reporter_id === me || admin,
     opportunity_participants: everything,
     teams: everything,
     team_applications: (r) => r.status === "accepted" || r.user_id === me || teamOwner.get(r.team_id) === me,
@@ -51,13 +53,16 @@ function allowedFor(me: string, admin: boolean): Record<string, (r: Record<strin
     award_teammates: (r) => r.status === "confirmed" || r.user_id === me || awardOwner.get(r.award_id) === me,
     notifications: (r) => r.user_id === me,
     admins: () => false,
+    suspensions: (r) => r.user_id === me || admin,
+    admin_actions: () => admin,
   };
 }
 
 let userA: Client, userB: Client, admin: Client, guestClient: Client, guestId: string;
 
 beforeAll(async () => {
-  [userA, userB, admin] = await Promise.all([signInAs(1), signInAs(2), signInAs(20)]);
+  // The admin with their code entered; admin.test.ts checks the admin without it
+  [userA, userB, admin] = await Promise.all([signInAs(1), signInAs(2), signInAsAdmin()]);
   ({ client: guestClient, userId: guestId } = await guest());
   teamOwner = new Map((await rows("teams", "id, owner_id")).map((t) => [t.id, t.owner_id]));
   awardOwner = new Map((await rows("awards", "id, user_id")).map((a) => [a.id, a.user_id]));
@@ -194,6 +199,8 @@ describe("functions", () => {
 
   it("is_admin is true only for admins", async () => {
     expect((await admin.rpc("is_admin")).data).toBe(true);
+    // Until the admin enters the code from their authenticator (supabase/admin.sql)
+    expect((await (await adminWithoutCode()).rpc("is_admin")).data).toBe(false);
     expect((await userA.rpc("is_admin")).data).toBe(false);
     expect((await guestClient.rpc("is_admin")).data).toBe(false);
   });

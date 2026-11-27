@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { id, service, signInAs } from "./auth";
+import { id, service, signInAs, signInAsAdmin } from "./auth";
 import { pick } from "./combobox";
 
 // Filters, sorting, "for you", Review imports and "Fill from link" (supabase/opportunity-engine.sql).
@@ -117,18 +117,21 @@ test("signed in: events for you by default, with Show all", async ({ browser }) 
   await context.close();
 });
 
-test("admins review imports: Approve lists it for everyone", async ({ browser, page }) => {
+test("admins review imports in /admin/imports: Approve lists it for everyone", async ({ browser, page }) => {
   const context = await browser.newContext();
-  await signInAs(context, 20);
+  await signInAsAdmin(context);
   const admin = await context.newPage();
-  await admin.goto("/opportunities");
-  const review = admin.getByRole("region", { name: "Review imports" });
-  const item = review.locator("div").filter({ hasText: lumaTitle }).filter({ has: admin.getByRole("button", { name: "Approve" }) }).last();
+  // Imports aren't on the public list until reviewed
+  await page.goto("/opportunities?all=1");
+  await expect(list(page).filter({ hasText: lumaTitle })).toHaveCount(0);
+
+  await admin.goto("/admin/imports");
+  const item = admin.getByRole("article", { name: lumaTitle });
   await expect(item).toContainText("Luma");
-  await expect(item.getByRole("link", { name: "Edit" })).toHaveAttribute("href", `/opportunities/${luma}/edit`);
+  await expect(item.getByRole("link", { name: "Edit" })).toHaveAttribute("href", `/admin/events/${luma}`);
 
   await item.getByRole("button", { name: "Approve" }).click();
-  await expect(review).toHaveCount(0);
+  await expect(item).toHaveCount(0);
   await admin.goto("/opportunities?all=1");
   await expect(list(admin).filter({ hasText: lumaTitle })).toHaveCount(1);
   await page.goto("/opportunities");

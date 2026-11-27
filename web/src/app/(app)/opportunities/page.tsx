@@ -1,23 +1,20 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
-import { dateRange, formatDay, nextDate, opportunityTypes, placeLabel, today, type OpportunityType } from "@/lib/opportunities";
+import { nextDate, opportunityTypes, today, type OpportunityType } from "@/lib/opportunities";
 import { countryName, countryOf } from "@/lib/countries";
 import { ONLINE, countryOptions, filtersHref, forYou, forYouLabel, matches, readFilters, sortListings, type Me } from "@/lib/opportunity-filters";
-import { reviewImport, setOpportunityStatus } from "@/app/actions";
 import { OpportunitySearch } from "./opportunity-search";
 import { OpportunityHeader, OpportunityRow, type OpportunityRowData } from "./opportunity-row";
 import { connectionsGoing, myConnections } from "@/lib/connections";
 import { eventState, myTeams } from "@/lib/teams";
 import { EventActions } from "./event-actions";
-import { ButtonLink, PageHeader, Tabs, ToastProvider, SubmitButton } from "@/components/ui";
+import { ButtonLink, PageHeader, Tabs, ToastProvider } from "@/components/ui";
 import { OpportunityFilters } from "./opportunity-filters";
 
 export const instant = false;
 
 const types = Object.keys(opportunityTypes) as OpportunityType[];
 const tabLabel = (t: OpportunityType) => (t === "other" ? "Other" : `${opportunityTypes[t]}s`);
-
-const sourceNames: Record<string, string> = { hackclub: "Hack Club", kaggle: "Kaggle", kstartup: "K-Startup", luma: "Luma" };
 
 export default async function OpportunitiesPage(props: PageProps<"/opportunities">) {
   const filters = readFilters(await props.searchParams);
@@ -37,9 +34,8 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
 
   // Your connections going to each one: loaded once for the whole list
   const going = myConnections(supabase, userId, isGuest).then((connections) => connectionsGoing(supabase, connections));
-  const [{ data: items }, { data: admin }, goingTo, looking, yourTeams, profile] = await Promise.all([
+  const [{ data: items }, goingTo, looking, yourTeams, profile] = await Promise.all([
     query,
-    supabase.rpc("is_admin"),
     going,
     // For featured events' buttons: where you're looking for a team, and your teams
     supabase.from("opportunity_participants").select("opportunity_id, note").eq("user_id", userId),
@@ -49,12 +45,6 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
   ]);
   const me: Me | null = isGuest || !profile.data ? null : { country: countryOf(profile.data.city ?? ""), languages: profile.data.languages ?? [] };
   const note = new Map((looking.data ?? []).map((p) => [p.opportunity_id as string, p.note as string]));
-  const [{ data: hidden }, { data: pending }] = admin
-    ? await Promise.all([
-        supabase.from("opportunities").select("id, title, opportunity_reports(reason)").eq("status", "hidden").order("created_at"),
-        supabase.from("opportunities").select("id, title, url, source, location, city, country, online, starts_at, ends_at, deadline").eq("status", "live").eq("needs_review", true).order("imported_at"),
-      ])
-    : [{ data: [] }, { data: [] }];
 
   const all = ((items ?? []) as OpportunityRowData[]).map((o) => {
     const next = nextDate(o, day);
@@ -105,45 +95,6 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
           </>
         }
       />
-
-      {admin && (hidden ?? []).length > 0 && (
-        <section className="border-y border-line2 py-4">
-          <h2 className="mb-2 text-base font-semibold">Hidden after reports</h2>
-          {(hidden ?? []).map((o) => (
-            <div key={o.id} className="flex flex-col gap-2 border-b border-border py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm">
-                <Link href={`/opportunities/${o.id}`} className="font-medium hover:text-accent">{o.title}</Link>
-                <span className="text-ink2"> · {(o.opportunity_reports as { reason: string }[]).map((r) => r.reason).join(", ")}</span>
-              </div>
-              <div className="flex gap-2">
-                <form action={setOpportunityStatus.bind(null, o.id, "live")}><SubmitButton variant="secondary" size="sm">Restore</SubmitButton></form>
-                <form action={setOpportunityStatus.bind(null, o.id, "removed")}><SubmitButton size="sm">Remove</SubmitButton></form>
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {admin && (pending ?? []).length > 0 && (
-        <section aria-labelledby="review-imports" className="border-y border-line2 py-4">
-          <h2 id="review-imports" className="mb-2 text-base font-semibold">Review imports</h2>
-          {(pending ?? []).map((o) => (
-            <div key={o.id} className="flex flex-col gap-2 border-b border-border py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0 text-sm">
-                <a href={o.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:text-accent">{o.title}</a>
-                <span className="block text-ink2">
-                  {[sourceNames[o.source ?? ""] ?? o.source, dateRange(o.starts_at, o.ends_at) || (o.deadline && `Apply by ${formatDay(o.deadline)}`), placeLabel(o) || "Place not known"].filter(Boolean).join(" · ")}
-                </span>
-              </div>
-              <div className="flex shrink-0 gap-2">
-                <form action={reviewImport.bind(null, o.id, "approve")}><SubmitButton size="sm">Approve</SubmitButton></form>
-                <ButtonLink href={`/opportunities/${o.id}/edit`} variant="secondary" size="sm">Edit</ButtonLink>
-                <form action={reviewImport.bind(null, o.id, "reject")}><SubmitButton variant="secondary" size="sm">Reject</SubmitButton></form>
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
 
       <Tabs label="Opportunity types" scroll tabs={[tab(null, "All"), ...types.map((t) => tab(t, tabLabel(t)))]} />
 

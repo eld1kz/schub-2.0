@@ -72,7 +72,7 @@ describe("delete_my_account", () => {
     opportunity = must(await service.from("opportunities").insert({ title: `Leaver's Hackathon ${Date.now()}`, url: "https://example.com/leaver", type: "hackathon", organizer: "Test", submitted_by: owner.id, deadline: new Date(Date.UTC(2090, 0, 1) + (Date.now() % 3650) * 86_400_000).toISOString().slice(0, 10) }).select("id").single()).id;
     leftovers.push(opportunity);
     ok(await service.from("opportunity_participants").insert({ opportunity_id: opportunityId(1), user_id: owner.id }));
-    ok(await service.from("opportunity_reports").insert({ opportunity_id: opportunityId(2), user_id: owner.id, reason: "other" }));
+    ok(await service.from("reports").insert({ target_type: "event", target_id: opportunityId(2), reporter_id: owner.id, reason: "other" }));
     ok(await service.from("experiences").insert({ user_id: owner.id, role: "Dev", company: "Co", start_date: "2025-01-01" }));
     ok(await service.from("projects").insert({ user_id: owner.id, title: "Thing" }));
     ok(await service.from("posts").insert({ author_id: owner.id, content: "hi" }));

@@ -5,7 +5,9 @@ import { matchScore } from "@/lib/match";
 import { experienceColumns, projectColumns, sortExperiences, type Experience, type Project } from "@/lib/portfolio";
 import { awardColumns, type Award } from "@/lib/awards";
 import { sharedProjectColumns, type SharedProject } from "@/lib/shared-projects";
+import { adminAccess } from "@/lib/admin";
 import { ConnectButton } from "../../connect-button";
+import { ReportLink } from "../../report-link";
 import { ProfileView, type Connection, type ProfileData, type Suggestion } from "./profile-view";
 
 type Opportunity = { id: string; title: string; starts_at: string | null; deadline: string | null } | null;
@@ -26,10 +28,10 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
   const canEdit = isSelf && !isGuest;
   // "?as=visitor": the owner sees the page without edit controls, empty sections or contact details
   const preview = canEdit && as === "visitor";
-  const [profile, ideas, myConnections, contacts, projects, experiences, owned, joined, looking, connections, mine, people, ownAwards, tags, opportunities, shared] = await Promise.all([
+  const [profile, ideas, myConnections, contacts, projects, experiences, owned, joined, looking, connections, mine, people, ownAwards, tags, opportunities, shared, myReport] = await Promise.all([
     supabase
       .from("profiles")
-      .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, goals, open_to_collaborate, wanted_roles, languages, hours_per_week, work_mode, city, avatar_url, github, linkedin, website")
+      .select("name, headline, university, graduation_year, bio, skills, interests, looking_for, goals, open_to_collaborate, wanted_roles, languages, hours_per_week, work_mode, city, avatar_url, github, linkedin, website, hidden_at")
       .eq("id", id)
       .maybeSingle(),
     supabase.from("ideas").select("id, title, description, skills_needed, stage").eq("author_id", id).order("created_at", { ascending: false }),
@@ -50,6 +52,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
       .select("id, name, headline, avatar_url, skills, interests, open_to_collaborate, languages")
       .neq("name", "")
       .eq("open_to_collaborate", true)
+      .is("hidden_at", null)
       .neq("id", userId)
       .neq("id", id)
       .order("updated_at", { ascending: false })
@@ -61,9 +64,13 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
     canEdit && !preview ? supabase.from("opportunities").select("id, title").order("starts_at", { ascending: false, nullsFirst: false }) : { data: [] },
     // Team projects this profile is on: confirmed ones for everyone, and on your own profile the pending ones too
     supabase.from("team_project_members").select(`status, hidden, project:team_projects(${sharedProjectColumns})`).eq("user_id", id).in("status", ["confirmed", "pending"]),
+    // Whether you already reported this profile
+    isSelf || isGuest ? { data: null } : supabase.from("reports").select("reason").eq("target_type", "person").eq("target_id", id).eq("reporter_id", userId).maybeSingle(),
   ]);
-  const p = profile.data as ProfileData | null;
+  const p = profile.data as (ProfileData & { hidden_at: string | null }) | null;
   if (!p) notFound();
+  // Hidden by an admin (supabase/admin.sql): only the person and admins still see it
+  if (p.hidden_at && !isSelf && (await adminAccess()).access !== "admin") notFound();
 
   const tagRows = (tags.data ?? []) as unknown as { status: string; award: Award | null }[];
   const tagged = (status: string) => tagRows.flatMap((t) => (t.status === status && t.award ? [t.award] : []));
@@ -123,6 +130,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
       ideas={ideas.data ?? []}
       connections={(connections.data ?? []) as Connection[]}
       suggestions={suggestions}
+      report={!isSelf && !isGuest && <ReportLink kind="person" targetId={id} myReport={myReport.data?.reason ?? null} />}
     />
   );
 }

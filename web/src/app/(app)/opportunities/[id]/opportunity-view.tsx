@@ -5,7 +5,7 @@ import { matchScore, type MatchableProfile } from "@/lib/match";
 import { knownSkills } from "@/lib/skills";
 import { ELIGIBILITY, SOON_DAYS, dateRange, daysLabel, daysUntil, formatDay, isEligibility, opportunityTypes, placeLabel, type OpportunityType } from "@/lib/opportunities";
 import { countryName } from "@/lib/countries";
-import { deleteOpportunity, reportOpportunity, setFeatured } from "@/app/actions";
+import { deleteOpportunity } from "@/app/actions";
 import { teamMembers, type EnterableTeam, type MyEntry, type TeamSummary } from "@/lib/teams";
 import { goingLabel, tallyGoing } from "@/lib/connections";
 import type { Award } from "@/lib/awards";
@@ -15,8 +15,9 @@ import { TeamList } from "../../team-list";
 import { PersonRow } from "../../people/person-row";
 import { Placement, TrustLabels, awardPeople } from "../../u/[id]/awards";
 import { EventActions } from "../event-actions";
-import { Avatar, ButtonAnchor, Chip, ChipList, Combobox, EmptyState, MonoLabel, PageHeader, ToastProvider, SubmitButton, ButtonLink } from "@/components/ui";
+import { Avatar, ButtonAnchor, Chip, ChipList, EmptyState, MonoLabel, PageHeader, ToastProvider, SubmitButton, ButtonLink } from "@/components/ui";
 import { PersonLink } from "../../person-link";
+import { ReportLink } from "../../report-link";
 
 export type Opportunity = {
   id: string;
@@ -58,7 +59,6 @@ type Props = {
   connections: Set<string>;
   myReport: string | null;
   canDelete: boolean;
-  isAdmin: boolean;
   // Teams entered in it, without the ones still only "going" once it's over
   teams: TeamSummary[];
   // Your team in it, and your teams that could still enter
@@ -119,15 +119,8 @@ function PlacedAward({ award: a }: { award: Award }) {
   );
 }
 
-const reportReasons = [
-  { value: "fake", label: "Fake or spam" },
-  { value: "duplicate", label: "Duplicate" },
-  { value: "expired", label: "Expired" },
-  { value: "other", label: "Other" },
-];
-
 // People come here to find teammates, so that comes first; the official page has the details
-export function OpportunityView({ o, participants, me, statusWith, connections, myReport, canDelete, isAdmin, teams, myEntry, enterable, over, placed, awarded, userId, isGuest, today }: Props) {
+export function OpportunityView({ o, participants, me, statusWith, connections, myReport, canDelete, teams, myEntry, enterable, over, placed, awarded, userId, isGuest, today }: Props) {
   const mine = participants.find((p) => p.user_id === userId);
   const others = participants
     .filter((p) => p.user_id !== userId)
@@ -274,25 +267,9 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
         </section>
       )}
 
-      {(canReport || canDelete || isAdmin) && (
+      {(canReport || canDelete) && (
       <footer className="mt-12 flex flex-wrap items-start gap-x-6 gap-y-3 border-t border-line2 pt-4 text-sm text-ink2">
-        {canReport &&
-          (myReport ? (
-            <p>You reported this as {myReport}.</p>
-          ) : (
-            <details className="group">
-              <summary className="cursor-pointer list-none hover:text-foreground [&::-webkit-details-marker]:hidden">Report this listing</summary>
-              <form action={reportOpportunity.bind(null, o.id)} className="mt-3 flex flex-wrap items-center gap-2">
-                <Combobox name="reason" label="What's wrong" small options={reportReasons} />
-                <SubmitButton variant="secondary" size="sm">Report</SubmitButton>
-              </form>
-            </details>
-          ))}
-        {isAdmin && (
-          <form action={setFeatured.bind(null, o.id, !o.featured)}>
-            <SubmitButton variant="bare" className="hover:text-foreground">{o.featured ? "Stop featuring" : "Feature this event"}</SubmitButton>
-          </form>
-        )}
+        {canReport && <ReportLink kind="event" targetId={o.id} myReport={myReport} />}
         {canDelete && (
           <form action={deleteOpportunity.bind(null, o.id)}>
             <SubmitButton variant="bare" className="hover:text-danger">Delete this listing</SubmitButton>

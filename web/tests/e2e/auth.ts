@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import type { BrowserContext } from "@playwright/test";
+import { SEEDED_ADMIN_FACTOR, SEEDED_ADMIN_SECRET, totp } from "../totp";
 
 const env = Object.fromEntries(
   readFileSync(".env.test.local", "utf8")
@@ -43,6 +44,17 @@ async function withSession(context: BrowserContext, start: (auth: ReturnType<typ
 // A seeded student, 1 to 20
 export function signInAs(context: BrowserContext, n: number) {
   return withSession(context, (auth) => auth.signInWithPassword({ email: email(n), password: "password123" }));
+}
+
+// The seeded admin (student 20) after entering a code from the seeded authenticator: full admin powers.
+// signInAs(context, 20) is the same admin without the code.
+export function signInAsAdmin(context: BrowserContext) {
+  return withSession(context, async (auth) => {
+    const signedIn = await auth.signInWithPassword({ email: email(20), password: "password123" });
+    if (signedIn.error) return signedIn;
+    const { error } = await auth.mfa.challengeAndVerify({ factorId: SEEDED_ADMIN_FACTOR, code: totp(SEEDED_ADMIN_SECRET) });
+    return { data: signedIn.data, error };
+  });
 }
 
 // A brand-new account with an empty profile, like someone just back from Google sign-in

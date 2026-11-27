@@ -3,7 +3,7 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { runImport, type SourceRun } from "../../src/lib/importers/run";
 import type { ImportedEvent } from "../../src/lib/importers/types";
-import { A, ADMIN, expectNoChange, expectRefused, guest, opportunityId, service, signInAs, signedOut, type Client } from "./helpers";
+import { A, ADMIN, expectNoChange, expectRefused, guest, opportunityId, service, signInAs, signInAsAdmin, signedOut, type Client } from "./helpers";
 
 // Opportunity 8 "Sample Hack Club Jam" is imported and live; 9 "Sample Luma Builders Night" is imported and waiting
 // for review; 10 "Tokyo Sample Ideathon" is limited to Japan
@@ -12,7 +12,8 @@ const pending = opportunityId(9);
 let userA: Client, admin: Client;
 
 beforeAll(async () => {
-  [userA, admin] = await Promise.all([signInAs(1), signInAs(20)]);
+  // The admin with their code entered (supabase/admin.sql)
+  [userA, admin] = await Promise.all([signInAs(1), signInAsAdmin()]);
 });
 
 afterEach(async () => {
@@ -82,20 +83,37 @@ describe("imported events and review", () => {
     expect(data).toEqual([{ id: live }, { id: pending }]);
   });
 
-  it("only admins approve or reject", async () => {
-    await expectNoChange(["opportunities"], async () => {
+  it("only admins approve or reject, through admin_review_import, which logs it (supabase/admin.sql)", async () => {
+    const review = (client: Client, decision: string, reason = "") => client.rpc("admin_review_import", { event: pending, decision, reason });
+    await expectNoChange(["opportunities", "admin_actions"], async () => {
       await userA.from("opportunities").update({ needs_review: false }).eq("id", pending);
       await signedOut().from("opportunities").update({ needs_review: false }).eq("id", pending);
       await userA.from("opportunities").update({ city: "Busan" }).eq("id", live);
+      // Not directly, not even the admin
+      await admin.from("opportunities").update({ needs_review: false }).eq("id", pending);
+      expectRefused(await review(userA, "approve"));
+      expectRefused(await review(signedOut(), "approve"));
+      // Rejecting removes it, so it needs a reason; and only approve or reject
+      expect((await review(admin, "reject")).error?.message).toBe("Give a reason.");
+      expectRefused(await review(admin, "publish"));
     });
 
-    const reviewed_at = new Date().toISOString();
-    expect((await admin.from("opportunities").update({ needs_review: false, reviewed_at }).eq("id", pending)).error).toBeNull();
+    expect((await review(admin, "approve")).error).toBeNull();
     const { data } = await signedOut().from("opportunities").select("id").eq("id", pending);
     expect(data).toEqual([{ id: pending }]);
+    expect((await service.from("opportunities").select("reviewed_at").eq("id", pending).single()).data?.reviewed_at).not.toBeNull();
+    // Reviewed, so it isn't waiting any more
+    expect((await review(admin, "reject", "Spam")).error?.message).toBe("That import isn't waiting for review.");
 
-    expect((await admin.from("opportunities").update({ needs_review: false, reviewed_at, status: "removed" }).eq("id", pending)).error).toBeNull();
+    await service.from("opportunities").update({ needs_review: true, reviewed_at: null }).eq("id", pending);
+    expect((await review(admin, "reject", "Not a real event")).error).toBeNull();
+    expect((await service.from("opportunities").select("status, needs_review").eq("id", pending).single()).data).toEqual({ status: "removed", needs_review: false });
     expect((await signedOut().from("opportunities").select("id").eq("id", pending)).data).toEqual([]);
+    const { data: log } = await service.from("admin_actions").select("action, target_id, reason").order("id", { ascending: false }).limit(2);
+    expect(log).toEqual([
+      { action: "reject", target_id: pending, reason: "Not a real event" },
+      { action: "approve", target_id: pending, reason: "" },
+    ]);
   });
 });
 

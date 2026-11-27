@@ -2,13 +2,14 @@
 // Guests and signed-out visitors are in guest.test.ts.
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  A, ADMIN, B, awardId, expectNoChange, expectRefused, id, opportunityId, rows, service, signInAs, teamId, type Client,
+  A, ADMIN, B, awardId, expectNoChange, expectRefused, id, opportunityId, rows, service, signInAs, signInAsAdmin, teamId, type Client,
 } from "./helpers";
 
 let userA: Client, userB: Client, admin: Client;
 
 beforeAll(async () => {
-  [userA, userB, admin] = await Promise.all([signInAs(1), signInAs(2), signInAs(20)]);
+  // The admin with their code entered: everything "not even the admin" holds with full admin powers
+  [userA, userB, admin] = await Promise.all([signInAs(1), signInAs(2), signInAsAdmin()]);
 });
 
 const one = async (table: string, match: Record<string, unknown>) => {
@@ -287,17 +288,17 @@ describe("notifications", () => {
 describe("opportunities", () => {
   const base = { title: "A brand new test opportunity", type: "hackathon", url: "https://example.com/new-test", deadline: "2030-01-01" };
 
-  it("you add them as yourself and live; only admins change the status", async () => {
+  it("you add them as yourself and live; nobody changes the status directly, not even the admin", async () => {
     await expectNoChange(["opportunities"], async () => {
       expectRefused(await userA.from("opportunities").insert({ ...base, submitted_by: B }));
       expectRefused(await userA.from("opportunities").insert({ ...base, status: "hidden" }));
       await userA.from("opportunities").update({ status: "removed" }).eq("id", opportunityId(1));
       await userA.from("opportunities").update({ status: "live" }).eq("id", opportunityId(6));
       await userA.from("opportunities").delete().eq("id", opportunityId(2)); // 07's
+      // Admins hide and restore through the logged functions (admin.test.ts)
+      await admin.from("opportunities").update({ status: "live" }).eq("id", opportunityId(6));
+      await admin.from("opportunities").delete().eq("id", opportunityId(2));
     });
-    const { data } = await admin.from("opportunities").update({ status: "live" }).eq("id", opportunityId(6)).select("status");
-    expect(data).toEqual([{ status: "live" }]);
-    await service.from("opportunities").update({ status: "hidden" }).eq("id", opportunityId(6));
   });
 
   it("rejects links that aren't http(s)", async () => {
@@ -318,9 +319,10 @@ describe("opportunities", () => {
   });
 
   it("reports and 'looking for a team' are only ever your own", async () => {
-    await expectNoChange(["opportunity_reports", "opportunity_participants"], async () => {
-      expectRefused(await userA.from("opportunity_reports").insert({ opportunity_id: opportunityId(1), user_id: B, reason: "fake" }));
-      await userA.from("opportunity_reports").delete().eq("opportunity_id", opportunityId(6));
+    await expectNoChange(["reports", "opportunity_participants"], async () => {
+      expectRefused(await userA.from("reports").insert({ target_type: "event", target_id: opportunityId(1), reporter_id: B, reason: "fake" }));
+      await userA.from("reports").delete().eq("target_id", opportunityId(6));
+      await userA.from("reports").update({ status: "dismissed" }).eq("target_id", opportunityId(6));
       expectRefused(await userA.from("opportunity_participants").insert({ opportunity_id: opportunityId(1), user_id: B }));
       await userA.from("opportunity_participants").delete().eq("user_id", id(5));
       await userA.from("opportunity_participants").update({ note: "Hacked" }).eq("user_id", id(5));

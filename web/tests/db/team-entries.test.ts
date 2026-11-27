@@ -1,6 +1,6 @@
 // Teams entering events and featured events (supabase/team-entries.sql)
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { A, expectNoChange, expectRefused, id, opportunityId, service, signInAs, signedOut, teamId, type Client } from "./helpers";
+import { A, expectNoChange, expectRefused, id, opportunityId, service, signInAs, signInAsAdmin, signedOut, teamId, type Client } from "./helpers";
 
 // Team 2 "Full Sample Team": owner 07, members 08 (Backend) and 14 (ML), entered in opportunity 2 (upcoming).
 // Team 5 "Fakename Growth Squad": owner 11, no event, nobody accepted.
@@ -9,7 +9,7 @@ const grant = opportunityId(3);
 let owner7: Client, member8: Client, owner11: Client, userA: Client, admin: Client;
 
 beforeAll(async () => {
-  [owner7, member8, owner11, userA, admin] = await Promise.all([signInAs(7), signInAs(8), signInAs(11), signInAs(1), signInAs(20)]);
+  [owner7, member8, owner11, userA, admin] = await Promise.all([signInAs(7), signInAs(8), signInAs(11), signInAs(1), signInAsAdmin()]);
 });
 
 afterEach(async () => {
@@ -111,17 +111,21 @@ describe("changing open roles", () => {
 });
 
 describe("featured events", () => {
-  it("everyone reads it; it's off unless an admin turns it on", async () => {
+  it("everyone reads it; it's off unless an admin turns it on, through the logged function (supabase/admin.sql)", async () => {
     const { data } = await signedOut().from("opportunities").select("featured").eq("id", opportunityId(1)).single();
     expect(data).toEqual({ featured: false });
-    const { data: on } = await admin.from("opportunities").update({ featured: true }).eq("id", opportunityId(1)).select("featured");
-    expect(on).toEqual([{ featured: true }]);
+    expect((await admin.rpc("admin_set_featured", { event: opportunityId(1), featured: true })).error).toBeNull();
+    const { data: on } = await signedOut().from("opportunities").select("featured").eq("id", opportunityId(1)).single();
+    expect(on).toEqual({ featured: true });
   });
 
   it("nobody else can feature one, not even the person who added it, or add one already featured", async () => {
     await expectNoChange(["opportunities"], async () => {
       await owner7.from("opportunities").update({ featured: true }).eq("id", opportunityId(2)); // 07 added it
       await userA.from("opportunities").update({ featured: true }).eq("id", opportunityId(1));
+      // Not directly, even for the admin: only admin_set_featured, which logs it
+      await admin.from("opportunities").update({ featured: true }).eq("id", opportunityId(1));
+      expectRefused(await admin.from("opportunities").insert({ title: `Admin-featured ${Date.now()}`, type: "other", url: `https://example.com/admin-featured-${Date.now()}`, deadline: "2090-01-01", submitted_by: id(20), featured: true }));
       expectRefused(
         await userA.from("opportunities").insert({ title: `Self-featured ${Date.now()}`, type: "other", url: `https://example.com/featured-${Date.now()}`, deadline: "2090-01-01", submitted_by: A, featured: true }),
       );

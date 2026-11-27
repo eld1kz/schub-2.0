@@ -1,4 +1,5 @@
 import { CalendarDays, Inbox } from "lucide-react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { openRoles, type Entry, type TeamEvent } from "@/lib/teams";
 import { dateRange, hasEnded, nextDate, today } from "@/lib/opportunities";
@@ -119,7 +120,7 @@ export type Team = {
 // `sharedProject`: what the team built (lib/shared-projects.ts), shown with `award`, the team's best award.
 // `results`: awards linked to the team, best first, shown next to the event they're for
 // `canRecord`: the owner may record it now (the event has ended, or there is none)
-export function TeamView({ team: t, applications, userId, isGuest, connections, contacts = {}, shareVersion, suggestions = {}, sharedProject = null, award, results = [], canRecord = false }: {
+export function TeamView({ team: t, applications, userId, isGuest, connections, contacts = {}, shareVersion, suggestions = {}, sharedProject = null, award, results = [], canRecord = false, report }: {
   team: Team;
   applications: Application[];
   userId: string;
@@ -132,6 +133,8 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
   award?: Award;
   results?: Award[];
   canRecord?: boolean;
+  // "Report this team", for signed-in visitors who aren't its owner (report-link.tsx)
+  report?: ReactNode;
 }) {
   const { owner, opportunity } = t;
   const roles = t.roles;
@@ -354,6 +357,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
             <SubmitButton variant="bare" className="text-sm text-ink2 hover:text-danger">Delete team</SubmitButton>
           </form>
         )}
+        {report && <footer className="border-t border-line2 pt-4 text-sm text-ink2">{report}</footer>}
       </div>
     </ToastProvider>
   );
