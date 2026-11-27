@@ -4,7 +4,7 @@ import { today } from "@/lib/opportunities";
 import { SignInPrompt } from "../../sign-in";
 import { RoleFields } from "./role-fields";
 import { LANGUAGES, WORK_MODES } from "@/lib/languages";
-import { CheckChip, Combobox, ErrorText, FieldLabel, Input, PageHeader, Textarea, SubmitButton } from "@/components/ui";
+import { CheckChip, Combobox, ErrorText, FieldLabel, Input, PageHeader, Textarea, SubmitButton, CheckedForm, FieldError } from "@/components/ui";
 
 export const instant = false;
 
@@ -24,13 +24,14 @@ export default async function NewTeamPage(props: PageProps<"/teams/new">) {
     .order("title");
 
   return (
-    <form action={createTeam} className="max-w-form">
+    <CheckedForm action={createTeam} className="max-w-form">
       <PageHeader title="Post a team" description={<>Say what you&apos;re building and which roles you still need. People apply; you accept or decline.</>} ruled className="pb-6" />
 
       <div className="space-y-4 py-6">
-        <div>
+        <div data-missing="The name should be 3 to 120 characters.">
           <FieldLabel htmlFor="title" required>What are you building?</FieldLabel>
           <Input id="title" name="title" required minLength={3} maxLength={120} placeholder="AI study buddy for university students" />
+          <FieldError field="title" />
         </div>
         <div>
           <FieldLabel htmlFor="description" optional>More about it</FieldLabel>
@@ -59,6 +60,6 @@ export default async function NewTeamPage(props: PageProps<"/teams/new">) {
         <SubmitButton size="touch" full>Post team</SubmitButton>
         {typeof error === "string" && <ErrorText size="sm">{error}</ErrorText>}
       </div>
-    </form>
+    </CheckedForm>
   );
 }

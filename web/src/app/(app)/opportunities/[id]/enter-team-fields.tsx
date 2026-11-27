@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { ROLES } from "@/lib/roles";
 import type { EnterableTeam } from "@/lib/teams";
-import { FieldError } from "../../u/[id]/edit-dialog";
-import { FieldLabel, ToggleChip } from "@/components/ui";
+import { FieldLabel, ToggleChip, FieldError } from "@/components/ui";
 
 const maxRoles = 10;
 
@@ -21,7 +20,7 @@ export function EnterTeamFields({ teams }: { teams: EnterableTeam[] }) {
 
   return (
     <div className="flex flex-col gap-6 py-6">
-      <fieldset>
+      <fieldset data-missing="Choose a team.">
         <FieldLabel as="legend">Which team?</FieldLabel>
         <div className="flex flex-col border-t border-border">
           {teams.map((t) => (

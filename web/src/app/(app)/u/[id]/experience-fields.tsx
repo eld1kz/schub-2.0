@@ -4,9 +4,8 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, type Experience } from "@/lib/portfolio";
 import { knownSkills } from "@/lib/skills";
 import { SkillPicker } from "../../profile/skill-picker";
-import { FieldError } from "./edit-dialog";
 import { PeriodFields } from "./period-fields";
-import { Combobox, Field, FieldLabel, Input, Textarea } from "@/components/ui";
+import { Combobox, Field, FieldLabel, Input, Textarea, FieldError } from "@/components/ui";
 
 const typeOptions = EXPERIENCE_TYPES.map((t) => ({ value: t, label: t }));
 
@@ -23,7 +22,7 @@ export function ExperienceFields({ experience: e }: { experience?: Experience })
   const [type, setType] = useState(e?.type ?? "");
   const [description, setDescription] = useState(e?.description ?? "");
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
-  // Older entries can be longer than the limit; Save stays off until they're shortened
+  // Older entries can be longer than the limit; they can't be saved until they're shortened
   const tooLong = description.length > EXPERIENCE_DESCRIPTION_MAX;
 
   useEffect(() => {
@@ -33,7 +32,7 @@ export function ExperienceFields({ experience: e }: { experience?: Experience })
   return (
     <div onKeyDown={nextOnEnter} className="space-y-4 py-6">
       <Field id="experience-role" label="Title" required>
-        <Input id="experience-role" name="role" defaultValue={e?.role} required maxLength={80} placeholder="Backend developer" />
+        <Input id="experience-role" data-missing="Add a title." name="role" defaultValue={e?.role} required maxLength={80} placeholder="Backend developer" />
         <FieldError field="role" />
       </Field>
 
@@ -42,7 +41,7 @@ export function ExperienceFields({ experience: e }: { experience?: Experience })
       </Field>
 
       <Field id="experience-company" label="Organization" required>
-        <Input id="experience-company" name="company" defaultValue={e?.company} required maxLength={80} placeholder="Daangn, KU Robotics Club, ..." />
+        <Input id="experience-company" data-missing="Add the organization." name="company" defaultValue={e?.company} required maxLength={80} placeholder="Daangn, KU Robotics Club, ..." />
         <FieldError field="company" />
       </Field>
 

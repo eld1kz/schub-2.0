@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { LANGUAGES } from "@/lib/languages";
 import { ELIGIBILITY } from "@/lib/opportunities";
-import { FieldError } from "../../u/[id]/edit-dialog";
-import { CheckChip, Combobox, FieldLabel, Input, type ComboboxOption } from "@/components/ui";
+import { CheckChip, Combobox, FieldLabel, Input, type ComboboxOption, FieldError } from "@/components/ui";
 
 const eligibilityOptions = Object.entries(ELIGIBILITY).map(([value, text]) => ({ value, label: text }));
 

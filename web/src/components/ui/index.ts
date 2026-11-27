@@ -11,6 +11,7 @@ export { EmptyState } from "./empty-state";
 export { ErrorText, Field, FieldLabel, Input, Textarea, inputClass, inputHeight } from "./field";
 export { CloseIcon, Modal, ModalGrabber, ModalHeader } from "./modal";
 export { HoverCard } from "./hover-card";
+export { CheckedForm, FieldError, FormErrors, useFormCheck } from "./form-check";
 export { Icon } from "./icon";
 export { Kbd } from "./kbd";
 export { MonoLabel } from "./mono-label";

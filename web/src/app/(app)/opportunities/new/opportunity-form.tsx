@@ -4,11 +4,10 @@ import { useState, useTransition, type FormEvent } from "react";
 import { addOpportunity, updateOpportunity } from "@/app/actions";
 import type { Prefill } from "@/lib/link-preview";
 import { opportunityTypes } from "@/lib/opportunities";
-import { FieldError } from "../../u/[id]/edit-dialog";
 import { DateField } from "./date-field";
 import { LinkField } from "./link-field";
 import { PlaceFields, type PlaceValues } from "./place-fields";
-import { Combobox, ErrorText, Field, Input, PageHeader, Textarea, type ComboboxOption, Button } from "@/components/ui";
+import { Combobox, ErrorText, Field, Input, PageHeader, Textarea, type ComboboxOption, Button, FieldError, FormErrors, useFormCheck } from "@/components/ui";
 
 const typeOptions = Object.entries(opportunityTypes).map(([value, label]) => ({ value, label }));
 
@@ -32,6 +31,7 @@ export function OpportunityForm({ edit, countries }: { edit?: { id: string; valu
   const [dates, setDates] = useState({ deadline: values.deadline, starts_at: values.starts_at, ends_at: values.ends_at });
   const [error, setError] = useState<{ message: string; field?: string } | null>(null);
   const [saving, startSave] = useTransition();
+  const { missing, check, recheck } = useFormCheck();
 
   // Same order the server checks: deadline on or before the start, end on or after the start (or deadline)
   const begins = dates.starts_at || dates.deadline;
@@ -49,6 +49,7 @@ export function OpportunityForm({ edit, countries }: { edit?: { id: string; valu
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!check(e.currentTarget)) return;
     const formData = new FormData(e.currentTarget);
     setError(null);
     // On success the action opens the opportunity's page
@@ -60,7 +61,17 @@ export function OpportunityForm({ edit, countries }: { edit?: { id: string; valu
 
   const submit = edit ? (edit.pending ? "Save and publish" : "Save") : "Add opportunity";
   return (
-    <form onSubmit={onSubmit} onInput={() => setError(null)} className="max-w-form">
+    <form
+      noValidate
+      onSubmit={onSubmit}
+      onInput={(e) => {
+        setError(null);
+        recheck(e.currentTarget);
+      }}
+      onClick={(e) => recheck(e.currentTarget)}
+      className="max-w-form"
+    >
+      <FormErrors missing={missing}>
       <PageHeader
         title={edit ? "Edit opportunity" : "Add an opportunity"}
         description={edit ? (edit.pending ? "Imported and waiting for review. Saving publishes it." : "Saving keeps the importer from changing it.") : "It goes live right away. Real, upcoming events only."}
@@ -73,12 +84,15 @@ export function OpportunityForm({ edit, countries }: { edit?: { id: string; valu
 
         <div key={filled} className="space-y-4">
           <Field id="title" label="Title" required>
-            <Input id="title" name="title" required minLength={3} maxLength={200} defaultValue={values.title} placeholder="Microsoft Imagine Cup 2027" />
+            <Input id="title" data-missing="Add a title of at least 3 characters." name="title" required minLength={3} maxLength={200} defaultValue={values.title} placeholder="Microsoft Imagine Cup 2027" />
             <FieldError field="title" message={serverError("title")} />
           </Field>
 
           <Field id="type" label="Type" required>
+            <div data-missing="Choose a type.">
             <Combobox id="type" label="Type" labelled name="type" placeholder="Choose a type" value={type} onChange={setType} options={typeOptions} />
+            </div>
+            <FieldError field="type" message={serverError("type")} />
           </Field>
 
           <Field id="organizer" label="Organizer" optional>
@@ -101,6 +115,7 @@ export function OpportunityForm({ edit, countries }: { edit?: { id: string; valu
         <Button size="touch" full pending={saving}>{submit}</Button>
         {error && !error.field && <ErrorText size="sm">{error.message}</ErrorText>}
       </div>
+      </FormErrors>
     </form>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ROLE_NOTE_MAX, ROLES } from "@/lib/roles";
-import { FieldLabel, Input, ToggleChip } from "@/components/ui";
+import { FieldLabel, Input, ToggleChip, FieldError } from "@/components/ui";
 
 const maxRoles = 10;
 
@@ -19,7 +19,7 @@ export function RoleFields({ initial, locked = [] }: { initial?: { roles: string
   const toggle = (role: string) => setPicked(picked.includes(role) ? picked.filter((r) => r !== role) : [...picked, role]);
 
   return (
-    <fieldset>
+    <fieldset data-field="roles">
       <FieldLabel as="legend" required>Open roles</FieldLabel>
       <input ref={check} aria-hidden tabIndex={-1} value={picked.length > 0 ? "picked" : ""} onChange={() => {}} className="sr-only" />
       <div className="flex flex-wrap gap-1.5">
@@ -52,6 +52,7 @@ export function RoleFields({ initial, locked = [] }: { initial?: { roles: string
           ))}
         </div>
       )}
+      <FieldError field="roles" />
     </fieldset>
   );
 }

@@ -48,7 +48,7 @@ export function EventActions({ event, userId, isGuest, looking, entered, enterab
   const enter = isGuest ? (
     <Link href={login(page)} className={buttonClass({ variant: "secondary", size: "sm" })}>Enter your team</Link>
   ) : enterable.length > 0 ? (
-    <EditDialog title={`Enter your team in ${event.title}`} trigger="action" label="Enter your team" submit="Enter team" done="Team entered" save={enterTeam.bind(null, event.id)} requireValid tall>
+    <EditDialog title={`Enter your team in ${event.title}`} trigger="action" label="Enter your team" submit="Enter team" done="Team entered" save={enterTeam.bind(null, event.id)} tall>
       <EnterTeamFields teams={enterable} />
     </EditDialog>
   ) : null;
