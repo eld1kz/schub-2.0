@@ -105,7 +105,7 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
 `people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read` → `people-discover` →
 `notification-limits` → `participant-notes` → `display-name` →
-`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites` → `shared-projects` → `team-entries` → `opportunity-engine`. `seed_opportunities.sql` and
+`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites` → `shared-projects` → `team-entries` → `opportunity-engine` → `team-edit`. `seed_opportunities.sql` and
 `fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only; its dates are relative to today (`SEED_TODAY` pins today, as the screenshot tests do). New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
@@ -129,8 +129,9 @@ Tables:
 - `opportunity_participants` — people looking for a team for an opportunity
 - `opportunity_reports` — 3 reports hide an opportunity; `admins` can restore or remove
 - `teams` — owner, title, description, roles[] (new teams pick from `lib/roles.ts`; old
-  ones keep typed-in roles), role_notes (jsonb, role → short note), languages[], work_mode. The owner can change
-  roles and role_notes only. `opportunity_id` is old and unused by the app: events are in `team_entries`; drop it
+  ones keep typed-in roles), role_notes (jsonb, role → short note), languages[], work_mode. The owner edits all of
+  those and title and description (`team-edit.sql`); filled roles stay, and removing a role declines its pending
+  applications and invites with a notification. `opportunity_id` is old and unused by the app: events are in `team_entries`; drop it
   once the version using `team_entries` is deployed (`team-entries.sql` header)
 - `team_entries` — team_id, opportunity_id (one per pair), status (going / registered / submitted / placed),
   created_at. Anyone reads; only the team's owner enters (live events that haven't ended), changes the status or
@@ -210,6 +211,12 @@ neutral everything else.
 - Redesign status: `/u/[id]`, `/teams` (list, `[id]`, `new`), `/people` (three tabs) and
   `/opportunities` (list, `[id]`, `new`) and `/onboarding` are done. Only the on-hold `/feed`
   still has the old layout (with the new tokens and fonts).
+
+## Token budget
+- Run only tests related to your change. CI runs the full suite.
+- No screenshots, audits or reviewer subagents unless I ask, or the change touches database, auth or permissions.
+- Pixel-only screenshot changes: update and mention in one line.
+- Reports: 5 lines max.
 
 ## Coding rules
 

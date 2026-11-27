@@ -12,6 +12,7 @@ import { SharedProjectBody } from "../../u/[id]/shared-projects";
 import { Placement } from "../../u/[id]/awards";
 import { EntryStatusControl, EntryStatusLabel } from "../../entry-status";
 import { SharedProjectEdit } from "./shared-project-edit";
+import { TeamEdit } from "./team-edit";
 import { SignInButton } from "../../sign-in";
 import { EditDialog } from "../../u/[id]/edit-dialog";
 
@@ -191,7 +192,10 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
               For <Link href={`/opportunities/${opportunity.id}`} className="font-medium text-accent hover:underline">{opportunity.title}</Link>
             </p>
           )}
-          <h1 className="text-2xl leading-tight font-semibold tracking-tight sm:text-3xl sm:tracking-tighter">{t.title}</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-2xl leading-tight font-semibold tracking-tight sm:text-3xl sm:tracking-tighter">{t.title}</h1>
+            {isOwner && <TeamEdit team={t} applications={applications} />}
+          </div>
           {t.description && <p className="max-w-prose text-base leading-relaxed text-pretty whitespace-pre-wrap">{t.description}</p>}
           {(t.languages.length > 0 || t.work_mode) && (
             <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink2">

@@ -92,11 +92,10 @@ describe("status", () => {
 });
 
 describe("changing open roles", () => {
-  it("the owner changes the roles and their notes, and nothing else", async () => {
+  it("the owner changes the roles and their notes, never the owner", async () => {
     const { data } = await owner7.from("teams").update({ roles: ["Backend", "ML", "Designer"], role_notes: { Designer: "Figma" } }).eq("id", teamId(2)).select("roles, role_notes");
     expect(data).toEqual([{ roles: ["Backend", "ML", "Designer"], role_notes: { Designer: "Figma" } }]);
     await expectNoChange(["teams"], async () => {
-      expectRefused(await owner7.from("teams").update({ title: "Renamed" }).eq("id", teamId(2)));
       expectRefused(await owner7.from("teams").update({ owner_id: A }).eq("id", teamId(2)));
       expectRefused(await owner7.from("teams").update({ roles: [] }).eq("id", teamId(2)));
     });

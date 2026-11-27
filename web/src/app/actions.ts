@@ -718,6 +718,38 @@ export async function createTeam(formData: FormData) {
   redirect(`/teams/${data.id}`);
 }
 
+// The owner edits the team from its page. Roles someone was accepted for stay, whatever the form sends; removing
+// any other role declines its pending applications and invites (supabase/team-edit.sql).
+export async function updateTeam(teamId: string, formData: FormData): Promise<SaveResult> {
+  const { supabase, userId } = await requireMember();
+  const title = field(formData, "title");
+  if (title.length < 3 || title.length > 120) return { error: "The name should be 3 to 120 characters.", field: "title" };
+  const { data } = await supabase.from("teams").select("owner_id, roles, team_applications(role, status)").eq("id", teamId).maybeSingle();
+  const team = data as { owner_id: string; roles: string[]; team_applications: { role: string; status: string }[] } | null;
+  if (!team || team.owner_id !== userId) return { error: "Only the team's owner can edit it." };
+
+  const open = openRoles(team);
+  const picked = rolesWithNotes(formData.getAll("roles"), formData.getAll("role_notes"), team.roles);
+  const roles = [...picked.roles, ...team.roles.filter((r) => !open.includes(r) && !picked.roles.includes(r))];
+  if (roles.length === 0) return { error: "Pick at least one open role.", field: "roles" };
+  if (roles.length > 10) return { error: "A team can list up to 10 roles.", field: "roles" };
+
+  const { error } = await supabase
+    .from("teams")
+    .update({
+      title,
+      description: field(formData, "description"),
+      roles,
+      role_notes: picked.notes,
+      languages: knownLanguages(formData.getAll("languages")),
+      work_mode: oneOf(WORK_MODES, formData.get("work_mode")),
+    })
+    .eq("id", teamId);
+  if (error) return { error: saveFailed };
+  revalidatePath("/", "layout");
+  return {};
+}
+
 // "Enter your team": enters one of your teams in an event; members are notified by a trigger
 // (supabase/team-entries.sql). The "roles" values are the open roles as adjusted in the form; roles someone was
 // accepted for always stay, and their notes stay with them.
