@@ -4,7 +4,7 @@ import { today } from "@/lib/opportunities";
 import { SignInPrompt } from "../../sign-in";
 import { RoleFields } from "./role-fields";
 import { LANGUAGES, WORK_MODES } from "@/lib/languages";
-import { CheckChip, ErrorText, FieldLabel, Input, PageHeader, Select, Textarea, buttonClass } from "@/components/ui";
+import { CheckChip, Combobox, ErrorText, FieldLabel, Input, PageHeader, Textarea, buttonClass } from "@/components/ui";
 
 export const instant = false;
 
@@ -47,11 +47,11 @@ export default async function NewTeamPage(props: PageProps<"/teams/new">) {
         </fieldset>
         <div>
           <FieldLabel htmlFor="work_mode" optional>How you&apos;ll work</FieldLabel>
-          <Select id="work_mode" name="work_mode" defaultValue="" placeholder="Not decided" required={false} options={WORK_MODES.map((m) => ({ value: m, label: m }))} />
+          <Combobox id="work_mode" label="How you'll work" labelled name="work_mode" defaultValue="" placeholder="Not decided" required={false} options={WORK_MODES.map((m) => ({ value: m, label: m }))} />
         </div>
         <div>
           <FieldLabel htmlFor="opportunity_id" optional>For an opportunity</FieldLabel>
-          <Select id="opportunity_id" name="opportunity_id" defaultValue={typeof opportunity === "string" ? opportunity : ""} placeholder="Not tied to one" required={false} options={(opportunities ?? []).map((o) => ({ value: o.id, label: o.title }))} />
+          <Combobox id="opportunity_id" label="For an opportunity" labelled name="opportunity_id" defaultValue={typeof opportunity === "string" ? opportunity : ""} placeholder="Not tied to one" required={false} options={(opportunities ?? []).map((o) => ({ value: o.id, label: o.title }))} />
         </div>
       </div>
 

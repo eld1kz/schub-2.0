@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { requireUser } from "@/lib/supabase/server";
+import { countryChoices } from "../../new/country-choices";
 import { OpportunityForm } from "../../new/opportunity-form";
 
 export const instant = false;
@@ -15,7 +15,7 @@ export default async function EditOpportunityPage(props: PageProps<"/opportuniti
 
   return (
     <OpportunityForm
-      countries={COUNTRY_OPTIONS}
+      countries={await countryChoices(supabase)}
       edit={{
         id,
         pending: o.needs_review,

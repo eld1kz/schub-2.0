@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
 import { dateRange, formatDay, nextDate, opportunityTypes, placeLabel, today, type OpportunityType } from "@/lib/opportunities";
-import { countryOf } from "@/lib/countries";
-import { countryOptions, filtersHref, forYou, forYouLabel, matches, readFilters, sortListings, type Me } from "@/lib/opportunity-filters";
+import { countryName, countryOf } from "@/lib/countries";
+import { ONLINE, countryOptions, filtersHref, forYou, forYouLabel, matches, readFilters, sortListings, type Me } from "@/lib/opportunity-filters";
 import { reviewImport, setOpportunityStatus } from "@/app/actions";
 import { OpportunitySearch } from "./opportunity-search";
 import { OpportunityHeader, OpportunityRow, type OpportunityRowData } from "./opportunity-row";
@@ -63,7 +63,7 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
   });
   // Each type tab and country counts what picking it would show, with the other filters as they are
   const count = (t: OpportunityType | null) => all.filter((o) => matches(o, { ...filters, type: t }, me)).length;
-  const countries = countryOptions(all.filter((o) => matches(o, filters, me, "country")));
+  const countries = countryOptions(all, all.filter((o) => matches(o, filters, me, "country")));
   const shown = sortListings(all.filter((o) => matches(o, filters, me)), filters.sort);
   const showingForYou = forYou(filters, me);
   // Signed in, with a country or languages, but asked for everything: offer "for you" back
@@ -86,6 +86,9 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
       />
     );
   };
+
+  // A picked country with no events at all, whatever the other filters say
+  const emptyCountry = filters.country && filters.country !== ONLINE && !all.some((o) => o.country === filters.country) ? countryName(filters.country) : "";
 
   const tab = (t: OpportunityType | null, label: string) => ({ href: filtersHref({ ...filters, type: t }), label, current: type === t, count: count(t) });
 
@@ -163,13 +166,20 @@ export default async function OpportunitiesPage(props: PageProps<"/opportunities
 
       <OpportunitySearch
         empty={
-          all.length === 0
-            ? "No upcoming opportunities yet."
-            : showingForYou
-              ? "Nothing here for you yet. Show all to see every event."
-              : type
-                ? `No upcoming ${tabLabel(type).toLowerCase()} match these filters.`
-                : "No upcoming opportunities match these filters."
+          emptyCountry ? (
+            <>
+              No events in {emptyCountry} yet ·{" "}
+              <Link href="/opportunities/new" className="font-medium text-accent hover:underline">Add one</Link>
+            </>
+          ) : all.length === 0 ? (
+            "No upcoming opportunities yet."
+          ) : showingForYou ? (
+            "Nothing here for you yet. Show all to see every event."
+          ) : type ? (
+            `No upcoming ${tabLabel(type).toLowerCase()} match these filters.`
+          ) : (
+            "No upcoming opportunities match these filters."
+          )
         }
         header={<OpportunityHeader />}
         rows={shown.map((o) => ({ id: o.id, title: o.title, node: <OpportunityRow o={o} day={day} going={goingTo.get(o.id)} actions={actions(o)} /> }))}

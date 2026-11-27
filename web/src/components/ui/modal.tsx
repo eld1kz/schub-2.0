@@ -30,7 +30,13 @@ export function Modal({ open, onClose, label, width = "dialog", tall = false, sc
     <dialog
       ref={dialog}
       aria-label={label}
-      onClose={onClose}
+      // React passes a dialog's close and cancel on to dialogs around it (a Combobox's sheet inside an edit dialog),
+      // which would close them too
+      onClose={(e) => {
+        e.stopPropagation();
+        onClose();
+      }}
+      onCancel={(e) => e.stopPropagation()}
       onMouseDown={(e) => {
         pressedOutside.current = e.target === dialog.current;
       }}

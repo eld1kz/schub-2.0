@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { signUpNew } from "./auth";
+import { pick } from "./combobox";
 
 test("a new user goes through onboarding and lands on opportunities", async ({ context, page }) => {
   const userId = await signUpNew(context, "Newbie Testcase");
@@ -11,7 +12,7 @@ test("a new user goes through onboarding and lands on opportunities", async ({ c
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.getByText("Add your university to continue.")).toBeVisible();
   await page.getByLabel("University").fill("KAIST");
-  await page.locator("#graduation_year").selectOption("2028");
+  await pick(page.locator("#graduation_year"), "2028");
   await page.getByRole("button", { name: "Next", exact: true }).click();
 
   // Step 2: at least one skill

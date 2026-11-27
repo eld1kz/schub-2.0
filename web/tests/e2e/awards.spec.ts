@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { id, service, signInAs } from "./auth";
+import { pick } from "./combobox";
 
 // Student 14 (Kai) adds the award and tags 15 (Dana), an accepted connection
 async function confirmTag(page: Page, placement: string) {
@@ -29,9 +30,9 @@ test("add an award, tag a teammate, confirm; changing the placement asks again",
   const dialog = ownerPage.getByRole("dialog", { name: "Add award" });
   await dialog.getByPlaceholder("Search opportunities on Schub").fill("E2E Robot Cup");
   await dialog.getByRole("button", { name: "Use “E2E Robot Cup” as event name" }).click();
-  await dialog.locator("#award-placement").selectOption("Finalist");
-  await dialog.getByLabel("Month", { exact: true }).selectOption("03");
-  await dialog.getByLabel("Year", { exact: true }).selectOption("2026");
+  await pick(dialog.locator("#award-placement"), "Finalist");
+  await pick(dialog.getByLabel("Month", { exact: true }), "March");
+  await pick(dialog.getByLabel("Year", { exact: true }), "2026");
   await dialog.getByPlaceholder("Search your connections and teammates").fill("Dana Mock");
   await dialog.getByRole("button", { name: /Dana Mockingbird/ }).click();
   await dialog.getByRole("button", { name: "Save", exact: true }).click();
@@ -46,7 +47,7 @@ test("add an award, tag a teammate, confirm; changing the placement asks again",
   await ownerPage.reload();
   await ownerPage.getByRole("button", { name: "Edit Finalist, E2E Robot Cup" }).click();
   const edit = ownerPage.getByRole("dialog", { name: "Edit award" });
-  await edit.locator("#award-placement").selectOption("Winner");
+  await pick(edit.locator("#award-placement"), "Winner");
   await edit.getByRole("button", { name: "Save", exact: true }).click();
   await expect(edit).toBeHidden();
 

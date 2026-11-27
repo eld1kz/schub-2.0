@@ -13,7 +13,7 @@ import { PhotoField } from "./photo-field";
 import { ExperienceFields } from "./experience-fields";
 import { GitHubIcon, LinkedInIcon, WebsiteIcon } from "./link-icons";
 import type { ProfileData } from "./profile-view";
-import { Avatar, CheckChip, FieldLabel, Input, Select, Switch, Textarea } from "@/components/ui";
+import { Avatar, CheckChip, Combobox, FieldLabel, Input, Switch, Textarea } from "@/components/ui";
 
 // The owner's edit modals, one per profile section. Each saves only its own fields.
 
@@ -76,12 +76,14 @@ export function HeroEdit({ profile: p }: { profile: ProfileData }) {
           </div>
         </fieldset>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Hours a week">
-            <Select name="hours_per_week" defaultValue={p.hours_per_week} placeholder="Not set" required={false} options={HOURS.map((h) => ({ value: h, label: h }))} />
-          </Field>
-          <Field label="Work mode">
-            <Select name="work_mode" defaultValue={p.work_mode} placeholder="Not set" required={false} options={WORK_MODES.map((m) => ({ value: m, label: workModeLabel(m) }))} />
-          </Field>
+          <div>
+            <FieldLabel as="span" quiet>Hours a week</FieldLabel>
+            <Combobox name="hours_per_week" label="Hours a week" defaultValue={p.hours_per_week} placeholder="Not set" required={false} options={HOURS.map((h) => ({ value: h, label: h }))} />
+          </div>
+          <div>
+            <FieldLabel as="span" quiet>Work mode</FieldLabel>
+            <Combobox name="work_mode" label="Work mode" defaultValue={p.work_mode} placeholder="Not set" required={false} options={WORK_MODES.map((m) => ({ value: m, label: workModeLabel(m) }))} />
+          </div>
         </div>
         <Field label="City"><Input name="city" defaultValue={p.city} maxLength={60} placeholder="Seoul" /></Field>
         <p className="text-meta text-ink2">Everyone can see these, signed out too</p>

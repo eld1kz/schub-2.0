@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LANGUAGES } from "@/lib/languages";
-import { Select } from "@/components/ui";
+import { Combobox } from "@/components/ui";
 
 const languageOptions = LANGUAGES.map((l) => ({ value: l, label: l }));
 const modeOptions = ["In person", "Remote"].map((m) => ({ value: m, label: m }));
@@ -38,7 +38,7 @@ function RoleChip({ label, active, to }: { label: string; active: boolean; to: s
 }
 
 // Under the title: open roles as chips, then language, work mode and status. On phones the chips scroll sideways;
-// below lg the selects sit on their own row, so the chips keep the full width.
+// below lg the dropdowns sit on their own row, so the chips keep the full width.
 export function TeamFilters({ roles, filters }: { roles: string[]; filters: Filters }) {
   const router = useRouter();
   const { role, status } = filters;
@@ -53,13 +53,13 @@ export function TeamFilters({ roles, filters }: { roles: string[]; filters: Filt
       </div>
       <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex">
         <div className="min-w-0 sm:w-36">
-          <Select label="Team language" placeholder="Any language" value={filters.lang} onChange={(lang) => router.push(href({ ...filters, lang }))} options={languageOptions} required={false} small />
+          <Combobox label="Team language" placeholder="Any language" value={filters.lang} onChange={(lang) => router.push(href({ ...filters, lang }))} options={languageOptions} required={false} small />
         </div>
-        <div className="min-w-0 sm:w-36">
-          <Select label="Work mode" placeholder="Any work mode" value={filters.mode} onChange={(mode) => router.push(href({ ...filters, mode }))} options={modeOptions} required={false} small />
+        <div className="min-w-0 sm:w-40">
+          <Combobox label="Work mode" placeholder="Any work mode" value={filters.mode} onChange={(mode) => router.push(href({ ...filters, mode }))} options={modeOptions} required={false} small />
         </div>
         <div className="col-span-2 min-w-0 sm:w-36">
-          <Select label="Status" placeholder="All teams" value={status} onChange={(s) => router.push(href({ ...filters, status: s }))} options={statusOptions} required={false} small />
+          <Combobox label="Status" placeholder="All teams" value={status} onChange={(s) => router.push(href({ ...filters, status: s }))} options={statusOptions} required={false} small />
         </div>
       </div>
     </div>

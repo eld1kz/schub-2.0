@@ -7,8 +7,8 @@ import { opportunityTypes } from "@/lib/opportunities";
 import { FieldError } from "../../u/[id]/edit-dialog";
 import { DateField } from "./date-field";
 import { LinkField } from "./link-field";
-import { PlaceFields, type Option, type PlaceValues } from "./place-fields";
-import { ErrorText, Field, Input, PageHeader, Select, Textarea, buttonClass } from "@/components/ui";
+import { PlaceFields, type PlaceValues } from "./place-fields";
+import { Combobox, ErrorText, Field, Input, PageHeader, Textarea, buttonClass, type ComboboxOption } from "@/components/ui";
 
 const typeOptions = Object.entries(opportunityTypes).map(([value, label]) => ({ value, label }));
 
@@ -24,7 +24,7 @@ const blank: OpportunityValues = {
 // One column, like the experience form. Server checks (link opens, not a duplicate, dates, 5 a day)
 // come back with the field they belong to and show under it; the typed values stay.
 // Adding: "Fill from link" fills every field from the event's page. Editing (admins, `edit`): starts from the row.
-export function OpportunityForm({ edit, countries }: { edit?: { id: string; values: OpportunityValues; pending: boolean }; countries: Option[] }) {
+export function OpportunityForm({ edit, countries }: { edit?: { id: string; values: OpportunityValues; pending: boolean }; countries: ComboboxOption[] }) {
   const [values, setValues] = useState(edit?.values ?? blank);
   // A fill replaces the fields, so they start again from the new values
   const [filled, setFilled] = useState(0);
@@ -78,7 +78,7 @@ export function OpportunityForm({ edit, countries }: { edit?: { id: string; valu
           </Field>
 
           <Field id="type" label="Type" required>
-            <Select id="type" name="type" placeholder="Choose a type" value={type} onChange={setType} options={typeOptions} />
+            <Combobox id="type" label="Type" labelled name="type" placeholder="Choose a type" value={type} onChange={setType} options={typeOptions} />
           </Field>
 
           <Field id="organizer" label="Organizer" optional>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { formatPeriod } from "@/lib/portfolio";
 import { FieldError } from "./edit-dialog";
-import { FieldLabel, Select } from "@/components/ui";
+import { Combobox, FieldLabel, type ComboboxHandle } from "@/components/ui";
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const firstYear = 1990;
@@ -25,7 +25,7 @@ export function PeriodFields({ start, end, current }: { start?: string; end?: st
   const [isCurrent, setCurrent] = useState(current);
   const [from, setFrom] = useState(split(start));
   const [to, setTo] = useState(split(end));
-  const endMonth = useRef<HTMLSelectElement>(null);
+  const endMonth = useRef<ComboboxHandle>(null);
 
   const startValue = from.year && from.month ? `${from.year}-${from.month}` : "";
   const endValue = to.year && to.month ? `${to.year}-${to.month}` : "";
@@ -49,8 +49,8 @@ export function PeriodFields({ start, end, current }: { start?: string; end?: st
         <FieldLabel as="legend" required>Start date</FieldLabel>
         <input type="hidden" name="start" value={startValue} />
         <div className="grid grid-cols-2 gap-3">
-          <Select label="Start month" placeholder="Month" value={from.month} onChange={(month) => setFrom({ ...from, month })} options={monthOptions} />
-          <Select label="Start year" placeholder="Year" value={from.year} onChange={(year) => setFrom({ ...from, year })} options={yearOptions(thisYear)} />
+          <Combobox label="Start month" placeholder="Month" value={from.month} onChange={(month) => setFrom({ ...from, month })} options={monthOptions} />
+          <Combobox label="Start year" placeholder="Year" value={from.year} onChange={(year) => setFrom({ ...from, year })} options={yearOptions(thisYear)} />
         </div>
         <FieldError field="start" />
       </fieldset>
@@ -59,8 +59,8 @@ export function PeriodFields({ start, end, current }: { start?: string; end?: st
           <FieldLabel as="legend" required>End date</FieldLabel>
           <input type="hidden" name="end" value={endValue} />
           <div className="grid grid-cols-2 gap-3">
-            <Select label="End month" placeholder="Month" value={to.month} onChange={(month) => setTo({ ...to, month })} options={monthOptions} selectRef={endMonth} />
-            <Select label="End year" placeholder="Year" value={to.year} onChange={(year) => setTo({ ...to, year })} options={yearOptions(thisYear + yearsAhead)} />
+            <Combobox label="End month" placeholder="Month" value={to.month} onChange={(month) => setTo({ ...to, month })} options={monthOptions} ref={endMonth} />
+            <Combobox label="End year" placeholder="Year" value={to.year} onChange={(year) => setTo({ ...to, year })} options={yearOptions(thisYear + yearsAhead)} />
           </div>
           <FieldError field="end" message={endsTooEarly ? "The end can't be before the start." : ""} />
         </fieldset>
