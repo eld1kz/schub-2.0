@@ -32,7 +32,7 @@ export function PeopleFilters({ query }: { query: PeopleQuery }) {
       <div className="w-36">
         <Combobox label="Language" placeholder="Any language" value={query.lang} onChange={(lang) => router.push(peopleHref({ ...query, lang, page: 1 }))} options={languageOptions} required={false} small />
       </div>
-      <div className="w-36">
+      <div className="w-40">
         <Combobox label="Work mode" placeholder="Any work mode" value={query.mode} onChange={(mode) => router.push(peopleHref({ ...query, mode, page: 1 }))} options={modeOptions} required={false} small />
       </div>
     </div>

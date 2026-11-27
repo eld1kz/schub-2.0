@@ -55,7 +55,7 @@ export function TeamFilters({ roles, filters }: { roles: string[]; filters: Filt
         <div className="min-w-0 sm:w-36">
           <Combobox label="Team language" placeholder="Any language" value={filters.lang} onChange={(lang) => router.push(href({ ...filters, lang }))} options={languageOptions} required={false} small />
         </div>
-        <div className="min-w-0 sm:w-36">
+        <div className="min-w-0 sm:w-40">
           <Combobox label="Work mode" placeholder="Any work mode" value={filters.mode} onChange={(mode) => router.push(href({ ...filters, mode }))} options={modeOptions} required={false} small />
         </div>
         <div className="col-span-2 min-w-0 sm:w-36">
