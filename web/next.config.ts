@@ -1,6 +1,16 @@
 import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
+// The app can't work without these, so say which one is missing instead of building around "undefined".
+// Next has read the .env files by the time it loads this.
+function required(name: string) {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is not set. Add it to web/.env.local, or to the project's environment variables on Vercel (for Preview as well as Production).`);
+  return value;
+}
+const supabaseUrl = required("NEXT_PUBLIC_SUPABASE_URL");
+required("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+
 const nextConfig: NextConfig = {
   /* config options here */
   // dev:local builds into its own folder, so it can run next to `next dev` and never mixes in
@@ -34,7 +44,7 @@ const nextConfig: NextConfig = {
   images: {
     // Uploaded images, and Google or GitHub account photos for members who haven't uploaded one (account-photos.sql)
     remotePatterns: [
-      new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/media/**`),
+      new URL(`${supabaseUrl}/storage/v1/object/public/media/**`),
       new URL("https://lh3.googleusercontent.com/**"),
       // Exactly the query photoUrl gives GitHub avatars, so the optimizer takes no other variations
       { protocol: "https", hostname: "avatars.githubusercontent.com", pathname: "/**", search: "?v=4&s=256" },
