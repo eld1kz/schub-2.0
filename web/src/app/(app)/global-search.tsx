@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { searchGlobal, type SearchResults } from "@/app/actions";
+import { Input } from "@/components/ui";
 
 // Search icon in the nav that opens an input; results for people and teams appear as you type
 export function GlobalSearch() {
@@ -45,7 +46,7 @@ export function GlobalSearch() {
         type="button"
         aria-label="Search people and teams"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 text-muted hover:text-foreground sm:h-9 sm:w-[300px] sm:rounded-md sm:border sm:border-line2 sm:px-3 sm:text-sm"
+        className="flex items-center gap-2 text-muted hover:text-foreground sm:h-9 sm:w-75 sm:rounded-md sm:border sm:border-line2 sm:px-3 sm:text-sm"
       >
         <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 fill-none stroke-current sm:h-4 sm:w-4" strokeWidth={2} strokeLinecap="round">
           <circle cx="11" cy="11" r="7" />
@@ -64,8 +65,9 @@ export function GlobalSearch() {
 
   return (
     // On phones the field covers the top bar while it's open
-    <div ref={ref} className="fixed inset-x-0 top-0 z-30 flex h-[60px] items-center gap-3 bg-background px-4 sm:relative sm:h-auto sm:bg-transparent sm:px-0">
-      <input
+    <div ref={ref} className="fixed inset-x-0 top-0 z-30 flex h-15 items-center gap-3 bg-background px-4 sm:relative sm:h-auto sm:bg-transparent sm:px-0">
+      <Input
+        small
         autoFocus
         type="text"
         value={query}
@@ -76,11 +78,11 @@ export function GlobalSearch() {
         onKeyDown={(e) => e.key === "Escape" && close()}
         placeholder="Search people and teams"
         aria-label="Search people and teams"
-        className="input h-9 py-0 text-sm sm:w-[300px]"
+        className="sm:w-75"
       />
       <button type="button" onClick={close} className="text-sm font-medium text-ink2 sm:hidden">Cancel</button>
       {results && (
-        <div className="fixed inset-x-4 top-16 z-10 rounded-md border border-border bg-background py-2 shadow-lg sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-[300px]">
+        <div className="fixed inset-x-4 top-16 z-10 rounded-md border border-border bg-background py-2 shadow-lg sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-75">
           {results.people.length === 0 && results.teams.length === 0 && <p className="px-4 py-2 text-muted">No results</p>}
           {results.people.length > 0 && (
             <>

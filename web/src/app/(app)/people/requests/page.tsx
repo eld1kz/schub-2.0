@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/supabase/server";
 import { respond, withdrawRequest } from "@/app/actions";
 import { awardedIds } from "@/lib/awards";
 import { PersonRow } from "../person-row";
+import { buttonClass } from "@/components/ui";
 
 type Person = { name: string; headline: string; avatar_url: string; open_to_collaborate: boolean } | null;
 type Request = { id: string; sender_id: string; receiver_id: string; created_at: string; sender: Person; receiver: Person };
@@ -13,7 +14,7 @@ const sent = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month:
 
 function Heading({ title, count }: { title: string; count: number }) {
   return (
-    <h2 className="mb-4 text-[15px] font-semibold">
+    <h2 className="mb-4 text-base font-semibold">
       {title} <span className="font-normal text-muted">{count}</span>
     </h2>
   );
@@ -37,14 +38,14 @@ export default async function RequestsPage() {
   if (pending.length === 0) {
     return (
       <div className="flex flex-col items-start gap-2 py-2">
-        <p className="text-[15px] font-medium">No pending requests</p>
+        <p className="text-base font-medium">No pending requests</p>
         <Link href="/people" className="text-sm font-semibold text-accent hover:underline">Find people on Discover</Link>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       <section>
         <Heading title="Received" count={received.length} />
         {received.length === 0 ? (
@@ -61,12 +62,12 @@ export default async function RequestsPage() {
               awarded={awarded.has(c.sender_id)}
               actions={
                 <>
-                  <form action={respond.bind(null, c.id, "accepted")}><button className="btn h-9 px-4">Accept</button></form>
-                  <form action={respond.bind(null, c.id, "declined")}><button className="btn-outline h-9">Decline</button></form>
+                  <form action={respond.bind(null, c.id, "accepted")}><button className={buttonClass({ size: "sm" })}>Accept</button></form>
+                  <form action={respond.bind(null, c.id, "declined")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
                 </>
               }
             >
-              <p className="text-[13px] text-muted">Sent {sent(c.created_at)}</p>
+              <p className="text-meta text-muted">Sent {sent(c.created_at)}</p>
             </PersonRow>
           ))
         )}
@@ -88,7 +89,7 @@ export default async function RequestsPage() {
               awarded={awarded.has(c.receiver_id)}
               actions={<form action={withdrawRequest.bind(null, c.id)}><button className="h-9 text-sm text-ink2 hover:text-foreground">Withdraw</button></form>}
             >
-              <p className="text-[13px] text-muted">Sent {sent(c.created_at)} · waiting for a reply</p>
+              <p className="text-meta text-muted">Sent {sent(c.created_at)} · waiting for a reply</p>
             </PersonRow>
           ))
         )}

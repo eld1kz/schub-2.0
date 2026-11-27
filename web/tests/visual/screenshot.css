@@ -1,0 +1,4 @@
+/* Applied while taking screenshots: hide the Next.js dev indicator, which isn't part of the app */
+nextjs-portal {
+  display: none !important;
+}

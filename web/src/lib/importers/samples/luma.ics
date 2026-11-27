@@ -1,0 +1,57 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Luma//Sample Calendar//EN
+X-WR-CALNAME:Sample Builders Seoul
+X-WR-CALDESC:Luma Calendar
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+DTSTART:20261212T010000Z
+DTEND:20261213T090000Z
+DTSTAMP:20261124T063121Z
+ORGANIZER;CN="Sample Host":MAILTO:calendar-invite@lu.ma
+UID:evt-SampleHackSeoul@events.lu.ma
+SUMMARY:Sample Builders Hackathon\, Winter Edition
+DESCRIPTION:Get up-to-date information at: https://luma.com/samplehack\n\nAd
+ dress:\nSample Campus\nSeoul\nSouth Korea\n\nHosted by Sample Host
+LOCATION:Sample Campus, South Korea, Seoul, Gangnam District, 대치2동 Yeongdong-daero
+ , 417 B2
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261203T093000Z
+DTEND:20261203T120000Z
+UID:evt-SampleHidden@events.lu.ma
+SUMMARY:서울 AI 빌더 밋업
+DESCRIPTION:Get up-to-date information at: https://luma.com/samplemeet\n\nAddress:\nCheck event page for more details.\n\nHosted by Sample Host
+LOCATION:https://luma.com/event/evt-SampleHidden
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Asia/Seoul:20270110T200000
+DTEND;TZID=Asia/Seoul:20270110T220000
+UID:evt-SampleOnline@events.lu.ma
+SUMMARY:Online Demo Night
+DESCRIPTION:Get up-to-date information at: https://luma.com/sampleonline\n\nHosted by Sample Host
+LOCATION:https://zoom.us/j/123456789
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20250731T100000Z
+DTEND:20250731T123000Z
+UID:evt-SamplePast@events.lu.ma
+SUMMARY:Sample Meetup #0
+DESCRIPTION:Get up-to-date information at: https://luma.com/samplepast\n\nAddress:\n20 Tojeong-ro 3an-gil\, Mapo-gu\nSeoul\nSouth Korea
+LOCATION:20 Tojeong-ro 3an-gil\, Mapo-gu\, Seoul\, South Korea
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261220T100000Z
+DTEND:20261220T123000Z
+UID:evt-SampleCancelled@events.lu.ma
+SUMMARY:Cancelled Sample Event
+DESCRIPTION:Get up-to-date information at: https://luma.com/samplecancel
+LOCATION:Seoul
+STATUS:CANCELLED
+END:VEVENT
+END:VCALENDAR

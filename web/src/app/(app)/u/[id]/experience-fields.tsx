@@ -1,33 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { EXPERIENCE_DESCRIPTION_MAX, EXPERIENCE_TYPES, type Experience } from "@/lib/portfolio";
 import { knownSkills } from "@/lib/skills";
 import { SkillPicker } from "../../profile/skill-picker";
 import { FieldError } from "./edit-dialog";
-import { Select } from "../../select";
 import { PeriodFields } from "./period-fields";
+import { Combobox, Field, FieldLabel, Input, Textarea } from "@/components/ui";
 
-const input = "input h-11 sm:h-10";
 const typeOptions = EXPERIENCE_TYPES.map((t) => ({ value: t, label: t }));
-
-export function Field({ id, label, required = false, children }: { id: string; label: string; required?: boolean; children: ReactNode }) {
-  return (
-    <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
-        {label}
-        {required && <span aria-hidden className="ml-0.5 text-accent">*</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
 
 // Enter in a one-line field moves to the next field instead of submitting. The skill search handles its own Enter.
 export function nextOnEnter(e: KeyboardEvent<HTMLDivElement>) {
   if (e.key !== "Enter" || e.defaultPrevented || !(e.target instanceof HTMLInputElement)) return;
   e.preventDefault();
-  const fields = [...e.currentTarget.querySelectorAll<HTMLElement>("input:not([type=hidden]), select, textarea")].filter((f) => f.getClientRects().length > 0);
+  const fields = [...e.currentTarget.querySelectorAll<HTMLElement>("input:not([type=hidden]):not([data-combobox-value]), [role=combobox], textarea")].filter((f) => f.getClientRects().length > 0);
   fields[fields.indexOf(e.target) + 1]?.focus();
 }
 
@@ -44,24 +31,24 @@ export function ExperienceFields({ experience: e }: { experience?: Experience })
   }, [tooLong]);
 
   return (
-    <div onKeyDown={nextOnEnter} className="space-y-5 py-6">
+    <div onKeyDown={nextOnEnter} className="space-y-4 py-6">
       <Field id="experience-role" label="Title" required>
-        <input id="experience-role" name="role" defaultValue={e?.role} required maxLength={80} placeholder="Backend developer" className={input} />
+        <Input id="experience-role" name="role" defaultValue={e?.role} required maxLength={80} placeholder="Backend developer" />
         <FieldError field="role" />
       </Field>
 
       <Field id="experience-type" label="Type">
-        <Select id="experience-type" name="type" placeholder="Choose a type" value={type} onChange={setType} options={typeOptions} required={false} />
+        <Combobox id="experience-type" label="Type" labelled name="type" placeholder="Choose a type" value={type} onChange={setType} options={typeOptions} required={false} />
       </Field>
 
       <Field id="experience-company" label="Organization" required>
-        <input id="experience-company" name="company" defaultValue={e?.company} required maxLength={80} placeholder="Daangn, KU Robotics Club, ..." className={input} />
+        <Input id="experience-company" name="company" defaultValue={e?.company} required maxLength={80} placeholder="Daangn, KU Robotics Club, ..." />
         <FieldError field="company" />
       </Field>
 
       <Field id="experience-location" label="Location">
         <div className="flex items-center gap-4">
-          <input id="experience-location" name="location" defaultValue={e?.location} maxLength={80} placeholder="Seoul" className={`${input} min-w-0 flex-1`} />
+          <Input id="experience-location" name="location" defaultValue={e?.location} maxLength={80} placeholder="Seoul" className="min-w-0 flex-1" />
           <label className="flex shrink-0 cursor-pointer items-center gap-2 text-sm text-ink2">
             <input type="checkbox" name="remote" defaultChecked={e?.remote} className="peer sr-only" />
             <span
@@ -76,7 +63,7 @@ export function ExperienceFields({ experience: e }: { experience?: Experience })
       <PeriodFields start={e?.start_date.slice(0, 7)} end={e?.end_date?.slice(0, 7)} current={e ? !e.end_date : false} />
 
       <Field id="experience-description" label="Description">
-        <textarea
+        <Textarea
           ref={descriptionRef}
           id="experience-description"
           name="description"
@@ -85,11 +72,10 @@ export function ExperienceFields({ experience: e }: { experience?: Experience })
           onChange={(ev) => setDescription(ev.target.value)}
           maxLength={EXPERIENCE_DESCRIPTION_MAX}
           placeholder="What did you build or do? One or two lines is enough."
-          className="input resize-none leading-normal"
         />
         <div className="mt-1 flex justify-between gap-4">
           <FieldError field="description" message={tooLong ? `Keep it to ${EXPERIENCE_DESCRIPTION_MAX} characters or fewer.` : ""} />
-          <span className={`ml-auto text-[13px] tabular-nums ${tooLong ? "text-red-600 dark:text-red-400" : "text-muted"}`}>
+          <span className={`ml-auto text-meta tabular-nums ${tooLong ? "text-danger" : "text-muted"}`}>
             {description.length}/{EXPERIENCE_DESCRIPTION_MAX}
           </span>
         </div>
@@ -97,9 +83,7 @@ export function ExperienceFields({ experience: e }: { experience?: Experience })
 
       {/* The shared picker's search box, at least 44px tall on phones like the other fields */}
       <div className="[&_input[type=search]]:h-11 sm:[&_input[type=search]]:h-10">
-        <label htmlFor="experience-skill-search" className="mb-1.5 block text-sm font-medium">
-          Skills used <span className="font-normal text-muted">(optional)</span>
-        </label>
+        <FieldLabel htmlFor="experience-skill-search" optional>Skills used</FieldLabel>
         <SkillPicker id="experience-skill-search" defaultValue={knownSkills(e?.skills ?? [])} />
       </div>
     </div>

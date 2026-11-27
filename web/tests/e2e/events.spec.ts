@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { id, service, signInAs } from "./auth";
+import { pick } from "./combobox";
 
 // The event page's action bar, entering a team, entry status and featured events (supabase/team-entries.sql).
 // Opportunity 1 "Placeholder Hack Seoul 2027" is upcoming; 4 "Placeholder Hack 2025" ended long ago.
@@ -69,7 +70,8 @@ test("Create a team opens the form with the event picked; the new team is entere
   await page.goto(`/opportunities/${event}`);
   await bar(page, "Placeholder Hack Seoul 2027").getByRole("link", { name: "Create a team" }).click();
   await expect(page).toHaveURL(`/teams/new?opportunity=${event}`);
-  await expect(page.getByLabel("For an opportunity")).toHaveValue(event);
+  await expect(page.locator('input[name="opportunity_id"]')).toHaveValue(event);
+  await expect(page.getByLabel("For an opportunity")).toHaveText("Placeholder Hack Seoul 2027");
 
   await page.getByLabel("What are you building?").fill(newTeam);
   await page.getByRole("button", { name: "Designer" }).click();
@@ -77,7 +79,7 @@ test("Create a team opens the form with the event picked; the new team is entere
   await expect(page.getByRole("heading", { level: 1, name: newTeam })).toBeVisible();
   await expect(page.getByText("For Placeholder Hack Seoul 2027")).toBeVisible();
   const events = page.getByRole("group", { name: "Placeholder Hack Seoul 2027" });
-  await expect(events.getByLabel(`Status of ${newTeam} for Placeholder Hack Seoul 2027`)).toHaveValue("going");
+  await expect(events.getByLabel(`Status of ${newTeam} for Placeholder Hack Seoul 2027`)).toHaveText("Going");
 
   // Back on the event page it's your team now, instead of "Enter your team"
   await page.goto(`/opportunities/${event}`);
@@ -117,19 +119,19 @@ test("enter an existing team, adding an open role; members are notified and stat
   await expect(taeho.getByText("Your team entered Placeholder Hack Seoul 2027").first()).toBeVisible();
 
   // The owner moves it to Registered from the event page: the official page is linked, the row's label follows
-  const status = actions.getByLabel("Status of Full Sample Team for Placeholder Hack Seoul 2027");
-  await status.selectOption("registered");
+  const status = actions.getByRole("combobox", { name: "Status of Full Sample Team for Placeholder Hack Seoul 2027", exact: true });
+  await pick(status, "Registered");
   await expect(actions.getByRole("link", { name: "Official registration page ↗" })).toHaveAttribute("href", "https://example.com/hack-seoul-2027");
   await expect(row.getByText("Registered", { exact: true })).toBeVisible();
   await page.reload();
-  await expect(status).toHaveValue("registered");
+  await expect(status).toHaveText("Registered");
 
   // Then to Placed from the team page's Events, newest first, which links to adding the award
   await page.goto(`/teams/${team2}`);
   const events = page.locator("#events").getByRole("group");
   await expect(events.first()).toHaveAccessibleName("Placeholder Hack Seoul 2027");
   await expect(events.nth(1)).toHaveAccessibleName("Mock AI Challenge Winter");
-  await events.first().getByLabel("Status of Full Sample Team for Placeholder Hack Seoul 2027").selectOption("placed");
+  await pick(events.first().getByRole("combobox", { name: "Status of Full Sample Team for Placeholder Hack Seoul 2027", exact: true }), "Placed");
   await expect(events.first().getByRole("link", { name: "Add the award to your profile" })).toHaveAttribute("href", `/u/${id(7)}#awards`);
 
   // Members see the status, but can't change it

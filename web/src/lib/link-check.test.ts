@@ -17,7 +17,7 @@ vi.mock("node:dns", () => ({
   },
 }));
 
-const { isPublicAddress, linkWorks, safeLookup } = await import("./link-check");
+const { fetchPage, isPublicAddress, linkWorks, safeLookup } = await import("./link-check");
 
 type Hop = { status: number; location: string | null };
 // A fake network: each URL answers with the given status and Location
@@ -103,5 +103,28 @@ describe("linkWorks", () => {
     expect(await linkWorks("https://public.example/", fakeRequest({ "https://public.example/": { status: 410, location: null } }))).toBe(false);
     expect(await linkWorks("https://public.example/", fakeRequest({ "https://public.example/": { status: 403, location: null } }))).toBe(true);
     expect(await linkWorks("https://public.example/", vi.fn(async () => Promise.reject(new Error("refused"))))).toBe(false);
+  });
+});
+
+describe("fetchPage", () => {
+  type Page = Hop & { contentType: string; body: string };
+  const page = (answers: Record<string, Partial<Page>>) =>
+    vi.fn(async (url: URL): Promise<Page> => ({ status: 200, location: null, contentType: "text/html; charset=utf-8", body: "<html></html>", ...answers[url.href] }));
+
+  it("returns a public page's HTML, after redirects", async () => {
+    const send = page({ "https://public.example/a": { status: 301, location: "/b" }, "https://public.example/b": { body: "<title>Hi</title>" } });
+    expect(await fetchPage("https://public.example/a", send)).toBe("<title>Hi</title>");
+  });
+
+  it("refuses private addresses and redirects to them, like linkWorks", async () => {
+    expect(await fetchPage("http://internal.example/")).toBeNull();
+    const send = page({ "https://public.example/a": { status: 302, location: "http://127.0.0.1/admin" } });
+    expect(await fetchPage("https://public.example/a", send)).toBeNull();
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns nothing for errors and anything that isn't HTML", async () => {
+    expect(await fetchPage("https://public.example/", page({ "https://public.example/": { status: 404 } }))).toBeNull();
+    expect(await fetchPage("https://public.example/", page({ "https://public.example/": { contentType: "application/pdf" } }))).toBeNull();
   });
 });

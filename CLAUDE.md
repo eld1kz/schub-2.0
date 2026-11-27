@@ -20,10 +20,14 @@ The repo has two apps on the same Supabase project:
   before using an API you're unsure of (see `web/AGENTS.md`)
 - Check changes with `npx tsc --noEmit`, `npx eslint src` and `npx next build` in `web/`
 - Tests, all in `web/`: `npm test` (Vitest unit tests next to the code), `npm run test:db` (permission
-  tests in `tests/db/`) and `npm run test:e2e` (Playwright, `tests/e2e/`). The last two need Docker:
-  they run `npm run db:local` first, which starts a local Supabase, applies every migration and loads
+  tests in `tests/db/`), `npm run test:e2e` (Playwright, `tests/e2e/`) and `npm run test:visual` (screenshots,
+  `tests/visual/`, in the Playwright Docker image; `test:visual:update` accepts changes). The last three need
+  Docker: they run `npm run db:local` first, which starts a local Supabase, applies every migration and loads
   `supabase/seed.local.sql`. `npm run dev:local` serves the app on port 3101 against that local database.
+  The e2e tests also serve sample event pages for "Fill from link" on port 3102 (`tests/e2e/fixtures`); the
+  screenshot tests serve the app on 3103.
   Tests never touch the real project. Known open issues are `it.fails` tests marked KNOWN ISSUE.
+- CI (`.github/workflows/ci.yml`) runs lint, types and all four test suites on every push and pull request.
 
 ## Web structure
 ```
@@ -32,7 +36,7 @@ web/src/
   app/
     actions.ts              ALL server actions (every DB write goes through here)
     layout.tsx              root layout, fonts
-    globals.css             design tokens (light + dark), .btn .btn-outline .input .skill .label
+    globals.css             design tokens (DESIGN.md): colors (light-dark), type, spacing, radii, widths, named layouts
     page.tsx                landing page for signed-out visitors; members go to /opportunities
     landing-samples.tsx     the landing page's sample previews, built from app components (inert, data-sample)
     login/                  every sign-in option; ?next= is where to go back to
@@ -40,10 +44,13 @@ web/src/
     onboarding/             first-time flow after the first sign-in
     auth/callback/          OAuth and email-link callback
     teams/[id]/share/       phone page opened from the share dialog's QR code: the story image and Share
+    design/                 /design, development only: every ui component in every state, light and dark
     (app)/
       layout.tsx            top bar (tabs, search, bell, avatar), phone tab bar, nav counts
       nav-tabs.tsx          active-tab tabs (desktop) and bottom tab bar (phones)
-      opportunities/        list, [id] detail, new; event-actions.tsx is the event's action bar (Find a team,
+      opportunities/        list (country, language, "Can I join?" and sort filters in the URL; "for you" by
+                            default for members; admins' Review imports), [id] detail, [id]/edit (admins), new
+                            (with "Fill from link"); event-actions.tsx is the event's action bar (Find a team,
                             Create a team, Enter your team), also inline on featured events
       teams/                list with filters; [id] (page.tsx loads, team-view.tsx renders,
                             story.png 1080x1920 share image, og.png link preview); new
@@ -52,9 +59,10 @@ web/src/
       profile/              redirects to /u/<you>; holds skill-picker and completion score
       settings/             your sign-in email and linked accounts, sign out, delete account
       feed/                 posts and ideas; on hold, not linked from the nav
-      connect-button.tsx, avatar.tsx, select.tsx, team-list.tsx, global-search.tsx, notifications.tsx
+      connect-button.tsx, team-list.tsx, global-search.tsx, notifications.tsx
       share-team.tsx        Share button and dialog: Web Share on phones, QR code / copy image on laptops
       entry-status.tsx      a team's status in an event: the owner's select, everyone else's label
+  components/ui/            the design system's components (DESIGN.md), imported from @/components/ui
   lib/
     match.ts                matching score (the iOS DiscoverViewModel's, plus a shared-language adjustment)
     skills.ts               the fixed skill list and its groups
@@ -66,10 +74,20 @@ web/src/
     teams.ts                team rows, open roles, entries: a team's current event (its soonest upcoming entry,
                             else the one that ended last) and recruitingRoles (none once that event is over)
     opportunities.ts, goals.ts
+    opportunity-filters.ts  /opportunities filters, sorting, "for you" and the list of every country (counts for those with events)
+    countries.ts            ISO country codes and names, and the country a typed-in city or address is in
+    importers/              one module per source (Hack Club, Kaggle, K-Startup, Luma) returning one shape
+                            (types.ts), dedupe.ts across sources, run.ts writes them; run by
+                            scripts/import-opportunities.ts (npm run import:opportunities) twice a day from
+                            .github/workflows/import-opportunities.yml. MLH and Devpost are out: their terms forbid it
+    link-preview.ts         "Fill from link": an event page's schema.org Event and Open Graph tags as form values
+    link-check.ts           the safe link check (no private addresses, limited redirects); fetchPage reads one page
     connections.ts          your accepted connections (one query per page) and which events they're going to
     story.ts, story-image.tsx  the team share images: wording (English, or Korean for mostly-Hangul teams) and
                             sizing (story.ts), drawing with next/og
     supabase/server.ts      createClient, requireUser, requireMember
+web/DESIGN.md               tokens, components, when to use which, how to add one
+web/eslint-rules/           design-tokens.mjs: the lint rule that keeps pages on the tokens and components
 web/supabase/               SQL migrations, run by hand in the Supabase SQL Editor
 web/assets/fonts/           TTFs for the share images (Instrument Sans, Plex Mono, Noto Sans KR for Hangul and Cyrillic)
 ```
@@ -80,8 +98,8 @@ Migrations live in `web/supabase/` and are run by hand, in this order:
 `connections-list` → `auth` → `notifications` → `goals` → `experience-details` →
 `people-requests` → `opportunity-details` → `awards` → `length-limits` → `public-read` → `people-discover` →
 `notification-limits` → `participant-notes` → `display-name` →
-`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites` → `shared-projects` → `team-entries`. `seed_opportunities.sql` and
-`fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only. New schema changes get a new file with a header
+`own-images` → `team-contact` → `google-photos` → `account-photos` → `delete-account` → `open-to-team` → `languages` → `team-invites` → `shared-projects` → `team-entries` → `opportunity-engine`. `seed_opportunities.sql` and
+`fix_admin.sql` are one-off helpers. `seed.local.sql` is fake data for the local test database only; its dates are relative to today (`SEED_TODAY` pins today, as the screenshot tests do). New schema changes get a new file with a header
 saying what it does and what it runs after; show the SQL, the user runs it.
 
 Tables:
@@ -95,6 +113,12 @@ Tables:
 - `opportunities` — title, type, organizer, location, online, url, deadline, starts_at, ends_at,
   status (live / hidden / removed), submitted_by, featured (only admins set it; first on /opportunities and the
   landing page). `check_new_opportunity()` limits 5 a day, rejects past dates and near-duplicate titles.
+  Where and who (`opportunity-engine.sql`): country (ISO code, null when online only), city (old rows only have
+  `location`), languages[] (`lib/languages.ts`), eligibility (anyone / students / country) and eligibility_note,
+  inferred[] (fields an importer guessed). Imports: source and external_id (unique together), imported_at,
+  needs_review (Luma, and anything without dates: only admins see it until approved), reviewed_at (set by an
+  admin's approve, edit or reject; the importer then leaves the row alone). People can't add rows with any of these.
+- `link_fetches` — one row per "Fill from link" page read, 20 an hour per member; no one reads it
 - `opportunity_participants` — people looking for a team for an opportunity
 - `opportunity_reports` — 3 reports hide an opportunity; `admins` can restore or remove
 - `teams` — owner, title, description, roles[] (new teams pick from `lib/roles.ts`; old
@@ -166,13 +190,15 @@ The UI follows **Direction A ("Document")** from the Claude Design project "Schu
 Directions" (`Schub A - Document.dc.html`): the calm, CV-like direction. No cards;
 structure comes from full-width rules and a fixed label column. One indigo accent,
 neutral everything else.
-- Tokens in `globals.css`, used as Tailwind colors: `background`, `foreground`, `ink2`,
-  `muted`, `border` (light rule), `line2` (section rule), `chip`, `accent`,
-  `accent-soft`, `on-accent`. Dark values come from `prefers-color-scheme`.
+- **Use only `src/components/ui` and tokens. New patterns go into `ui/` first. Visual changes need
+  `test:visual:update` and my approval.** `web/DESIGN.md` lists the tokens and components and when to use
+  which; `npx eslint src` fails on bracket values, palette colors, spacing off the scale and `style=`.
+- Tokens in `globals.css`: colors (`background`, `foreground`, `ink2`, `muted`, `border` (light rule), `line2`
+  (section rule), `chip`, `accent`, `accent-soft`, `on-accent`, `open`, `danger`), each a light-dark() pair;
+  8 type sizes plus `display`; spacing 2-32px plus 48/64/80; 3 radii; named widths and grid layouts.
 - Fonts: Instrument Sans (`font-sans`) and IBM Plex Mono (`font-mono`, for skill chips
   and small labels).
-- Profile building blocks: `u/[id]/profile-parts.tsx` (Section, SideBlock, EmptyPrompt,
-  ChipTable). Owner editing: `u/[id]/edit-dialog.tsx` (modal from sm up, bottom sheet on
+- Profile-only pieces: `u/[id]/profile-parts.tsx` (SideBlock, KeyValue, SkillRows, ExperienceEntry). Owner editing: `u/[id]/edit-dialog.tsx` (modal from sm up, bottom sheet on
   phones) and `u/[id]/section-edits.tsx` (one form per section, grouped with a label column).
 - Redesign status: `/u/[id]`, `/teams` (list, `[id]`, `new`), `/people` (three tabs) and
   `/opportunities` (list, `[id]`, `new`) and `/onboarding` are done. Only the on-hold `/feed`
@@ -210,7 +236,18 @@ neutral everything else.
 - Mobile-first layouts
 - Tailwind only — no inline styles
 
-### 7. Matching
+### 7. Settled decisions
+Don't reopen these without asking:
+- **Contact visibility:** Telegram and email show only to yourself, accepted connections and teammates, through
+  `contact_for`; they're never selectable on `profiles`.
+- **Award confirmation:** tagged teammates confirm or decline; only confirmed tags are public, and changing an
+  award's placement, prize, event or date asks them again.
+- **Opt-in ring:** the green ring means the person switched on "Open to a team"; nobody gets it by default.
+- **No guest accounts:** signed-out visitors browse read-only as `anon`; nothing creates anonymous users.
+- **No emoji** in the UI.
+- **One accent color** (indigo); everything else is neutral.
+
+### 8. Matching
 `lib/match.ts` scores complementary skills highest, then shared interests, then shared
 skills; when both people list languages, a shared one adds a bonus and none in common takes a lot off.
 Keep matching logic there.

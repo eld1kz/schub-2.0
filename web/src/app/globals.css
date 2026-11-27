@@ -1,21 +1,33 @@
 @import "tailwindcss";
 
-/* Direction A ("Document"): neutral inks and rules, one indigo accent */
+/* Direction A ("Document"): neutral inks and rules, one indigo accent. Each color is light-dark(light, dark): it
+   follows the color scheme, which is the visitor's system setting here, and can be set on any part of a page
+   (scheme-only-light, scheme-only-dark), as /design does to show both side by side. The colors are declared again
+   on those, because the build turns light-dark() into variables that resolve where they're declared. */
 :root {
-  --background: #ffffff;
-  --foreground: #141416;
-  --ink2: #3b3c41;
-  --muted: #5c5d64;
-  --border: #e7e6e2;
-  --line2: #cfcec9;
-  --chip: #f2f2ef;
-  --accent: oklch(0.49 0.2 275);
-  --accent-soft: oklch(0.95 0.03 275);
-  --on-accent: #ffffff;
-  /* The ring around people who are open to a team */
-  --open: oklch(0.62 0.17 150);
-  /* Native controls (date pickers, scrollbars) follow the theme */
   color-scheme: light dark;
+}
+:root,
+.scheme-only-light,
+.scheme-only-dark {
+  --background: light-dark(#ffffff, #141416);
+  --foreground: light-dark(#141416, #f2f2f0);
+  --ink2: light-dark(#3b3c41, #cdcdd1);
+  --muted: light-dark(#5c5d64, #a0a0a8);
+  --border: light-dark(#e7e6e2, #2a2a2e);
+  --line2: light-dark(#cfcec9, #3d3d43);
+  --chip: light-dark(#f2f2ef, #232327);
+  --accent: light-dark(oklch(0.49 0.2 275), oklch(0.75 0.13 275));
+  --accent-soft: light-dark(oklch(0.95 0.03 275), oklch(0.31 0.07 275));
+  --on-accent: light-dark(#ffffff, #111114);
+  /* The ring around people who are open to a team */
+  --open: light-dark(oklch(0.62 0.17 150), oklch(0.72 0.17 150));
+  /* Errors and destructive actions */
+  --danger: light-dark(#dc2626, #f87171);
+  /* Behind modals and sheets */
+  --scrim: light-dark(rgb(20 20 24 / 0.45), rgb(0 0 0 / 0.6));
+  /* Soft shadow under the landing page's sample frames */
+  --frame-shadow: light-dark(rgb(0 0 0 / 0.06), rgb(0 0 0 / 0.4));
 }
 
 @theme inline {
@@ -30,46 +42,162 @@
   --color-accent-soft: var(--accent-soft);
   --color-on-accent: var(--on-accent);
   --color-open: var(--open);
+  --color-danger: var(--danger);
+  --color-scrim: var(--scrim);
+  /* A QR code stays black on white in both themes, so phones can scan it */
+  --color-qr-ink: #141416;
+  --color-qr-paper: #ffffff;
+  --shadow-modal: 0 24px 60px rgb(0 0 0 / 0.22);
+  /* The line under the current tab */
+  --shadow-tab: inset 0 -2px 0 var(--accent);
+  --shadow-frame: 0 10px 15px -3px var(--frame-shadow), 0 4px 6px -4px var(--frame-shadow);
   --font-sans: var(--font-instrument-sans);
   --font-mono: var(--font-plex-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #141416;
-    --foreground: #f2f2f0;
-    --ink2: #cdcdd1;
-    --muted: #a0a0a8;
-    --border: #2a2a2e;
-    --line2: #3d3d43;
-    --chip: #232327;
-    --accent: oklch(0.75 0.13 275);
-    --accent-soft: oklch(0.31 0.07 275);
-    --on-accent: #111114;
-    --open: oklch(0.72 0.17 150);
-  }
+/* The fixed scales (DESIGN.md). Anything not listed here doesn't exist: Tailwind's own sizes are cleared. */
+@theme {
+  /* Type: 8 sizes and a display size for the landing page. Line height and letter spacing come with each. */
+  --text-*: initial;
+  --text-xs: 12px;
+  --text-xs--line-height: calc(16 / 12);
+  --text-meta: 13px;
+  --text-meta--line-height: 1.5;
+  --text-sm: 14px;
+  --text-sm--line-height: calc(20 / 14);
+  --text-base: 15px;
+  --text-base--line-height: 1.5;
+  --text-lg: 17px;
+  --text-lg--line-height: 1.5;
+  --text-xl: 20px;
+  --text-xl--line-height: 1.4;
+  --text-xl--letter-spacing: -0.01em;
+  --text-2xl: 28px;
+  --text-2xl--line-height: 1.1;
+  --text-2xl--letter-spacing: -0.02em;
+  --text-3xl: 36px;
+  --text-3xl--line-height: 1.1;
+  --text-3xl--letter-spacing: -0.03em;
+  --text-display: 56px;
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.03em;
+
+  --leading-*: initial;
+  --leading-tight: 1.1;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  --tracking-*: initial;
+  --tracking-tighter: -0.03em;
+  --tracking-tight: -0.02em;
+  --tracking-snug: -0.01em;
+  --tracking-normal: 0em;
+  /* Small uppercase mono labels */
+  --tracking-wide: 0.04em;
+
+  /* Radius: chips, controls, modals and sheets (plus rounded-full for avatars and dots) */
+  --radius-*: initial;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+
+  /* Spacing steps are Tailwind's 0.5, 1, 1.5, 2, 3, 4, 6, 8 (2 to 32px) and 12, 16, 20 for layout (48, 64, 80px);
+     the lint rule (eslint-rules/design-tokens.mjs) allows only those. `bar` is the room kept under a page on
+     phones for a bar pinned to the bottom of the screen. */
+  --spacing-bar: 7rem;
+  /* Room for the home indicator on phones without a home button: pb-safe, or at least 16px with pb-safe-4 */
+  --spacing-safe: env(safe-area-inset-bottom);
+  --spacing-safe-4: max(1rem, env(safe-area-inset-bottom));
+
+  /* Project images */
+  --aspect-photo: 3 / 2;
+
+  /* Widths: max-w-<name> */
+  --container-*: initial;
+  --container-note: 224px; /* a short line under a button */
+  --container-search: 320px;
+  --container-narrow: 360px; /* sign-in buttons, the share card */
+  --container-phone: 480px;
+  --container-measure: 520px; /* a paragraph beside a label column */
+  --container-form: 560px;
+  --container-prose: 600px;
+  --container-dialog: 680px;
+  --container-column: 752px; /* a page's single column */
+  --container-statement: 820px;
+  --container-page: 1176px;
+  --container-wide: 1440px;
+}
+
+/* Named layouts: the grid columns pages are built on, so no page writes its own (DESIGN.md) */
+@utility grid-cols-label {
+  /* A section's title column, then its content */
+  grid-template-columns: 152px minmax(0, 1fr);
+}
+@utility grid-cols-label-edit {
+  /* The same with the owner's pencil on the right */
+  grid-template-columns: 152px minmax(0, 1fr) 34px;
+}
+@utility grid-cols-label-sm {
+  /* A group's label beside its fields, in forms */
+  grid-template-columns: 120px minmax(0, 1fr);
+}
+@utility grid-cols-media {
+  /* An avatar or photo, then text */
+  grid-template-columns: auto minmax(0, 1fr);
+}
+@utility grid-cols-media-actions {
+  /* An avatar, text, then buttons */
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+@utility grid-cols-fill-auto {
+  /* Text, then something at its own width on the right */
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+@utility grid-cols-fill-short {
+  /* A field and a short one beside it (a year) */
+  grid-template-columns: minmax(0, 1fr) 7rem;
+}
+@utility grid-rows-auto-fill {
+  /* A first row at its own height; the second takes the rest */
+  grid-template-rows: auto minmax(0, 1fr);
+}
+@utility grid-cols-sidebar {
+  /* A page's main column and a 296px side column */
+  grid-template-columns: minmax(0, 1fr) 296px;
+}
+@utility grid-cols-hero {
+  /* The landing page's words and its sample previews */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
+}
+@utility grid-cols-hero-wide {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 580px);
+}
+@utility grid-cols-opportunity {
+  /* The opportunity list's columns: type, event, dates, place, people */
+  grid-template-columns: 120px minmax(0, 1fr) 200px 190px 200px;
+}
+@utility grid-cols-share {
+  /* The share dialog: the story image, then the ways to share it */
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+/* An icon inline with text sits on the text's baseline, like a letter */
+@utility align-icon {
+  vertical-align: -0.125em;
+}
+/* Fills the height its parent allows (a modal's form, so its middle scrolls) */
+@utility max-h-inherit {
+  max-height: inherit;
+}
+/* The story image's height in the share sheet and on the phone share page */
+@utility h-story-sheet {
+  height: min(44dvh, 391px);
+}
+@utility h-story-page {
+  height: min(58dvh, 560px);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-}
-
-@layer components {
-  .input {
-    @apply w-full rounded-md border border-line2 bg-transparent px-3 py-2 text-[15px] outline-none focus:border-accent focus:ring-1 focus:ring-accent;
-  }
-  .btn {
-    @apply inline-flex h-[38px] items-center justify-center rounded-md bg-accent px-5 text-sm font-semibold whitespace-nowrap text-on-accent hover:opacity-90 disabled:opacity-50;
-  }
-  .btn-outline {
-    @apply inline-flex h-[38px] items-center justify-center rounded-md border border-line2 bg-background px-4 text-sm font-semibold whitespace-nowrap hover:border-muted;
-  }
-  /* A skill: mono text on a flat chip */
-  .skill {
-    @apply rounded bg-chip px-2 py-0.5 font-mono text-[13px];
-  }
-  .label {
-    @apply mb-1.5 block text-[13px] text-ink2;
-  }
 }

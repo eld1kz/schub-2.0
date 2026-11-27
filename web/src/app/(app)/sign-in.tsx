@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { buttonClass } from "@/components/ui";
 
 // Goes to /login, which brings people back to this page after they sign in
-export function SignInButton({ label = "Sign in", className = "btn" }: { label?: string; className?: string }) {
+export function SignInButton({ label = "Sign in", className = buttonClass() }: { label?: string; className?: string }) {
   const pathname = usePathname();
   const search = useSearchParams().toString();
   const next = pathname + (search ? `?${search}` : "");
@@ -14,7 +15,7 @@ export function SignInButton({ label = "Sign in", className = "btn" }: { label?:
 // Shown in place of a form guests can't use
 export function SignInPrompt({ text }: { text: string }) {
   return (
-    <div className="max-w-md space-y-3 rounded-md border border-border p-4">
+    <div className="max-w-phone space-y-3 rounded-md border border-border p-4">
       <p className="text-sm">{text}</p>
       <SignInButton />
     </div>

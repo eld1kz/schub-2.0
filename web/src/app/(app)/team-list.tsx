@@ -6,8 +6,8 @@ import { storyVersion } from "@/lib/story";
 import { workModeLabel } from "@/lib/languages";
 import { AwardMark } from "./award-mark";
 import { EntryStatusLabel } from "./entry-status";
-import { Avatar } from "./avatar";
 import { ShareTeamButton } from "./share-team";
+import { Avatar, EmptyState, MonoLabel, Row, buttonClass } from "@/components/ui";
 
 // Overlapping avatars: each sits above the next, so the lead's ring is never covered
 const stack = ["z-30", "z-20", "z-10", "z-0"];
@@ -33,7 +33,7 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
   share?: boolean;
   empty: ReactNode;
 }) {
-  if (teams.length === 0) return <p className="py-8 text-sm text-ink2">{empty}</p>;
+  if (teams.length === 0) return <EmptyState>{empty}</EmptyState>;
   const day = today();
   return (
     <div>
@@ -48,73 +48,78 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
         const days = next ? daysUntil(next, day) : null;
         const leadName = lead ? (lead.id === userId ? "You" : lead.name || "Unnamed") : "";
         return (
-          <article key={t.id} className="flex items-start justify-between gap-6 border-b border-border py-5 sm:py-6">
-            <div className="flex min-w-0 flex-col gap-1.5">
-              {status && <EntryStatusLabel status={status} />}
-              {!event && <p className="font-mono text-[11px] font-medium tracking-[0.04em] text-ink2 uppercase sm:text-xs">
-                {t.opportunity ? (
-                  <>
-                    <Link href={`/opportunities/${t.opportunity.id}`} className="hover:text-accent">{t.opportunity.title}</Link>
-                    {days !== null && <span className={days <= SOON_DAYS ? "font-semibold text-accent" : ""}> · {daysLeft(days)}</span>}
-                  </>
+          <Row
+            key={t.id}
+            spacious
+            actions={
+              <>
+                {share && <ShareTeamButton teamId={t.id} title={t.title} version={storyVersion(t)} variant="icon" />}
+                {applied?.has(t.id) ? (
+                  <span className="hidden h-9 shrink-0 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold text-muted sm:inline-flex">Applied</span>
                 ) : (
-                  "Own project"
+                  <Link href={`/teams/${t.id}`} className={buttonClass({ variant: "secondary", size: "sm", showFrom: "sm" })}>
+                    {mine ? "Manage" : open.length > 0 ? "Ask to join" : "View"}
+                  </Link>
                 )}
-              </p>}
-              <h3 className="text-[17px] leading-snug font-semibold text-pretty sm:text-lg">
-                <Link href={`/teams/${t.id}`} className="hover:text-accent">{t.title}</Link>
-              </h3>
-              <p className="text-sm sm:text-[15px]">
-                {open.length > 0 ? (
-                  <><span className="text-muted">Needs:</span> {open.join(", ")}</>
-                ) : (
-                  // Roles still open, but the event they were for is over
-                  <span className="text-muted">{openRoles(t).length > 0 ? "Not recruiting: the event is over" : "All roles filled"}</span>
-                )}
-              </p>
-              {(t.languages.length > 0 || t.work_mode) && (
-                <p className="text-[13px] text-ink2 sm:text-sm">{[t.languages.join(", "), workModeLabel(t.work_mode)].filter(Boolean).join(" · ")}</p>
-              )}
-              {lead && (
-                <div className="mt-1 flex items-center gap-2.5 text-[13px] text-ink2 sm:text-sm">
-                  <span className="flex shrink-0 -space-x-1.5">
-                    {ordered.slice(0, 4).map((m, i) => (
-                      <Avatar
-                        key={m.id}
-                        url={m.avatar_url}
-                        name={m.name}
-                        className={`h-6 w-6 text-[9px] ring-2 ${stack[i]} ${connections.has(m.id) ? "ring-accent" : m.open_to_collaborate ? "ring-open" : "ring-background"}`}
-                        sizes="24px"
-                      />
-                    ))}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="font-medium text-foreground">{leadName}</span>
-                    {lead.id !== userId && awarded.has(lead.id) && <> <AwardMark /></>}
-                    {connected ? (
-                      <>, <span className="font-medium text-accent">your connection</span>{others > 0 && `, + ${others} ${others === 1 ? "other" : "others"}`}</>
-                    ) : (
-                      others > 0 && ` + ${others}`
-                    )}
-                    {universities.length > 0 && ` · ${universitiesLabel(universities)}`}
-                    {/* Phones have no button, so "Applied" goes here */}
-                    {applied?.has(t.id) && <span className="sm:hidden"> · Applied</span>}
-                    {toReview > 0 && <> · <Link href={`/teams/${t.id}#applications`} className="font-semibold text-accent hover:underline">{toReview} to review</Link></>}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5">
-              {share && <ShareTeamButton teamId={t.id} title={t.title} version={storyVersion(t)} variant="icon" />}
-              {applied?.has(t.id) ? (
-                <span className="hidden h-9 shrink-0 items-center justify-center rounded-md border border-border px-4 text-sm font-semibold text-muted sm:inline-flex">Applied</span>
+              </>
+            }
+          >
+            {status && <EntryStatusLabel status={status} />}
+            {!event && <MonoLabel as="p">
+              {t.opportunity ? (
+                <>
+                  <Link href={`/opportunities/${t.opportunity.id}`} className="hover:text-accent">{t.opportunity.title}</Link>
+                  {days !== null && <span className={days <= SOON_DAYS ? "font-semibold text-accent" : ""}> · {daysLeft(days)}</span>}
+                </>
               ) : (
-                <Link href={`/teams/${t.id}`} className="btn-outline hidden h-9 shrink-0 sm:inline-flex">
-                  {mine ? "Manage" : open.length > 0 ? "Ask to join" : "View"}
-                </Link>
+                "Own project"
               )}
-            </div>
-          </article>
+            </MonoLabel>}
+            <h3 className="text-lg leading-snug font-semibold text-pretty">
+              <Link href={`/teams/${t.id}`} className="hover:text-accent">{t.title}</Link>
+            </h3>
+            <p className="text-sm sm:text-base">
+              {open.length > 0 ? (
+                <><span className="text-muted">Needs:</span> {open.join(", ")}</>
+              ) : (
+                // Roles still open, but the event they were for is over
+                <span className="text-muted">{openRoles(t).length > 0 ? "Not recruiting: the event is over" : "All roles filled"}</span>
+              )}
+            </p>
+            {(t.languages.length > 0 || t.work_mode) && (
+              <p className="text-meta text-ink2 sm:text-sm">{[t.languages.join(", "), workModeLabel(t.work_mode)].filter(Boolean).join(" · ")}</p>
+            )}
+            {lead && (
+              <div className="mt-1 flex items-center gap-2 text-meta text-ink2 sm:text-sm">
+                <span className="flex shrink-0 -space-x-1.5">
+                  {ordered.slice(0, 4).map((m, i) => (
+                    <Avatar
+                      key={m.id}
+                      url={m.avatar_url}
+                      name={m.name}
+                      size="xs"
+                      stacked
+                      ring={connections.has(m.id) ? "connection" : m.open_to_collaborate ? "open" : null}
+                      className={stack[i]}
+                    />
+                  ))}
+                </span>
+                <span className="min-w-0">
+                  <span className="font-medium text-foreground">{leadName}</span>
+                  {lead.id !== userId && awarded.has(lead.id) && <> <AwardMark /></>}
+                  {connected ? (
+                    <>, <span className="font-medium text-accent">your connection</span>{others > 0 && `, + ${others} ${others === 1 ? "other" : "others"}`}</>
+                  ) : (
+                    others > 0 && ` + ${others}`
+                  )}
+                  {universities.length > 0 && ` · ${universitiesLabel(universities)}`}
+                  {/* Phones have no button, so "Applied" goes here */}
+                  {applied?.has(t.id) && <span className="sm:hidden"> · Applied</span>}
+                  {toReview > 0 && <> · <Link href={`/teams/${t.id}#applications`} className="font-semibold text-accent hover:underline">{toReview} to review</Link></>}
+                </span>
+              </div>
+            )}
+          </Row>
         );
       })}
     </div>

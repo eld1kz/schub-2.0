@@ -8,6 +8,7 @@ import { PersonRow } from "./person-row";
 import { PeopleFilters } from "./people-filters";
 import { peopleHref, readPeopleQuery } from "./people-query";
 import { suitedModes, workStyleLine } from "@/lib/languages";
+import { Chip, ChipList, buttonClass } from "@/components/ui";
 
 const chipCount = 12;
 const pageSize = 20;
@@ -78,7 +79,7 @@ export default async function PeoplePage(props: PageProps<"/people">) {
               key={s}
               href={at({ skills: on ? selected.filter((x) => x !== s) : [...selected, s] })}
               aria-current={on ? "true" : undefined}
-              className={`rounded px-2.5 py-1 text-sm ${on ? "bg-foreground font-medium text-background" : "border border-line2 text-ink2 hover:border-muted hover:text-foreground"}`}
+              className={`rounded-sm px-2 py-1 text-sm ${on ? "bg-foreground font-medium text-background" : "border border-line2 text-ink2 hover:border-muted hover:text-foreground"}`}
             >
               {s}
             </Link>
@@ -89,7 +90,7 @@ export default async function PeoplePage(props: PageProps<"/people">) {
 
       {matches.length === 0 ? (
         <div className="flex flex-col items-start gap-2 border-t border-border py-8">
-          <p className="text-[15px] font-medium">{filtered ? "No one matches these filters" : "No one new to discover right now"}</p>
+          <p className="text-base font-medium">{filtered ? "No one matches these filters" : "No one new to discover right now"}</p>
           {filtered ? (
             <Link href="/people" className="text-sm font-semibold text-accent hover:underline">Clear filters</Link>
           ) : (
@@ -111,29 +112,29 @@ export default async function PeoplePage(props: PageProps<"/people">) {
                 open={p.open_to_collaborate}
                 actions={
                   <>
-                    <span className="text-[13px] text-muted tabular-nums">{p.score}% match</span>
-                    <ConnectButton profileId={p.id} status={statusWith(p.id)} isGuest={isGuest} className="btn-outline h-9" />
+                    <span className="text-meta text-muted tabular-nums">{p.score}% match</span>
+                    <ConnectButton profileId={p.id} status={statusWith(p.id)} isGuest={isGuest} className={buttonClass({ variant: "secondary", size: "sm" })} />
                   </>
                 }
               >
-                {p.university && <p className="text-[13px] text-muted">{p.university}</p>}
-                {workStyleLine(p) && <p className="text-[13px] text-ink2">{workStyleLine(p)}</p>}
+                {p.university && <p className="text-meta text-muted">{p.university}</p>}
+                {workStyleLine(p) && <p className="text-meta text-ink2">{workStyleLine(p)}</p>}
                 {(skills.length > 0 || p.reason) && (
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                     {skills.length > 0 && (
-                      <ul className="flex flex-wrap gap-1.5">
-                        {skills.map((s) => <li key={s} className="skill px-1.5 text-xs">{s}</li>)}
-                      </ul>
+                      <ChipList>
+                        {skills.map((s) => <Chip key={s}>{s}</Chip>)}
+                      </ChipList>
                     )}
-                    {p.reason && <p className="text-[13px] font-medium text-accent">{p.reason}</p>}
+                    {p.reason && <p className="text-meta font-medium text-accent">{p.reason}</p>}
                   </div>
                 )}
                 {p.open_to_collaborate && (
-                  <p className="text-[13px]">
+                  <p className="text-meta">
                     {p.wanted_roles.length > 0 ? <><span className="text-muted">Open to:</span> {p.wanted_roles.join(", ")}</> : <span className="text-muted">Open to a team</span>}
                   </p>
                 )}
-                {!p.open_to_collaborate && <p className="text-[13px] text-muted">Not open to a team</p>}
+                {!p.open_to_collaborate && <p className="text-meta text-muted">Not open to a team</p>}
               </PersonRow>
             );
           })}
@@ -141,7 +142,7 @@ export default async function PeoplePage(props: PageProps<"/people">) {
       )}
 
       {pages > 1 && (
-        <nav aria-label="Pages" className="flex items-center justify-between border-t border-border pt-5 text-sm">
+        <nav aria-label="Pages" className="flex items-center justify-between border-t border-border pt-4 text-sm">
           {page > 1 ? <Link href={at({ page: page - 1 })} className="font-semibold text-accent hover:underline">Previous</Link> : <span />}
           <span className="text-muted tabular-nums">Page {page} of {pages}</span>
           {page < pages ? <Link href={at({ page: page + 1 })} className="font-semibold text-accent hover:underline">Next</Link> : <span />}

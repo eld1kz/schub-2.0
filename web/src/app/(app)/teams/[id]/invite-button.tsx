@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { inviteToTeam } from "@/app/actions";
+import { ErrorText, buttonClass } from "@/components/ui";
 
 // Sends an invitation for one role; the page then shows them under "Invited". Errors (like the daily cap) show below.
 export function InviteButton({ teamId, personId, personName, role }: { teamId: string; personId: string; personName: string; role: string }) {
@@ -19,11 +20,11 @@ export function InviteButton({ teamId, personId, personName, role }: { teamId: s
             setError(result.error ?? "");
           })
         }
-        className="h-9 rounded-md border border-accent px-3 text-[13px] font-semibold whitespace-nowrap text-accent hover:bg-accent-soft disabled:opacity-50"
+        className={buttonClass({ variant: "accent", size: "sm" })}
       >
         {sending ? "Inviting..." : "Invite"}
       </button>
-      {error && <span role="alert" className="max-w-[220px] text-right text-[13px] text-red-600 dark:text-red-400">{error}</span>}
+      {error && <ErrorText as="span" className="max-w-note text-right">{error}</ErrorText>}
     </span>
   );
 }

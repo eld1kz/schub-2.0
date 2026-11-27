@@ -1,0 +1,61 @@
+# Every push and pull request: lint, types and unit tests, then the database, end-to-end and screenshot tests
+# against a local Supabase started on the runner (npm run db:local). Nothing here talks to the real project.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: web
+
+jobs:
+  checks:
+    name: Lint, types, unit tests
+    runs-on: ubuntu-latest
+    env:
+      # next.config.ts builds the image domain from it; typegen only reads the config and never connects
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx eslint src eslint-rules
+      # Route types (PageProps, LayoutProps) come from Next
+      - run: npx next typegen
+      - run: npx tsc --noEmit
+      - run: npm test
+
+  integration:
+    name: Database, end-to-end and screenshot tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # Each starts from a fresh local database (scripts/db-local.sh)
+      - run: npm run test:db
+      - run: npm run test:e2e
+      # In the Playwright Docker image, against the committed screenshots in tests/visual/__screenshots__
+      - run: npm run test:visual
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: web/test-results
+          retention-days: 7

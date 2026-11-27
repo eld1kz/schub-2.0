@@ -13,8 +13,8 @@ export function PhotoField({ current }: { current: ReactNode }) {
   }, [preview]);
 
   return (
-    <label className="group flex w-24 shrink-0 cursor-pointer flex-col items-center gap-1.5 rounded-lg text-center has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent">
-      <span className="relative block h-20 w-20 overflow-hidden rounded-lg transition-opacity group-hover:opacity-80">
+    <label className="group flex w-24 shrink-0 cursor-pointer flex-col items-center gap-1.5 rounded-md text-center has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent">
+      <span className="relative block h-20 w-20 overflow-hidden rounded-md transition-opacity group-hover:opacity-80">
         {preview ? <Image src={preview} alt="New photo preview" fill unoptimized className="object-cover" /> : current}
       </span>
       <span className="text-xs font-medium text-accent">{preview ? "New photo" : "Change photo"}</span>

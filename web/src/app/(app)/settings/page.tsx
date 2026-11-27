@@ -1,8 +1,9 @@
 import { requireUser } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
 import { SignInPrompt } from "../sign-in";
-import { KeyValue, Section } from "../u/[id]/profile-parts";
+import { KeyValue } from "../u/[id]/profile-parts";
 import { DeleteAccount } from "./delete-account";
+import { PageHeader, Section, buttonClass } from "@/components/ui";
 
 export const instant = false;
 
@@ -19,8 +20,8 @@ export default async function SettingsPage() {
   const linked = new Set((auth.user?.identities ?? []).map((i) => i.provider));
 
   return (
-    <div className="max-w-[752px]">
-      <h1 className="pb-8 text-[28px] font-semibold tracking-[-0.02em] sm:pb-10 sm:text-4xl sm:tracking-[-0.03em]">Settings</h1>
+    <div className="max-w-column">
+      <PageHeader title="Settings" className="pb-8" />
 
       <Section title="Account">
         <div className="flex flex-col gap-3">
@@ -31,14 +32,14 @@ export default async function SettingsPage() {
             </KeyValue>
           ))}
           <form action={signOut} className="pt-2">
-            <button className="btn-outline">Sign out</button>
+            <button className={buttonClass({ variant: "secondary" })}>Sign out</button>
           </form>
         </div>
       </Section>
 
       <Section title="Danger zone">
         <div className="flex flex-col gap-2">
-          <p className="text-[15px] text-ink2">Delete your account and everything on it. Teams you own go to a teammate.</p>
+          <p className="text-base text-ink2">Delete your account and everything on it. Teams you own go to a teammate.</p>
           <DeleteAccount blocked={(blocked as string | null) ?? ""} />
         </div>
       </Section>

@@ -1,0 +1,45 @@
+# Imports opportunities from Hack Club, Kaggle, K-Startup and Luma into the real Supabase project, twice a day
+# (web/scripts/import-opportunities.ts). The repository is public, so this log is public: the script prints only counts
+# per source and short, redacted errors, never keys or event data. Secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_URL               the project's URL
+#   SUPABASE_SERVICE_ROLE_KEY  the service role key; it skips row level security, so it lives only here
+#   KAGGLE_API_TOKEN           optional; without it Kaggle is skipped
+#   DATA_GO_KR_SERVICE_KEY     optional; without it K-Startup is skipped
+name: Import opportunities
+
+on:
+  schedule:
+    # 09:00 and 21:00 in Korea
+    - cron: "0 0,12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: import-opportunities
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund --loglevel=error
+      - run: npm run import:opportunities --silent
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}

@@ -3,17 +3,16 @@ import Link from "next/link";
 import { answerAwardTag } from "@/app/actions";
 import { confirmedTeammates, formedOnSchub, placementLabel, type Award, type AwardPerson } from "@/lib/awards";
 import { formatMonth, webLink } from "@/lib/portfolio";
-import { Avatar } from "../../avatar";
 import type { AwardOptions } from "./award-fields";
-import { EmptyPrompt, Section } from "./profile-parts";
 import { RemoveMeButton } from "./remove-me-button";
 import { AwardEdit } from "./section-edits";
+import { Avatar, EmptyState, MonoLabel, Section, buttonClass } from "@/components/ui";
 
 const outLink = "font-medium text-accent hover:underline";
 
 // "1ST PLACE", in mono caps and the accent color
 export function Placement({ placement, className = "" }: { placement: string; className?: string }) {
-  return <span className={`font-mono text-xs font-medium tracking-[0.04em] text-accent uppercase ${className}`}>{placementLabel(placement)}</span>;
+  return <MonoLabel tone="accent" className={className}>{placementLabel(placement)}</MonoLabel>;
 }
 
 // The event's name, linked when it's a Schub opportunity
@@ -26,7 +25,7 @@ export function TrustLabels({ award: a, className = "" }: { award: Award; classN
   const labels = [confirmedTeammates(a).length > 0 && "Confirmed by teammates", formedOnSchub(a) && "Team formed on Schub"].filter(Boolean);
   if (labels.length === 0) return null;
   return (
-    <p className={`flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-muted ${className}`}>
+    <p className={`flex flex-wrap gap-x-4 gap-y-1 text-meta text-muted ${className}`}>
       {labels.map((l) => (
         <span key={String(l)} className="flex items-center gap-1.5">
           <svg viewBox="0 0 16 16" aria-hidden className="h-3 w-3 fill-none stroke-current" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -51,7 +50,7 @@ function PeopleStack({ people }: { people: AwardPerson[] }) {
       {people.map((p) => (
         <li key={p.id} className="-mr-1.5">
           <Link href={`/u/${p.id}`} title={p.name || "Unnamed"} className="block rounded-full border-2 border-background hover:opacity-80">
-            <Avatar url={p.avatar_url} name={p.name} className="h-7 w-7 text-[10px]" sizes="28px" />
+            <Avatar url={p.avatar_url} name={p.name} size="sm" />
           </Link>
         </li>
       ))}
@@ -65,13 +64,13 @@ export function AwardItem({ award: a, profileId, edit, waiting }: { award: Award
   const others = awardPeople(a, profileId);
   const proof = webLink(a.proof_url);
   return (
-    <article id={`award-${a.id}`} className="flex flex-col gap-1 border-b border-border pb-5 sm:pb-6 [&+&]:pt-5 sm:[&+&]:pt-6">
+    <article id={`award-${a.id}`} className="flex flex-col gap-1 border-b border-border pb-4 sm:pb-6 [&+&]:pt-4 sm:[&+&]:pt-6">
       <div className="flex items-start justify-between gap-4">
         <Placement placement={a.placement} className="pt-0.5" />
         {edit && <span className="-my-2">{edit}</span>}
       </div>
-      <h3 className="text-[15px] font-semibold sm:text-[17px]"><EventName award={a} /></h3>
-      <p className="text-[13px] text-ink2 sm:text-sm">
+      <h3 className="text-base font-semibold sm:text-lg"><EventName award={a} /></h3>
+      <p className="text-meta text-ink2 sm:text-sm">
         {[a.prize_name, formatMonth(a.awarded_on)].filter(Boolean).join(" · ")}
         {byTeammate && (
           <>
@@ -80,9 +79,9 @@ export function AwardItem({ award: a, profileId, edit, waiting }: { award: Award
           </>
         )}
       </p>
-      {a.description && <p className="mt-1 max-w-[600px] text-sm leading-normal whitespace-pre-wrap sm:text-[15px]">{a.description}</p>}
+      {a.description && <p className="mt-1 max-w-prose text-sm leading-normal whitespace-pre-wrap sm:text-base">{a.description}</p>}
       {(others.length > 0 || a.project || proof) && (
-        <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           {others.length > 0 && <PeopleStack people={others} />}
           {a.project && (
             <span>
@@ -94,7 +93,7 @@ export function AwardItem({ award: a, profileId, edit, waiting }: { award: Award
         </div>
       )}
       <TrustLabels award={a} className="mt-1" />
-      {waiting > 0 && <p className="text-[13px] text-muted">Waiting for {waiting} {waiting === 1 ? "teammate" : "teammates"} to confirm. Only you see this.</p>}
+      {waiting > 0 && <p className="text-meta text-muted">Waiting for {waiting} {waiting === 1 ? "teammate" : "teammates"} to confirm. Only you see this.</p>}
     </article>
   );
 }
@@ -114,9 +113,9 @@ export function AwardsSection({ awards, profileId, canEdit, options }: { awards:
           })}
         </div>
       ) : (
-        <EmptyPrompt title="Add an award" text="Hackathon wins, finals, track prizes. Link the event and tag your teammates so they can confirm it.">
-          <AwardEdit options={options} trigger="button" />
-        </EmptyPrompt>
+        <EmptyState title="Add an award" action={<AwardEdit options={options} trigger="button" />}>
+          Hackathon wins, finals, track prizes. Link the event and tag your teammates so they can confirm it.
+        </EmptyState>
       )}
     </Section>
   );
@@ -128,13 +127,13 @@ export function PendingTags({ awards }: { awards: Award[] }) {
     <section aria-label="Awards to confirm" className="mb-8 flex flex-col border-b border-line2 sm:mb-12">
       {awards.map((a) => (
         <div key={a.id} className="flex flex-col gap-3 border-t border-border py-4 first:border-t-0 first:pt-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-          <p className="text-[15px] leading-normal">
+          <p className="text-base leading-normal">
             <Link href={`/u/${a.user_id}`} className="font-semibold hover:text-accent">{a.owner?.name || "Someone"}</Link> tagged you in{" "}
             <span className="font-semibold">{placementLabel(a.placement)}</span>, <EventName award={a} />.
           </p>
           <div className="flex shrink-0 gap-2">
-            <form action={answerAwardTag.bind(null, a.id, "confirmed")}><button className="btn h-9 px-4">Confirm</button></form>
-            <form action={answerAwardTag.bind(null, a.id, "declined")}><button className="btn-outline h-9">Decline</button></form>
+            <form action={answerAwardTag.bind(null, a.id, "confirmed")}><button className={buttonClass({ size: "sm" })}>Confirm</button></form>
+            <form action={answerAwardTag.bind(null, a.id, "declined")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
           </div>
         </div>
       ))}
@@ -145,7 +144,7 @@ export function PendingTags({ awards }: { awards: Award[] }) {
 // One line under the headline: the best award
 export function HeroAward({ award: a }: { award: Award }) {
   return (
-    <a href="#awards" className="flex w-fit flex-wrap items-baseline gap-x-2.5 gap-y-1 text-sm hover:opacity-80 sm:text-[15px]">
+    <a href="#awards" className="flex w-fit flex-wrap items-baseline gap-x-2 gap-y-1 text-sm hover:opacity-80 sm:text-base">
       <Placement placement={a.placement} />
       <span className="font-medium">{a.opportunity?.title ?? a.event_name}</span>
       <span className="text-muted tabular-nums">{formatMonth(a.awarded_on)}</span>

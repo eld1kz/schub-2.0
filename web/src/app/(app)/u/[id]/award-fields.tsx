@@ -3,20 +3,18 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { searchPeople, type PersonResult } from "@/app/actions";
 import { AWARD_DESCRIPTION_MAX, AWARD_TEAMMATES_MAX, PLACEMENTS, placementLabel, type Award } from "@/lib/awards";
-import { Avatar } from "../../avatar";
-import { Select } from "../../select";
 import { FieldError } from "./edit-dialog";
-import { Field, nextOnEnter } from "./experience-fields";
+import { nextOnEnter } from "./experience-fields";
 import { monthOptions, yearOptions } from "./period-fields";
+import { Avatar, Combobox, Field, FieldLabel, Input, Textarea, type ComboboxHandle } from "@/components/ui";
 
 export type AwardOptions = { opportunities: { id: string; title: string }[]; projects: { id: string; title: string }[] };
 
 type Teammate = { id: string; name: string; avatar_url: string; status?: "pending" | "confirmed" };
 
-const input = "input h-11 sm:h-10";
 const placementOptions = PLACEMENTS.map((p) => ({ value: p, label: placementLabel(p) }));
 const shownMatches = 6;
-const option = "block w-full truncate px-3 py-2.5 text-left text-[15px] hover:bg-chip focus-visible:bg-chip focus-visible:outline-none";
+const option = "block w-full truncate px-3 py-2 text-left text-base hover:bg-chip focus-visible:bg-chip focus-visible:outline-none";
 
 // Enter in a search box picks its first option instead of moving on
 function pickOnEnter(e: KeyboardEvent<HTMLInputElement>, pick: () => void) {
@@ -29,8 +27,8 @@ function pickOnEnter(e: KeyboardEvent<HTMLInputElement>, pick: () => void) {
 export function AwardFields({ award: a, opportunities, projects }: { award?: Award } & AwardOptions) {
   const root = useRef<HTMLDivElement>(null);
   const eventInput = useRef<HTMLInputElement>(null);
-  const placementRef = useRef<HTMLSelectElement>(null);
-  const monthRef = useRef<HTMLSelectElement>(null);
+  const placementRef = useRef<ComboboxHandle>(null);
+  const monthRef = useRef<ComboboxHandle>(null);
 
   // A Schub opportunity ({ id, title }), or a typed-in name (id "")
   const [event, setEvent] = useState(a ? { id: a.opportunity?.id ?? "", title: a.opportunity?.title ?? a.event_name } : null);
@@ -91,15 +89,15 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
   }
 
   return (
-    <div ref={root} onKeyDown={nextOnEnter} className="space-y-5 py-6">
+    <div ref={root} onKeyDown={nextOnEnter} className="space-y-4 py-6">
       <Field id="award-event" label="Event" required>
         {event ? (
           <div className="flex h-11 items-center justify-between gap-3 rounded-md border border-line2 px-3 sm:h-10">
             <input type="hidden" name="opportunity_id" value={event.id} />
             <input type="hidden" name="event_name" value={event.title} />
-            <span className="min-w-0 truncate text-[15px]">{event.title}</span>
+            <span className="min-w-0 truncate text-base">{event.title}</span>
             <span className="flex shrink-0 items-center gap-3">
-              <span className="hidden text-[13px] text-muted sm:inline">{event.id ? "On Schub" : "Typed in"}</span>
+              <span className="hidden text-meta text-muted sm:inline">{event.id ? "On Schub" : "Typed in"}</span>
               <button
                 type="button"
                 onClick={() => {
@@ -114,7 +112,7 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
           </div>
         ) : (
           <>
-            <input
+            <Input
               ref={eventInput}
               id="award-event"
               value={eventQuery}
@@ -122,7 +120,6 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
               onKeyDown={(e) => pickOnEnter(e, () => chooseEvent(matches[0] ?? { id: "", title: q }))}
               placeholder="Search opportunities on Schub"
               autoComplete="off"
-              className={input}
             />
             {q && (
               <ul className="mt-1.5 divide-y divide-border overflow-hidden rounded-md border border-line2">
@@ -142,45 +139,45 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
       </Field>
 
       <Field id="award-placement" label="Placement" required>
-        <Select id="award-placement" name="placement" placeholder="Choose a placement" value={placement} onChange={setPlacement} options={placementOptions} selectRef={placementRef} />
+        <Combobox id="award-placement" label="Placement" labelled name="placement" placeholder="Choose a placement" value={placement} onChange={setPlacement} options={placementOptions} ref={placementRef} />
         <FieldError field="placement" />
       </Field>
 
       <Field id="award-prize" label="Prize name">
-        <input id="award-prize" name="prize_name" defaultValue={a?.prize_name} maxLength={100} placeholder="Best use of AI track" className={input} />
+        <Input id="award-prize" name="prize_name" defaultValue={a?.prize_name} maxLength={100} placeholder="Best use of AI track" />
       </Field>
 
       <fieldset>
-        <legend className="mb-1.5 block text-sm font-medium">Date<span aria-hidden className="ml-0.5 text-accent">*</span></legend>
+        <FieldLabel as="legend" required>Date</FieldLabel>
         <input type="hidden" name="awarded_on" value={month && year ? `${year}-${month}` : ""} />
         <div className="grid grid-cols-2 gap-3">
-          <Select label="Month" placeholder="Month" value={month} onChange={setMonth} options={monthOptions} selectRef={monthRef} />
-          <Select label="Year" placeholder="Year" value={year} onChange={setYear} options={yearOptions(new Date().getFullYear())} />
+          <Combobox label="Month" placeholder="Month" value={month} onChange={setMonth} options={monthOptions} ref={monthRef} />
+          <Combobox label="Year" placeholder="Year" value={year} onChange={setYear} options={yearOptions(new Date().getFullYear())} />
         </div>
         <FieldError field="awarded_on" message={future ? "Pick a month that has already passed." : ""} />
       </fieldset>
 
       <Field id="award-project" label="Project">
         {projects.length > 0 ? (
-          <Select id="award-project" name="project_id" placeholder="No project" value={project} onChange={setProject} options={projects.map((p) => ({ value: p.id, label: p.title }))} required={false} />
+          <Combobox id="award-project" label="Project" labelled name="project_id" placeholder="No project" value={project} onChange={setProject} options={projects.map((p) => ({ value: p.id, label: p.title }))} required={false} />
         ) : (
           <p className="text-sm text-ink2">Add the project to your profile first, then link it here.</p>
         )}
       </Field>
 
       <div>
-        <label htmlFor="award-teammates" className="mb-1.5 block text-sm font-medium">Teammates</label>
+        <FieldLabel htmlFor="award-teammates">Teammates</FieldLabel>
         {teammates.length > 0 && (
           <ul className="mb-3 flex flex-col">
             {teammates.map((t) => (
               <li key={t.id} className="flex items-center justify-between gap-3 border-b border-border py-2">
                 <input type="hidden" name="teammates" value={t.id} />
-                <span className="flex min-w-0 items-center gap-2.5">
-                  <Avatar url={t.avatar_url} name={t.name} className="h-7 w-7 text-[10px]" sizes="28px" />
-                  <span className="truncate text-[15px]">{t.name || "Unnamed"}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  <Avatar url={t.avatar_url} name={t.name} size="sm" />
+                  <span className="truncate text-base">{t.name || "Unnamed"}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-4">
-                  {t.status && <span className="text-[13px] text-muted">{t.status === "confirmed" ? "Confirmed" : "Not confirmed yet"}</span>}
+                  {t.status && <span className="text-meta text-muted">{t.status === "confirmed" ? "Confirmed" : "Not confirmed yet"}</span>}
                   <button type="button" onClick={() => setTeammates(teammates.filter((x) => x.id !== t.id))} aria-label={`Remove ${t.name || "teammate"}`} className="text-sm text-ink2 hover:text-foreground">
                     Remove
                   </button>
@@ -191,7 +188,7 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
         )}
         {teammates.length < AWARD_TEAMMATES_MAX && (
           <>
-            <input
+            <Input
               id="award-teammates"
               value={peopleQuery}
               onChange={(e) => {
@@ -201,15 +198,14 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
               onKeyDown={(e) => pickOnEnter(e, () => found[0] && addTeammate(found[0]))}
               placeholder="Search your connections and teammates"
               autoComplete="off"
-              className={input}
             />
             {people && (
               <ul className="mt-1.5 divide-y divide-border overflow-hidden rounded-md border border-line2">
-                {found.length === 0 && <li className="px-3 py-2.5 text-sm text-muted">None of your connections or teammates has that name.</li>}
+                {found.length === 0 && <li className="px-3 py-2 text-sm text-muted">None of your connections or teammates has that name.</li>}
                 {found.map((p) => (
                   <li key={p.id}>
-                    <button type="button" onClick={() => addTeammate(p)} className={`${option} flex items-center gap-2.5`}>
-                      <Avatar url={p.avatar_url} name={p.name} className="h-7 w-7 text-[10px]" sizes="28px" />
+                    <button type="button" onClick={() => addTeammate(p)} className={`${option} flex items-center gap-2`}>
+                      <Avatar url={p.avatar_url} name={p.name} size="sm" />
                       <span className="min-w-0 truncate">
                         {p.name}
                         {p.headline && <span className="text-muted"> · {p.headline}</span>}
@@ -221,16 +217,16 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
             )}
           </>
         )}
-        <p className="mt-1.5 text-[13px] text-muted">They get a notification, and the award shows on their profile once they confirm.</p>
+        <p className="mt-1.5 text-meta text-muted">They get a notification, and the award shows on their profile once they confirm.</p>
         <FieldError field="teammates" />
       </div>
 
       <Field id="award-proof" label="Proof link">
-        <input id="award-proof" name="proof_url" defaultValue={a?.proof_url} placeholder="Announcement or certificate, https://" className={input} />
+        <Input id="award-proof" name="proof_url" defaultValue={a?.proof_url} placeholder="Announcement or certificate, https://" />
       </Field>
 
       <Field id="award-description" label="Description">
-        <textarea
+        <Textarea
           id="award-description"
           name="description"
           rows={3}
@@ -238,11 +234,10 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
           onChange={(e) => setDescription(e.target.value)}
           maxLength={AWARD_DESCRIPTION_MAX}
           placeholder="What you built and what the judges liked."
-          className="input resize-none leading-normal"
         />
         <div className="mt-1 flex justify-between gap-4">
           <FieldError field="description" />
-          <span className="ml-auto text-[13px] text-muted tabular-nums">{description.length}/{AWARD_DESCRIPTION_MAX}</span>
+          <span className="ml-auto text-meta text-muted tabular-nums">{description.length}/{AWARD_DESCRIPTION_MAX}</span>
         </div>
       </Field>
     </div>

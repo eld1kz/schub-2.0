@@ -5,7 +5,7 @@ import { completeOnboarding } from "@/app/actions";
 import { GOALS } from "@/lib/goals";
 import { LANGUAGES } from "@/lib/languages";
 import { SkillPicker } from "@/app/(app)/profile/skill-picker";
-import { Select } from "@/app/(app)/select";
+import { CheckChip, Combobox, ErrorText, FieldLabel, Input, buttonClass } from "@/components/ui";
 
 const years = [2025, 2026, 2027, 2028, 2029, 2030];
 const yearOptions = years.map((y) => ({ value: String(y), label: String(y) }));
@@ -21,7 +21,7 @@ const steps = [
 type Props = { needsName: boolean; university: string; graduationYear: number; skills: string[]; goals: string[]; languages: string[]; error?: string };
 
 function FieldMessage({ text }: { text: string }) {
-  return text ? <p role="alert" className="mt-1.5 text-[13px] text-red-600 dark:text-red-400">{text}</p> : null;
+  return text ? <ErrorText under>{text}</ErrorText> : null;
 }
 
 // One form across three screens: earlier steps are only hidden, so Finish submits everything at once
@@ -66,82 +66,66 @@ export function OnboardingFlow({ needsName, university, graduationYear, skills, 
         <div className="flex gap-1.5" aria-hidden>
           {steps.map((s, i) => <span key={s.title} className={`h-1 flex-1 rounded-full ${i <= step ? "bg-accent" : "bg-line2"}`} />)}
         </div>
-        <p className="font-mono text-xs font-medium tracking-[0.04em] text-muted">STEP {step + 1} OF {steps.length}</p>
-        <h1 className="text-[28px] leading-[1.1] font-semibold tracking-[-0.02em] sm:text-4xl sm:tracking-[-0.03em]">{current.title}</h1>
-        <p className="text-[15px] text-ink2 sm:text-base">{current.note}</p>
+        <p className="font-mono text-xs font-medium tracking-wide text-muted">STEP {step + 1} OF {steps.length}</p>
+        <h1 className="text-2xl leading-tight font-semibold tracking-tight sm:text-3xl sm:tracking-tighter">{current.title}</h1>
+        <p className="text-base text-ink2">{current.note}</p>
       </div>
 
-      <div className={step === 0 ? "space-y-5" : "hidden"}>
+      <div className={step === 0 ? "space-y-4" : "hidden"}>
         {needsName && (
           <div>
-            <label htmlFor="name" className="mb-1.5 block text-sm font-medium">
-              Name<span aria-hidden className="ml-0.5 text-accent">*</span>
-            </label>
-            <input id="name" name="name" maxLength={80} autoFocus autoComplete="name" placeholder="Your full name" className="input h-11 sm:h-10" />
+            <FieldLabel htmlFor="name" required>Name</FieldLabel>
+            <Input id="name" name="name" maxLength={80} autoFocus autoComplete="name" placeholder="Your full name" />
             {step === 0 && problem === noName && <FieldMessage text={problem} />}
           </div>
         )}
         <div>
-          <label htmlFor="university" className="mb-1.5 block text-sm font-medium">
-            University<span aria-hidden className="ml-0.5 text-accent">*</span>
-          </label>
-          <input id="university" name="university" defaultValue={university} maxLength={120} autoFocus={!needsName} placeholder="Korea University" className="input h-11 sm:h-10" />
+          <FieldLabel htmlFor="university" required>University</FieldLabel>
+          <Input id="university" name="university" defaultValue={university} maxLength={120} autoFocus={!needsName} placeholder="Korea University" />
           {step === 0 && problem !== noName && <FieldMessage text={problem} />}
         </div>
         <div>
-          <label htmlFor="graduation_year" className="mb-1.5 block text-sm font-medium">
-            Graduation year <span className="font-normal text-muted">(optional)</span>
-          </label>
-          <Select id="graduation_year" name="graduation_year" placeholder="Select a year" value={year} onChange={setYear} options={yearOptions} required={false} />
+          <FieldLabel htmlFor="graduation_year" optional>Graduation year</FieldLabel>
+          <Combobox id="graduation_year" label="Graduation year" labelled name="graduation_year" placeholder="Select a year" value={year} onChange={setYear} options={yearOptions} required={false} />
         </div>
         <fieldset>
-          <legend className="mb-1.5 block text-sm font-medium">
-            Languages you work in <span className="font-normal text-muted">(optional)</span>
-          </legend>
+          <FieldLabel as="legend" optional>Languages you work in</FieldLabel>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
             {LANGUAGES.map((l) => (
-              <label
-                key={l}
-                className="flex min-h-10 cursor-pointer items-center justify-center rounded-md border border-line2 px-2 py-2 text-center text-sm text-ink2 transition-colors hover:border-muted has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:text-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent"
-              >
-                <input type="checkbox" name="languages" value={l} defaultChecked={languages.includes(l)} className="sr-only" />
-                {l}
-              </label>
+              <CheckChip key={l} name="languages" value={l} defaultChecked={languages.includes(l)}>{l}</CheckChip>
             ))}
           </div>
         </fieldset>
       </div>
 
       <div className={step === 1 ? "[&_input[type=search]]:h-11 sm:[&_input[type=search]]:h-10" : "hidden"}>
-        <label htmlFor="skills" className="mb-1.5 block text-sm font-medium">
-          Your skills<span aria-hidden className="ml-0.5 text-accent">*</span>
-        </label>
+        <FieldLabel htmlFor="skills" required>Your skills</FieldLabel>
         <SkillPicker id="skills" defaultValue={skills} />
         {step === 1 && <FieldMessage text={problem} />}
       </div>
 
-      <fieldset className={step === 2 ? "flex flex-col gap-2.5" : "hidden"}>
+      <fieldset className={step === 2 ? "flex flex-col gap-2" : "hidden"}>
         <legend className="sr-only">What you&apos;re looking for</legend>
         {GOALS.map((g) => (
           <label
             key={g}
-            className="flex min-h-12 cursor-pointer items-center gap-3 rounded-md border border-line2 px-4 py-3 text-[15px] transition-colors hover:border-muted has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent"
+            className="flex min-h-12 cursor-pointer items-center gap-3 rounded-md border border-line2 px-4 py-3 text-base transition-colors hover:border-muted has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent"
           >
-            <input type="checkbox" name="goals" value={g} defaultChecked={goals.includes(g)} className="h-[18px] w-[18px] shrink-0 accent-[var(--accent)]" />
+            <input type="checkbox" name="goals" value={g} defaultChecked={goals.includes(g)} className="h-4.5 w-4.5 shrink-0 accent-accent" />
             {g}
           </label>
         ))}
       </fieldset>
 
-      {error && <p role="alert" className="pt-5 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <ErrorText size="sm" className="pt-4">{error}</ErrorText>}
 
       {/* Phones: pinned to the bottom with a full-width main button */}
-      <div className="fixed inset-x-0 bottom-0 flex items-center gap-4 border-t border-border bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:static sm:mt-8 sm:px-0 sm:pb-0 sm:pt-5">
-        {step > 0 && <button type="button" onClick={back} className="text-[15px] text-ink2 hover:text-foreground">Back</button>}
+      <div className="fixed inset-x-0 bottom-0 flex items-center gap-4 border-t border-border bg-background px-4 py-4 pb-safe-4 sm:static sm:mt-8 sm:px-0 sm:pb-0 sm:pt-4">
+        {step > 0 && <button type="button" onClick={back} className="text-base text-ink2 hover:text-foreground">Back</button>}
         {last ? (
-          <button className="btn ml-auto h-11 flex-1 sm:h-[38px] sm:flex-none">Finish</button>
+          <button className={`${buttonClass({ size: "touch" })} ml-auto flex-1 sm:flex-none`}>Finish</button>
         ) : (
-          <button type="button" onClick={next} className="btn ml-auto h-11 flex-1 sm:h-[38px] sm:flex-none">Next</button>
+          <button type="button" onClick={next} className={`${buttonClass({ size: "touch" })} ml-auto flex-1 sm:flex-none`}>Next</button>
         )}
       </div>
     </form>

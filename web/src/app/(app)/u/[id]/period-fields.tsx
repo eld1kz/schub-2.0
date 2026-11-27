@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { formatPeriod } from "@/lib/portfolio";
-import { Select } from "../../select";
 import { FieldError } from "./edit-dialog";
+import { Combobox, FieldLabel, type ComboboxHandle } from "@/components/ui";
 
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const firstYear = 1990;
@@ -25,7 +25,7 @@ export function PeriodFields({ start, end, current }: { start?: string; end?: st
   const [isCurrent, setCurrent] = useState(current);
   const [from, setFrom] = useState(split(start));
   const [to, setTo] = useState(split(end));
-  const endMonth = useRef<HTMLSelectElement>(null);
+  const endMonth = useRef<ComboboxHandle>(null);
 
   const startValue = from.year && from.month ? `${from.year}-${from.month}` : "";
   const endValue = to.year && to.month ? `${to.year}-${to.month}` : "";
@@ -39,36 +39,33 @@ export function PeriodFields({ start, end, current }: { start?: string; end?: st
     endMonth.current?.setCustomValidity(endsTooEarly ? "The end can't be before the start." : "");
   }, [endsTooEarly]);
 
-  const legend = "mb-1.5 block text-sm font-medium";
-  const required = <span aria-hidden className="ml-0.5 text-accent">*</span>;
-
   return (
     <>
-      <label className="flex h-11 w-fit cursor-pointer items-center gap-2.5 text-[15px] sm:h-auto">
-        <input type="checkbox" name="current" checked={isCurrent} onChange={(e) => setCurrent(e.target.checked)} className="h-[18px] w-[18px] accent-[var(--accent)]" />
+      <label className="flex h-11 w-fit cursor-pointer items-center gap-2 text-base sm:h-auto">
+        <input type="checkbox" name="current" checked={isCurrent} onChange={(e) => setCurrent(e.target.checked)} className="h-4.5 w-4.5 accent-accent" />
         I currently work here
       </label>
       <fieldset>
-        <legend className={legend}>Start date{required}</legend>
+        <FieldLabel as="legend" required>Start date</FieldLabel>
         <input type="hidden" name="start" value={startValue} />
         <div className="grid grid-cols-2 gap-3">
-          <Select label="Start month" placeholder="Month" value={from.month} onChange={(month) => setFrom({ ...from, month })} options={monthOptions} />
-          <Select label="Start year" placeholder="Year" value={from.year} onChange={(year) => setFrom({ ...from, year })} options={yearOptions(thisYear)} />
+          <Combobox label="Start month" placeholder="Month" value={from.month} onChange={(month) => setFrom({ ...from, month })} options={monthOptions} />
+          <Combobox label="Start year" placeholder="Year" value={from.year} onChange={(year) => setFrom({ ...from, year })} options={yearOptions(thisYear)} />
         </div>
         <FieldError field="start" />
       </fieldset>
       {!isCurrent && (
         <fieldset>
-          <legend className={legend}>End date{required}</legend>
+          <FieldLabel as="legend" required>End date</FieldLabel>
           <input type="hidden" name="end" value={endValue} />
           <div className="grid grid-cols-2 gap-3">
-            <Select label="End month" placeholder="Month" value={to.month} onChange={(month) => setTo({ ...to, month })} options={monthOptions} selectRef={endMonth} />
-            <Select label="End year" placeholder="Year" value={to.year} onChange={(year) => setTo({ ...to, year })} options={yearOptions(thisYear + yearsAhead)} />
+            <Combobox label="End month" placeholder="Month" value={to.month} onChange={(month) => setTo({ ...to, month })} options={monthOptions} ref={endMonth} />
+            <Combobox label="End year" placeholder="Year" value={to.year} onChange={(year) => setTo({ ...to, year })} options={yearOptions(thisYear + yearsAhead)} />
           </div>
           <FieldError field="end" message={endsTooEarly ? "The end can't be before the start." : ""} />
         </fieldset>
       )}
-      {length && <p className="-mt-2 text-[13px] text-muted tabular-nums">{length}</p>}
+      {length && <p className="-mt-2 text-meta text-muted tabular-nums">{length}</p>}
     </>
   );
 }

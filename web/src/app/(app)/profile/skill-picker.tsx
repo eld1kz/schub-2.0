@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SKILLS } from "@/lib/skills";
+import { Input } from "@/components/ui";
 
 // Searchable multi-select over the fixed skill list. Each chosen skill is submitted as its own "skills" value.
 export function SkillPicker({ id, defaultValue }: { id: string; defaultValue: string[] }) {
@@ -20,14 +21,14 @@ export function SkillPicker({ id, defaultValue }: { id: string; defaultValue: st
           {selected.map((s) => (
             <li key={s}>
               <input type="hidden" name="skills" value={s} />
-              <button type="button" onClick={() => setSelected(selected.filter((x) => x !== s))} aria-label={`Remove ${s}`} className="skill inline-flex items-center gap-1.5">
+              <button type="button" onClick={() => setSelected(selected.filter((x) => x !== s))} aria-label={`Remove ${s}`} className="inline-flex items-center gap-1.5 rounded-sm bg-chip px-2 py-0.5 font-mono text-meta">
                 {s}<span aria-hidden className="font-normal opacity-60">×</span>
               </button>
             </li>
           ))}
         </ul>
       )}
-      <input
+      <Input
         id={id}
         type="search"
         value={query}
@@ -40,13 +41,12 @@ export function SkillPicker({ id, defaultValue }: { id: string; defaultValue: st
         }}
         placeholder="Search skills"
         autoComplete="off"
-        className="input"
       />
       {options.length > 0 ? (
         <ul className="flex max-h-40 flex-wrap gap-2 overflow-y-auto">
           {options.map((s) => (
             <li key={s}>
-              <button type="button" onClick={() => add(s)} className="rounded border border-line2 px-2 py-0.5 font-mono text-[13px] text-ink2 hover:border-foreground hover:text-foreground">
+              <button type="button" onClick={() => add(s)} className="rounded-sm border border-line2 px-2 py-0.5 font-mono text-meta text-ink2 hover:border-foreground hover:text-foreground">
                 {s}
               </button>
             </li>

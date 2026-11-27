@@ -1,0 +1,60 @@
+{
+  "currentCount": 4,
+  "matchCount": 4,
+  "page": 1,
+  "perPage": 100,
+  "totalCount": 4,
+  "data": [
+    {
+      "pbanc_sn": 170001,
+      "biz_pbanc_nm": "2027년 샘플 대학생 창업 아이디어 경진대회",
+      "intg_pbanc_biz_nm": "샘플 창업 경진대회",
+      "pbanc_ntrp_nm": "샘플창업진흥원",
+      "sprv_inst": "공공기관",
+      "detl_pg_url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=170001",
+      "biz_gdnc_url": "https://example.com/guide",
+      "pbanc_rcpt_bgng_dt": "20261101",
+      "pbanc_rcpt_end_dt": "20261215",
+      "supt_regin": "전국",
+      "supt_biz_clsfc": "행사ㆍ네트워크",
+      "aply_trgt": "대학생,일반인",
+      "rcrt_prgs_yn": "Y"
+    },
+    {
+      "pbanc_sn": 170002,
+      "biz_pbanc_nm": "2027 샘플 서울 청년 창업 사업화 지원",
+      "pbanc_ntrp_nm": "샘플서울센터",
+      "detl_pg_url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=170002",
+      "pbanc_rcpt_bgng_dt": "20261110",
+      "pbanc_rcpt_end_dt": "20270110",
+      "supt_regin": "서울",
+      "supt_biz_clsfc": "사업화",
+      "aply_trgt": "일반인,대학생",
+      "rcrt_prgs_yn": "Y"
+    },
+    {
+      "pbanc_sn": 170003,
+      "biz_pbanc_nm": "샘플 기업 대상 투자 연계 프로그램",
+      "pbanc_ntrp_nm": "샘플투자센터",
+      "detl_pg_url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=170003",
+      "pbanc_rcpt_bgng_dt": "20261101",
+      "pbanc_rcpt_end_dt": "20261230",
+      "supt_regin": "경기",
+      "supt_biz_clsfc": "융자",
+      "aply_trgt": "1인 창조기업,일반기업",
+      "rcrt_prgs_yn": "Y"
+    },
+    {
+      "pbanc_sn": 170004,
+      "biz_pbanc_nm": "샘플 부산 해커톤 2026",
+      "pbanc_ntrp_nm": "샘플부산센터",
+      "detl_pg_url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=170004",
+      "pbanc_rcpt_bgng_dt": "20261001",
+      "pbanc_rcpt_end_dt": "20261120",
+      "supt_regin": "부산",
+      "supt_biz_clsfc": "행사ㆍ네트워크",
+      "aply_trgt": "대학생,청소년",
+      "rcrt_prgs_yn": "Y"
+    }
+  ]
+}

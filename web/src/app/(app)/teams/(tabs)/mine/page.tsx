@@ -7,6 +7,7 @@ import { today } from "@/lib/opportunities";
 import { awardedIds } from "@/lib/awards";
 import { myConnections } from "@/lib/connections";
 import { TeamList } from "../../../team-list";
+import { Row, buttonClass } from "@/components/ui";
 
 export const instant = false;
 
@@ -25,22 +26,19 @@ const declinedFor = 14 * 24 * 60 * 60 * 1000;
 
 function Heading({ title, count }: { title: string; count: number }) {
   return (
-    <h2 className="mb-4 text-[15px] font-semibold">
+    <h2 className="mb-4 text-base font-semibold">
       {title} <span className="font-normal text-muted">{count}</span>
     </h2>
   );
 }
 
 // One of your teams or applications: the team, a line about you on it, and an action on the right
-function Row({ teamId, title, children, action }: { teamId: string; title: string; children: ReactNode; action?: ReactNode }) {
+function TeamRow({ teamId, title, children, action }: { teamId: string; title: string; children: ReactNode; action?: ReactNode }) {
   return (
-    <article className="flex items-center justify-between gap-4 border-b border-border py-4 first:pt-0">
-      <div className="flex min-w-0 flex-col gap-1">
-        <Link href={`/teams/${teamId}`} className="w-fit text-base font-semibold hover:text-accent">{title}</Link>
-        <p className="text-sm text-ink2">{children}</p>
-      </div>
-      {action}
-    </article>
+    <Row center flush actions={action}>
+      <Link href={`/teams/${teamId}`} className="w-fit text-base font-semibold hover:text-accent">{title}</Link>
+      <p className="text-sm text-ink2">{children}</p>
+    </Row>
   );
 }
 
@@ -78,34 +76,34 @@ export default async function YourTeamsPage() {
   if (invitations.length === 0 && running.length === 0 && memberOf.length === 0 && pendingOrDeclined.length === 0) {
     return (
       <div className="flex flex-col items-start gap-3 py-2">
-        <p className="text-[15px] font-medium">You&apos;re not on any team yet</p>
+        <p className="text-base font-medium">You&apos;re not on any team yet</p>
         <div className="flex flex-wrap gap-2">
-          <Link href="/teams/new" className="btn">Post a team</Link>
-          <Link href="/teams" className="btn-outline">Find teams</Link>
+          <Link href="/teams/new" className={buttonClass()}>Post a team</Link>
+          <Link href="/teams" className={buttonClass({ variant: "secondary" })}>Find teams</Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       {invitations.length > 0 && (
         <section>
           <Heading title="Invitations" count={invitations.length} />
           {invitations.map((a) => (
-            <Row
+            <TeamRow
               key={a.id}
               teamId={a.team_id}
               title={a.team?.title ?? ""}
               action={
                 <div className="flex shrink-0 gap-2">
-                  <form action={answerInvite.bind(null, a.id, "accepted")}><button aria-label={`Accept the invitation to ${a.team?.title ?? ""}`} className="btn h-9 px-4">Accept</button></form>
-                  <form action={answerInvite.bind(null, a.id, "declined")}><button aria-label={`Decline the invitation to ${a.team?.title ?? ""}`} className="btn-outline h-9">Decline</button></form>
+                  <form action={answerInvite.bind(null, a.id, "accepted")}><button aria-label={`Accept the invitation to ${a.team?.title ?? ""}`} className={buttonClass({ size: "sm" })}>Accept</button></form>
+                  <form action={answerInvite.bind(null, a.id, "declined")}><button aria-label={`Decline the invitation to ${a.team?.title ?? ""}`} className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
                 </div>
               }
             >
               <span className="text-foreground">{a.role}</span> · Invited by {a.team?.owner?.name || "Unnamed"}
-            </Row>
+            </TeamRow>
           ))}
         </section>
       )}
@@ -121,9 +119,9 @@ export default async function YourTeamsPage() {
         <section>
           <Heading title="Member of" count={memberOf.length} />
           {memberOf.map((a) => (
-            <Row key={a.id} teamId={a.team_id} title={a.team?.title ?? ""}>
+            <TeamRow key={a.id} teamId={a.team_id} title={a.team?.title ?? ""}>
               <span className="text-foreground">{a.role}</span> · Started by {a.team?.owner?.name || "Unnamed"}
-            </Row>
+            </TeamRow>
           ))}
         </section>
       )}
@@ -132,7 +130,7 @@ export default async function YourTeamsPage() {
         <section>
           <Heading title="Applications" count={pendingOrDeclined.length} />
           {pendingOrDeclined.map((a) => (
-            <Row
+            <TeamRow
               key={a.id}
               teamId={a.team_id}
               title={a.team?.title ?? ""}
@@ -142,7 +140,7 @@ export default async function YourTeamsPage() {
             >
               {a.role} ·{" "}
               {a.status === "pending" ? <span className="font-medium text-accent">Pending</span> : <span className="text-muted">Declined</span>}
-            </Row>
+            </TeamRow>
           ))}
         </section>
       )}

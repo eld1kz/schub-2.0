@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { PersonRow } from "../person-row";
+import { Input } from "@/components/ui";
 
 export type ConnectionItem = { id: string; name: string; headline: string; avatar_url: string; open: boolean; telegram: string; email: string; awarded: boolean };
 
-const contactLink = "text-[13px] font-medium text-accent hover:underline";
+const contactLink = "text-meta font-medium text-accent hover:underline";
 
 // Everyone you're connected with, filtered by name as you type
 export function ConnectionList({ people }: { people: ConnectionItem[] }) {
@@ -15,18 +16,19 @@ export function ConnectionList({ people }: { people: ConnectionItem[] }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="relative max-w-[320px]">
+      <div className="relative max-w-search">
         <svg viewBox="0 0 24 24" aria-hidden className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 fill-none stroke-muted" strokeWidth={2} strokeLinecap="round">
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
         </svg>
-        <input
+        <Input
+          search
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search your connections"
           aria-label="Search your connections by name"
-          className="input h-10 pl-9 text-sm"
+          className="pl-8"
         />
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useActionState, useId, useState } from "react";
 import type { EmailSignInState } from "./actions";
+import { ErrorText, Input, buttonClass } from "@/components/ui";
 
 // Email field and "Send sign-in link"; once sent, "Check your inbox" until they pick a different email
 // `lastUsed`: this browser signed in with email last time
@@ -30,7 +31,8 @@ export function EmailSignIn({ action, lastUsed }: { action: (prev: EmailSignInSt
     <form action={send} className="flex flex-col gap-2">
       <label htmlFor={id} className="sr-only">Email</label>
       {/* After an error the address stays in the field; after "Use a different email" it starts empty */}
-      <input
+      <Input
+        large
         id={id}
         type="email"
         name="email"
@@ -39,13 +41,12 @@ export function EmailSignIn({ action, lastUsed }: { action: (prev: EmailSignInSt
         autoComplete="email"
         placeholder="you@university.edu"
         defaultValue={state.error ? state.email : ""}
-        className="input h-11"
       />
-      {state.error && <p role="alert" className="text-[13px] text-red-600 dark:text-red-400">{state.error}</p>}
-      <button className="btn h-11 w-full gap-2 px-4 text-[15px]" disabled={pending}>
+      {state.error && <ErrorText>{state.error}</ErrorText>}
+      <button className={`${buttonClass({ size: "lg" })} w-full`} disabled={pending}>
         <span className="flex-1">{pending ? "Sending..." : "Send sign-in link"}</span>
         {/* Muted for the accent button: its own text color, faded */}
-        {lastUsed && <span className="font-mono text-[11px] font-normal text-on-accent/75">Last used</span>}
+        {lastUsed && <span className="font-mono text-xs font-normal text-on-accent/75">Last used</span>}
       </button>
     </form>
   );
