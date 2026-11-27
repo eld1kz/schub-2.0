@@ -8,6 +8,7 @@ import { Notifications, type Notification } from "./notifications";
 import { GlobalSearch } from "./global-search";
 import { NavTabs, TabBar } from "./nav-tabs";
 import { AccountMenu } from "./account-menu";
+import { SentryUser } from "./sentry-user";
 import { Avatar } from "@/components/ui";
 
 function Header({ counts = {}, profileHref = "/profile", account }: { counts?: Record<string, number>; profileHref?: string; account?: ReactNode }) {
@@ -47,6 +48,7 @@ async function NavWithCounts() {
   const name = me.data?.name ?? "";
   const account = (
     <span className="flex items-center gap-4 text-sm">
+      <SentryUser id={userId} />
       <Notifications items={(notifications.data ?? []) as Notification[]} unread={(unread.count ?? 0) > 0} />
       <AccountMenu avatar={<Avatar url={me.data?.avatar_url ?? ""} name={name} size="md" />}>
         <Link href={`/u/${userId}`} className={menuItem}>Your profile</Link>

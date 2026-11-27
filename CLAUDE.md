@@ -29,6 +29,13 @@ The repo has two apps on the same Supabase project:
   Tests never touch the real project. Known open issues are `it.fails` tests marked KNOWN ISSUE.
 - CI (`.github/workflows/ci.yml`) runs lint, types and all four test suites on every push and pull request.
 
+## Error tracking
+Sentry (`lib/sentry.ts`, `instrumentation.ts`, `instrumentation-client.ts`, `app/global-error.tsx`): errors only,
+no tracing or session replay, off unless `NEXT_PUBLIC_SENTRY_DSN` is set. The only personal data sent is the user
+id (`requireUser` on the server, `(app)/sentry-user.tsx` in the browser); `scrubEvent` drops cookies, headers,
+bodies, query strings, breadcrumbs and email addresses in messages. Source maps upload only where
+`SENTRY_AUTH_TOKEN` is set (with `SENTRY_ORG` and `SENTRY_PROJECT`).
+
 ## Web structure
 ```
 web/src/

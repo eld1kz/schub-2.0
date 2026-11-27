@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createPlainClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
@@ -46,7 +47,10 @@ export async function requireUser() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims.sub;
-  return { supabase, userId: userId ?? NOBODY, isGuest: !userId || data?.claims.is_anonymous === true };
+  const isGuest = !userId || data?.claims.is_anonymous === true;
+  // Errors in this request are reported with the member's user id only (lib/sentry.ts)
+  Sentry.setUser(userId && !isGuest ? { id: userId } : null);
+  return { supabase, userId: userId ?? NOBODY, isGuest };
 }
 
 // For writes: visitors have to sign in with Google first

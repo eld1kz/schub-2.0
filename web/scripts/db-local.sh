@@ -37,6 +37,8 @@ eval "$(npx supabase status -o env 2>/dev/null | grep -E '^(API_URL|PUBLISHABLE_
   echo "AUTH_PROVIDERS=google,github,email"
   # "Fill from link" may read the e2e tests' sample pages (tests/e2e/fixtures), in development only
   echo "LINK_PREVIEW_FIXTURES=http://localhost:3102"
+  # Tests report no errors to Sentry, even when .env.local has a DSN
+  echo "NEXT_PUBLIC_SENTRY_DSN="
 } > .env.test.local
 
 # `db reset` restarts the API containers before the migrations above run, so the REST API can load its schema
