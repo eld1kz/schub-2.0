@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { ButtonLink, EmptyState } from "@/components/ui";
+import { Users } from "lucide-react";
 import { requireUser } from "@/lib/supabase/server";
 import { awardedIds } from "@/lib/awards";
 import { ConnectionList, type ConnectionItem } from "./connection-list";
@@ -35,10 +36,7 @@ export default async function ConnectionsPage() {
 
   if (people.length === 0) {
     return (
-      <div className="flex flex-col items-start gap-2 py-2">
-        <p className="text-base font-medium">No connections yet</p>
-        <Link href="/people" className="text-sm font-semibold text-accent hover:underline">Find people on Discover</Link>
-      </div>
+      <EmptyState icon={Users} action={<ButtonLink href="/people" variant="secondary" size="sm">Find people</ButtonLink>}>No connections yet.</EmptyState>
     );
   }
 

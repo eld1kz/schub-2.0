@@ -1,3 +1,4 @@
+import { Users } from "lucide-react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { SOON_DAYS, daysUntil, nextDate, today } from "@/lib/opportunities";
@@ -7,6 +8,7 @@ import { workModeLabel } from "@/lib/languages";
 import { AwardMark } from "./award-mark";
 import { EntryStatusLabel } from "./entry-status";
 import { ShareTeamButton } from "./share-team";
+import { PersonLink } from "./person-link";
 import { Avatar, EmptyState, MonoLabel, Row, buttonClass } from "@/components/ui";
 
 // Overlapping avatars: each sits above the next, so the lead's ring is never covered
@@ -23,7 +25,7 @@ const daysLeft = (n: number) => (n === 0 ? "Today" : n === 1 ? "1 day left" : `$
 // repeat the page title, and its open roles only until the event is over.
 // Elsewhere a row shows the team's current event, and no open roles once that's over.
 // `share`: a share icon on each row, opening the share dialog (Your teams > Running)
-export function TeamList({ teams, userId, awarded, applied, connections = new Set(), event, share = false, empty }: {
+export function TeamList({ teams, userId, awarded, applied, connections = new Set(), event, share = false, empty, emptyAction }: {
   teams: TeamSummary[];
   userId: string;
   awarded: Set<string>;
@@ -32,8 +34,9 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
   event?: string;
   share?: boolean;
   empty: ReactNode;
+  emptyAction?: ReactNode;
 }) {
-  if (teams.length === 0) return <EmptyState>{empty}</EmptyState>;
+  if (teams.length === 0) return <EmptyState icon={Users} action={emptyAction}>{empty}</EmptyState>;
   const day = today();
   return (
     <div>
@@ -77,7 +80,7 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
               )}
             </MonoLabel>}
             <h3 className="text-lg leading-snug font-semibold text-pretty">
-              <Link href={`/teams/${t.id}`} className="hover:text-accent">{t.title}</Link>
+              <Link href={`/teams/${t.id}`} data-row-main className="hover:text-accent">{t.title}</Link>
             </h3>
             <p className="text-sm sm:text-base">
               {open.length > 0 ? (
@@ -106,7 +109,7 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
                   ))}
                 </span>
                 <span className="min-w-0">
-                  <span className="font-medium text-foreground">{leadName}</span>
+                  {lead.id === userId ? <span className="font-medium text-foreground">{leadName}</span> : <PersonLink id={lead.id} className="font-medium text-foreground hover:text-accent">{leadName}</PersonLink>}
                   {lead.id !== userId && awarded.has(lead.id) && <> <AwardMark /></>}
                   {connected ? (
                     <>, <span className="font-medium text-accent">your connection</span>{others > 0 && `, + ${others} ${others === 1 ? "other" : "others"}`}</>

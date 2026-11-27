@@ -1,3 +1,4 @@
+import { FileText, Briefcase, Wrench, Target, FolderOpen } from "lucide-react";
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,6 +17,7 @@ import { AboutEdit, ContactEdit, ExperienceEdit, HeroEdit, InterestsEdit, LinksE
 import type { SharedProject } from "@/lib/shared-projects";
 import { HideButton, PendingSharedProjects, SharedProjectBody, ShowAgainButton } from "./shared-projects";
 import { Avatar, Chip, ChipList, EmptyState, Section, Timeline, ToastProvider } from "@/components/ui";
+import { PersonLink } from "../../person-link";
 
 export type ProfileData = {
   name: string;
@@ -139,9 +141,9 @@ function ConnectionStack({ people }: { people: Connection[] }) {
     <ul className="flex">
       {people.map((c) => (
         <li key={c.id} className="-mr-1.5">
-          <Link href={`/u/${c.id}`} title={c.name || "Unnamed"} className="block rounded-full border-2 border-background hover:opacity-80">
+          <PersonLink id={c.id} title={c.name || "Unnamed"} className="block rounded-full border-2 border-background hover:opacity-80">
             <Avatar url={c.avatar_url} name={c.name} size="md" />
-          </Link>
+          </PersonLink>
         </li>
       ))}
     </ul>
@@ -226,7 +228,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
               {p.bio ? (
                 <div className="max-w-prose text-base leading-relaxed text-pretty"><About text={p.bio} /></div>
               ) : (
-                <EmptyState title="Write a few lines about you" action={<AboutEdit bio="" trigger="button" />}>
+                <EmptyState icon={FileText} action={<AboutEdit bio="" trigger="button" />}>
                   What you like building, what you&apos;re good at, and what kind of team you want to join.
                 </EmptyState>
               )}
@@ -242,8 +244,8 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                   ))}
                 </Timeline>
               ) : (
-                <EmptyState title="Add your experience" action={<ExperienceEdit trigger="button" />}>
-                  Internships, club roles, TA positions, research. Team leads check this first when reviewing a request to join.
+                <EmptyState icon={Briefcase} action={<ExperienceEdit trigger="button" />}>
+                  Internships, club roles, TA positions, research: team leads check this first.
                 </EmptyState>
               )}
             </Section>
@@ -256,8 +258,8 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
               {skillGroups.length > 0 ? (
                 <SkillRows groups={skillGroups} />
               ) : (
-                <EmptyState title="Add your skills" action={<SkillsEdit skills={[]} trigger="button" />}>
-                  The skills you bring to a team. They decide who you get matched with.
+                <EmptyState icon={Wrench} action={<SkillsEdit skills={[]} trigger="button" />}>
+                  The skills you bring to a team decide who you get matched with.
                 </EmptyState>
               )}
             </Section>
@@ -272,7 +274,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                   {p.looking_for.length > 0 && <p className="text-sm text-ink2 sm:text-base">Team up with: {p.looking_for.join(", ")}</p>}
                 </div>
               ) : (
-                <EmptyState title="Add interests and goals" action={<InterestsEdit profile={p} trigger="button" />}>
+                <EmptyState icon={Target} action={<InterestsEdit profile={p} trigger="button" />}>
                   What you&apos;re into, and what you&apos;re on Schub for: a hackathon team, a cofounder, a side project.
                 </EmptyState>
               )}
@@ -305,7 +307,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                   ))}
                 </div>
               ) : (
-                <EmptyState title="Add a project" action={<ProjectEdit trigger="button" />}>
+                <EmptyState icon={FolderOpen} action={<ProjectEdit trigger="button" />}>
                   One thing you built, even a small one: an app, a design, a pitch, a research paper.
                 </EmptyState>
               )}
@@ -409,7 +411,7 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
                   <summary className={`cursor-pointer list-none text-sm font-medium group-open:hidden ${outLink}`}>See all</summary>
                   <ul className="flex flex-col gap-2 text-sm">
                     {connections.slice(shownConnections).map((c) => (
-                      <li key={c.id}><Link href={`/u/${c.id}`} className="hover:text-accent">{c.name || "Unnamed"}</Link></li>
+                      <li key={c.id}><PersonLink id={c.id} className="hover:text-accent">{c.name || "Unnamed"}</PersonLink></li>
                     ))}
                   </ul>
                 </details>
@@ -427,14 +429,14 @@ export function ProfileView({ id, profile: p, canEdit, owner, action, contact, p
               <ul className="flex flex-col gap-4">
                 {suggestions.map((s) => (
                   <li key={s.id} className="grid grid-cols-fill-auto items-center gap-3">
-                    <Link href={`/u/${s.id}`} className="flex min-w-0 items-center gap-3 hover:opacity-80">
+                    <PersonLink id={s.id} className="flex min-w-0 items-center gap-3 hover:opacity-80">
                       {/* Suggestions are all open to a team */}
                       <Avatar url={s.avatar_url} name={s.name} size="lg" ring="open" />
                       <span className="min-w-0">
                         <span className="block truncate text-base font-semibold">{s.name}</span>
                         {s.headline && <span className="block truncate text-meta text-ink2">{s.headline}</span>}
                       </span>
-                    </Link>
+                    </PersonLink>
                     {s.connect}
                   </li>
                 ))}

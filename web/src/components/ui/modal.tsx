@@ -1,5 +1,7 @@
 "use client";
 
+import { Icon } from "./icon";
+import { X } from "lucide-react";
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { IconButton } from "./button";
 import { useLinger } from "./use-linger";
@@ -65,9 +67,7 @@ export function ModalGrabber() {
 
 export function CloseIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 fill-none stroke-current" strokeWidth={2} strokeLinecap="round">
-      <path d="M6 6l12 12M18 6 6 18" />
-    </svg>
+    <Icon icon={X} />
   );
 }
 

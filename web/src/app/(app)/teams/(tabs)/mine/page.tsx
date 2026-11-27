@@ -1,3 +1,4 @@
+import { Users } from "lucide-react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/server";
@@ -7,7 +8,7 @@ import { today } from "@/lib/opportunities";
 import { awardedIds } from "@/lib/awards";
 import { myConnections } from "@/lib/connections";
 import { TeamList } from "../../../team-list";
-import { Row, buttonClass, AnswerButtons, SubmitButton } from "@/components/ui";
+import { Row, AnswerButtons, SubmitButton, ButtonLink, EmptyState } from "@/components/ui";
 
 export const instant = false;
 
@@ -36,7 +37,7 @@ function Heading({ title, count }: { title: string; count: number }) {
 function TeamRow({ teamId, title, children, action }: { teamId: string; title: string; children: ReactNode; action?: ReactNode }) {
   return (
     <Row center flush actions={action} href={`/teams/${teamId}`}>
-      <Link href={`/teams/${teamId}`} className="w-fit text-base font-semibold hover:text-accent">{title}</Link>
+      <Link href={`/teams/${teamId}`} data-row-main className="w-fit text-base font-semibold hover:text-accent">{title}</Link>
       <p className="text-sm text-ink2">{children}</p>
     </Row>
   );
@@ -75,13 +76,7 @@ export default async function YourTeamsPage() {
 
   if (invitations.length === 0 && running.length === 0 && memberOf.length === 0 && pendingOrDeclined.length === 0) {
     return (
-      <div className="flex flex-col items-start gap-3 py-2">
-        <p className="text-base font-medium">You&apos;re not on any team yet</p>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/teams/new" className={buttonClass()}>Post a team</Link>
-          <Link href="/teams" className={buttonClass({ variant: "secondary" })}>Find teams</Link>
-        </div>
-      </div>
+      <EmptyState icon={Users} action={<ButtonLink href="/teams" variant="secondary" size="sm">Find teams</ButtonLink>}>You&apos;re not on any team yet.</EmptyState>
     );
   }
 

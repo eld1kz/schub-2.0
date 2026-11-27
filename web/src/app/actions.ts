@@ -56,22 +56,23 @@ export async function signOut() {
   redirect("/login");
 }
 
-export type SearchResults = { people: { id: string; name: string }[]; teams: { id: string; title: string }[] };
+export type SearchResults = { people: { id: string; name: string }[]; teams: { id: string; title: string }[]; events: { id: string; title: string }[] };
 
 // % and _ are wildcards in ilike; match them literally
 const containing = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
-// Nav search: people by name and teams by title, up to 5 of each. Signed-out visitors can search too.
+// Nav search: people by name, teams and listed events by title, up to 5 of each. Signed-out visitors can search too.
 export async function searchGlobal(query: string): Promise<SearchResults> {
   const { supabase } = await requireUser();
   const q = query.trim().slice(0, 50);
-  if (q.length < 2) return { people: [], teams: [] };
+  if (q.length < 2) return { people: [], teams: [], events: [] };
   const pattern = containing(q);
-  const [people, teams] = await Promise.all([
+  const [people, teams, events] = await Promise.all([
     supabase.from("profiles").select("id, name").ilike("name", pattern).order("name").limit(5),
     supabase.from("teams").select("id, title").ilike("title", pattern).order("created_at", { ascending: false }).limit(5),
+    supabase.from("opportunities").select("id, title").eq("status", "live").eq("needs_review", false).ilike("title", pattern).order("created_at", { ascending: false }).limit(5),
   ]);
-  return { people: people.data ?? [], teams: teams.data ?? [] };
+  return { people: people.data ?? [], teams: teams.data ?? [], events: events.data ?? [] };
 }
 
 // Notifications are written by database triggers (supabase/notifications.sql); here they're only read

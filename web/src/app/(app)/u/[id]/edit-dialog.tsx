@@ -1,8 +1,9 @@
 "use client";
 
+import { Pencil } from "lucide-react";
 import { createContext, useContext, useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import type { SaveResult } from "@/app/actions";
-import { Button, CloseIcon, ErrorText, IconButton, Modal, ModalGrabber, buttonClass, useToast } from "@/components/ui";
+import { Button, CloseIcon, ErrorText, IconButton, Modal, ModalGrabber, buttonClass, useToast, Icon } from "@/components/ui";
 
 type Props = {
   title: string;
@@ -47,9 +48,7 @@ export function FieldError({ field, message }: { field: string; message?: string
 
 function PencilIcon() {
   return (
-    <svg viewBox="0 0 16 16" aria-hidden className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth={1.5}>
-      <path d="M10.5 2.5l3 3L5 14H2v-3z" />
-    </svg>
+    <Icon icon={Pencil} />
   );
 }
 
@@ -191,7 +190,7 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
                 </Button>
               )}
               <div className={`${tall ? "flex flex-1 justify-end" : "hidden sm:flex"} ml-auto gap-2`}>
-                <button type="button" onClick={close} className={buttonClass({ variant: "secondary", showFrom: "sm" })}>Cancel</button>
+                <Button type="button" variant="secondary" showFrom="sm" shortcut="Esc" onClick={close}>Cancel</Button>
                 <Button size={tall ? "touch" : "md"} full={tall && !remove} disabled={!valid} pending={saving && !saved} done={saved}>
                   {submit}
                 </Button>

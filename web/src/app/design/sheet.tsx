@@ -1,40 +1,9 @@
-import {
-  Avatar,
-  Button,
-  ButtonLink,
-  CheckChip,
-  Chip,
-  ChipList,
-  CloseIcon,
-  Combobox,
-  ComboboxPanel,
-  EmptyState,
-  ErrorText,
-  Field,
-  FieldLabel,
-  IconButton,
-  Input,
-  MonoLabel,
-  PageHeader,
-  PageSkeleton,
-  Row,
-  Section,
-  SectionTitle,
-  Skeleton,
-  Switch,
-  Tabs,
-  Textarea,
-  Timeline,
-  TimelineEntry,
-  ToastMessage,
-  ToggleChip,
-  type AvatarSize,
-  type ButtonSize,
-  type ButtonVariant,
-  type ComboboxOption,
-} from "@/components/ui";
+import Link from "next/link";
+import { Pencil, Briefcase } from "lucide-react";
+import { Avatar, Button, ButtonLink, CheckChip, Chip, ChipList, CloseIcon, Combobox, ComboboxPanel, EmptyState, ErrorText, Field, FieldLabel, IconButton, Input, MonoLabel, PageHeader, PageSkeleton, Row, Section, SectionTitle, Skeleton, Switch, Tabs, Textarea, Timeline, TimelineEntry, ToastMessage, ToggleChip, type AvatarSize, type ButtonSize, type ButtonVariant, type ComboboxOption, Icon, RowKeys } from "@/components/ui";
 import { ModalDemo } from "./modal-demo";
-import { AnswerDemo, ConnectDemo, LoadingDemo, PopDemo, TabsDemo, ToastDemo } from "./motion-demo";
+import { SlotsDemo } from "./slots-demo";
+import { AnswerDemo, ConnectDemo, HoverDemo, LoadingDemo, PaletteDemo, PopDemo, TabsDemo, ToastDemo } from "./motion-demo";
 
 const variants: ButtonVariant[] = ["primary", "secondary", "accent", "quiet", "danger"];
 const sizes: ButtonSize[] = ["xs", "sm", "md", "touch", "lg"];
@@ -78,9 +47,7 @@ const places: ComboboxOption[] = [
 const openBox = "flex max-h-90 w-full max-w-narrow flex-col overflow-hidden rounded-md border border-line2 shadow-modal";
 const pencil = (
   <IconButton label="Edit">
-    <svg viewBox="0 0 16 16" aria-hidden className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth={1.5}>
-      <path d="M11.5 2.5l2 2L6 12l-2.5.5L4 10z" />
-    </svg>
+    <Icon icon={Pencil} />
   </IconButton>
 );
 
@@ -90,6 +57,11 @@ export function Sheet({ scheme }: { scheme: "light" | "dark" }) {
   return (
     <div className={`flex flex-col bg-background px-4 py-8 text-foreground sm:px-6 ${scheme === "dark" ? "scheme-only-dark" : "scheme-only-light"}`}>
       <MonoLabel as="p" className="pb-6">{scheme}</MonoLabel>
+      {scheme === "light" && <RowKeys />}
+
+      <Section title="Team slots">
+        <SlotsDemo />
+      </Section>
 
       <Section title="Color">
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -126,6 +98,7 @@ export function Sheet({ scheme }: { scheme: "light" | "dark" }) {
             <MonoLabel className="w-20">other</MonoLabel>
             <ButtonLink href="/design" variant="secondary">A link</ButtonLink>
             <Button type="button" full>Full width on phones</Button>
+            <Button type="button" variant="secondary" shortcut="Esc">Cancel</Button>
             <IconButton label="Close"><CloseIcon /></IconButton>
             {pencil}
           </div>
@@ -155,6 +128,14 @@ export function Sheet({ scheme }: { scheme: "light" | "dark" }) {
           <p className="text-meta text-muted">Accept works; Decline is turned down and comes back with the reason.</p>
           <AnswerDemo />
         </div>
+      </Section>
+
+      <Section title="Hover card">
+        <HoverDemo />
+      </Section>
+
+      <Section title="Command palette">
+        <PaletteDemo />
       </Section>
 
       <Section title="Counts">
@@ -326,8 +307,8 @@ export function Sheet({ scheme }: { scheme: "light" | "dark" }) {
       <Section title="Rows">
         <div>
           <Row href="/design" actions={<Button type="button" variant="secondary" size="sm">Ask to join</Button>}>
-            <p className="text-lg font-semibold">A row that links somewhere</p>
-            <p className="text-sm text-ink2">Hover it: a soft background and an arrow</p>
+            <Link href="/design" data-row-main className="w-fit text-lg font-semibold">A row that links somewhere</Link>
+            <p className="text-sm text-ink2">Hover it, or Tab to it and press Up and Down</p>
           </Row>
           <SectionTitle title="Teams recruiting" count={2} action={<Button type="button" variant="secondary" size="sm">Post a team</Button>} />
           <Row actions={<Button type="button" variant="secondary" size="sm">Ask to join</Button>}>
@@ -356,12 +337,12 @@ export function Sheet({ scheme }: { scheme: "light" | "dark" }) {
         <p className="text-base text-ink2">With `owner`, a third column holds the pencil.</p>
       </Section>
       <Section title="Empty, quiet" quiet owner edit={pencil} editOnHover>
-        <EmptyState title="Add your experience" action={<Button type="button" variant="accent" size="touch" full>+ Add experience</Button>}>
+        <EmptyState icon={Briefcase} action={<Button type="button" variant="accent" size="sm">+ Add experience</Button>}>
           Internships, club roles, TA positions, research.
         </EmptyState>
       </Section>
       <Section title="Empty list">
-        <EmptyState>Nobody yet. Be the first.</EmptyState>
+        <EmptyState action={<Button type="button" variant="secondary" size="sm">Browse people</Button>}>Nobody is looking for a team here yet.</EmptyState>
       </Section>
 
       <Section title="Timeline">

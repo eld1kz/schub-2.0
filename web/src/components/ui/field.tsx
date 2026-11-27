@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 
 // Text inputs and their labels (DESIGN.md)
-export const inputClass = "w-full rounded-md border border-line2 bg-transparent px-3 outline-none focus:border-accent focus:ring-1 focus:ring-accent";
+export const inputClass = "w-full rounded-md border border-line2 bg-transparent px-3 outline-none focus:border-accent focus:ring-1 focus:ring-accent user-invalid:border-danger user-invalid:focus:ring-danger";
 // Inputs are 44px tall on phones, 40px from sm up. `small` (36px) is for filter bars and the top bar's search;
 // `search` (40px, smaller text) for the search box over a list. `large` (44px everywhere) beside lg buttons (sign-in).
 export const inputHeight = (small = false, search = false, large = false) =>

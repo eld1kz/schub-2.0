@@ -17,15 +17,14 @@
   --border: light-dark(#e7e6e2, #2a2a2e);
   --line2: light-dark(#cfcec9, #3d3d43);
   --chip: light-dark(#f2f2ef, #232327);
+  /* A layer just off the page */
+  --surface: light-dark(#fafaf8, #1a1a1d);
   --accent: light-dark(oklch(0.49 0.2 275), oklch(0.75 0.13 275));
   --accent-soft: light-dark(oklch(0.95 0.03 275), oklch(0.31 0.07 275));
   --on-accent: light-dark(#ffffff, #111114);
   /* Filled buttons under the pointer: a step darker in light, lighter in dark */
   --accent-hover: light-dark(oklch(0.44 0.2 275), oklch(0.8 0.11 275));
   --danger-hover: light-dark(#b91c1c, #fca5a5);
-  /* The primary button's depth: a line of light along its top edge, and the shadow under it */
-  --highlight: light-dark(rgb(255 255 255 / 0.18), rgb(255 255 255 / 0.3));
-  --depth: light-dark(rgb(20 20 40 / 0.2), rgb(0 0 0 / 0.45));
   /* The ring around people who are open to a team */
   --open: light-dark(oklch(0.62 0.17 150), oklch(0.72 0.17 150));
   /* Errors and destructive actions */
@@ -44,6 +43,7 @@
   --color-border: var(--border);
   --color-line2: var(--line2);
   --color-chip: var(--chip);
+  --color-surface: var(--surface);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-on-accent: var(--on-accent);
@@ -59,8 +59,8 @@
   /* The line under the current tab */
   --shadow-tab: inset 0 -2px 0 var(--accent);
   --shadow-frame: 0 10px 15px -3px var(--frame-shadow), 0 4px 6px -4px var(--frame-shadow);
-  --shadow-raised: inset 0 1px 0 var(--highlight), 0 1px 2px var(--depth);
-  --shadow-pressed: inset 0 1px 2px var(--depth);
+  /* Something floating over the page: a tight shadow and a wide faint one */
+  --shadow-float: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.1);
   --font-sans: var(--font-instrument-sans);
   --font-mono: var(--font-plex-mono);
 }
@@ -79,6 +79,7 @@
   --text-base--line-height: 1.5;
   --text-lg: 17px;
   --text-lg--line-height: 1.5;
+  --text-lg--letter-spacing: -0.01em;
   --text-xl: 20px;
   --text-xl--line-height: 1.4;
   --text-xl--letter-spacing: -0.01em;
@@ -126,6 +127,11 @@
   --default-transition-duration: 120ms;
   --animate-shimmer: shimmer 1.6s linear infinite;
   --animate-pop: pop 240ms var(--ease-spring);
+  /* A member dropping into their team slot */
+  --animate-slot-in: slot-in 480ms var(--ease-spring);
+  @keyframes slot-in {
+    from { opacity: 0; scale: 1.6; translate: 0 -16px; }
+  }
   @keyframes shimmer {
     from { background-position: 100% 0; }
     to { background-position: -100% 0; }
@@ -224,6 +230,8 @@
 body {
   background: var(--background);
   color: var(--foreground);
+  /* Counts and dates line up */
+  font-variant-numeric: tabular-nums;
 }
 
 /* A clean ring for keyboard users only. Fields draw their own (inputClass). */

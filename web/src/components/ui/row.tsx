@@ -1,17 +1,20 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { Kbd } from "./kbd";
 
-// A row that goes somewhere: a soft background under the pointer, and an arrow that slides in just past its right
-// edge, in the page's margin, so the row's own content stays on the page's lines. Rows drawn by hand (the
-// opportunity table) use these two as well. Phones have no pointer and a narrow margin: no arrow there.
+// A row that goes somewhere has no rules: one accent highlight with a bar, following the pointer or the keyboard
+// (RowKeys sets data-active), and from sm up the Enter key in the right margin. It reaches into the margins so the
+// row's own content stays on the page's lines. Rows drawn by hand (the opportunity table) use these two as well,
+// with data-row on the row and data-row-main on its title's link.
 export const linkedRowClass =
-  "group/row relative isolate before:absolute before:inset-y-0 before:-inset-x-2 sm:before:-right-6 before:-z-10 before:rounded-md before:bg-chip before:opacity-0 before:transition-opacity hover:before:opacity-100";
+  "group/row relative isolate before:absolute before:inset-y-0 before:-inset-x-3 sm:before:-right-6 before:-z-10 before:rounded-md before:bg-accent-soft before:opacity-0 before:transition-opacity data-active:before:opacity-100";
 
-export function RowArrow() {
+export function RowMark() {
   return (
-    <svg viewBox="0 0 16 16" aria-hidden className="pointer-events-none absolute top-1/2 -right-5 hidden h-4 w-4 sm:block -translate-y-1/2 -translate-x-2 fill-none stroke-muted opacity-0 transition-[opacity,translate] duration-150 group-focus-within/row:translate-x-0 group-focus-within/row:opacity-100 group-hover/row:translate-x-0 group-hover/row:opacity-100" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <path d="m6 4 4 4-4 4" />
-    </svg>
+    <span aria-hidden className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-data-active/row:opacity-100">
+      <span className="absolute inset-y-2 -left-3 w-0.5 rounded-full bg-accent" />
+      <span className="absolute top-1/2 -right-5 hidden -translate-y-1/2 text-accent sm:block"><Kbd>↵</Kbd></span>
+    </span>
   );
 }
 
@@ -20,7 +23,7 @@ function RowLink({ href }: { href: string }) {
   return (
     <>
       <Link href={href} data-row-link aria-hidden tabIndex={-1} className="absolute inset-0 z-1" />
-      <RowArrow />
+      <RowMark />
     </>
   );
 }
@@ -48,10 +51,10 @@ export function Row({ media, actions, center = false, flush = false, spacious = 
   children: ReactNode;
 }) {
   const link = href ? `${linkedRowClass} ${aboveRowLink}` : "";
-  const pad = `border-b border-border py-4 ${spacious ? "sm:py-6" : ""} ${flush ? "first:pt-0" : ""} ${link}`;
+  const pad = href ? `py-3 ${spacious ? "sm:py-4" : ""} ${link}` : `border-b border-border py-4 ${spacious ? "sm:py-6" : ""} ${flush ? "first:pt-0" : ""}`;
   if (media) {
     return (
-      <article id={id} aria-label={label} className={`grid grid-cols-media gap-x-4 gap-y-3 sm:grid-cols-media-actions sm:items-start ${pad} ${className}`}>
+      <article id={id} aria-label={label} data-row={href ? "" : undefined} className={`grid grid-cols-media gap-x-4 gap-y-3 sm:grid-cols-media-actions sm:items-start ${pad} ${className}`}>
         {media}
         <div className="flex min-w-0 flex-col gap-1">{children}</div>
         {actions && <div className="col-start-2 flex flex-wrap items-center gap-2 sm:col-start-3">{actions}</div>}
@@ -62,7 +65,7 @@ export function Row({ media, actions, center = false, flush = false, spacious = 
   const layout = stack ? "flex-col gap-3 sm:flex-row sm:justify-between sm:gap-6" : "justify-between gap-6";
   const align = center ? "sm:items-center" : "sm:items-start";
   return (
-    <article id={id} aria-label={label} className={`flex ${layout} ${stack ? align : center ? "items-center" : "items-start"} ${pad} ${className}`}>
+    <article id={id} aria-label={label} data-row={href ? "" : undefined} className={`flex ${layout} ${stack ? align : center ? "items-center" : "items-start"} ${pad} ${className}`}>
       <div className="flex min-w-0 flex-col gap-1.5">{children}</div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       {href && <RowLink href={href} />}

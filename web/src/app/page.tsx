@@ -1,3 +1,4 @@
+import { Users } from "lucide-react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -242,8 +243,8 @@ function AskForTeam({ o, day, first }: { o: OpportunityRowData; day: string; fir
   const next = nextDate(o, day);
   const when = next.date ? `${next.label} · ${daysLabel(daysUntil(next.date, day))}. ` : "";
   return (
-    <EmptyState title={`${first ? "Be the first to post a team" : "Post a team"} for ${o.title}`} action={<Link href={signInTo(`/teams/new?opportunity=${o.id}`)} className={buttonClass()}>Post a team</Link>}>
-      {`${when}List the roles you need, and people going can ask to join.`}
+    <EmptyState icon={Users} action={<Link href={signInTo(`/teams/new?opportunity=${o.id}`)} className={buttonClass()}>Post a team</Link>}>
+      {`${first ? "Be the first to post a team" : "Post a team"} for ${o.title}. ${when}List the roles you need, and people going can ask to join.`}
     </EmptyState>
   );
 }

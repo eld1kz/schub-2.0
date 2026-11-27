@@ -1,8 +1,9 @@
 "use client";
 
+import { Search } from "lucide-react";
 import { useState } from "react";
 import { PersonRow } from "../person-row";
-import { Input } from "@/components/ui";
+import { Input, Icon, Button, EmptyState } from "@/components/ui";
 
 export type ConnectionItem = { id: string; name: string; headline: string; avatar_url: string; open: boolean; telegram: string; email: string; awarded: boolean };
 
@@ -17,10 +18,7 @@ export function ConnectionList({ people }: { people: ConnectionItem[] }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="relative max-w-search">
-        <svg viewBox="0 0 24 24" aria-hidden className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 fill-none stroke-muted" strokeWidth={2} strokeLinecap="round">
-          <circle cx="11" cy="11" r="7" />
-          <path d="m20 20-3.5-3.5" />
-        </svg>
+        <Icon icon={Search} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted" />
         <Input
           search
           type="search"
@@ -33,7 +31,9 @@ export function ConnectionList({ people }: { people: ConnectionItem[] }) {
       </div>
 
       {shown.length === 0 ? (
-        <p className="text-sm text-ink2">No connections named &ldquo;{query.trim()}&rdquo;.</p>
+        <EmptyState icon={Search} action={<Button type="button" variant="secondary" size="sm" onClick={() => setQuery("")}>Show everyone</Button>}>
+          No connections named &ldquo;{query.trim()}&rdquo;.
+        </EmptyState>
       ) : (
         <div className="flex flex-col">
           {shown.map((p) => (

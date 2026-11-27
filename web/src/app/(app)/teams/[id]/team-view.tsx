@@ -1,3 +1,4 @@
+import { CalendarDays, Inbox } from "lucide-react";
 import Link from "next/link";
 import { openRoles, type Entry, type TeamEvent } from "@/lib/teams";
 import { dateRange, hasEnded, nextDate, today } from "@/lib/opportunities";
@@ -17,7 +18,8 @@ import { SignInButton } from "../../sign-in";
 import { EditDialog } from "../../u/[id]/edit-dialog";
 
 import { ShareTeamButton } from "../../share-team";
-import { Avatar, Chip, ChipList, Row, Section, Textarea, buttonClass, ToastProvider, AnswerButtons, SubmitButton } from "@/components/ui";
+import { Avatar, Chip, ChipList, Row, Section, Textarea, buttonClass, ToastProvider, AnswerButtons, SubmitButton, ButtonLink, EmptyState } from "@/components/ui";
+import { PersonLink } from "../../person-link";
 
 type Person = { name: string; headline: string; university: string; skills: string[]; avatar_url: string; open_to_collaborate: boolean } | null;
 export type Application = {
@@ -33,12 +35,12 @@ export type Application = {
 
 const row = "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6";
 
-function PersonLink({ id, person, you }: { id: string; person: { name: string; avatar_url: string; open_to_collaborate: boolean } | null; you: boolean }) {
+function Applicant({ id, person, you }: { id: string; person: { name: string; avatar_url: string; open_to_collaborate: boolean } | null; you: boolean }) {
   return (
-    <Link href={`/u/${id}`} className="flex min-w-0 items-center gap-2 hover:text-accent">
+    <PersonLink id={id} className="flex min-w-0 items-center gap-2 hover:text-accent">
       <Avatar url={person?.avatar_url ?? ""} name={person?.name ?? ""} size="md" ring={person?.open_to_collaborate ? "open" : null} />
       <span className="truncate text-base font-medium">{you ? "You" : person?.name || "Unnamed"}</span>
-    </Link>
+    </PersonLink>
   );
 }
 
@@ -47,17 +49,17 @@ function PersonLink({ id, person, you }: { id: string; person: { name: string; a
 function Member({ id, person, role, you, connection }: { id: string; person: { name: string; headline: string; avatar_url: string; open_to_collaborate: boolean } | null; role: string; you: boolean; connection: boolean }) {
   return (
     <article className="flex items-start gap-3 border-b border-border py-4 first:pt-0">
-      <Link href={`/u/${id}`} aria-hidden tabIndex={-1} className="shrink-0">
+      <PersonLink id={id} aria-hidden tabIndex={-1} className="shrink-0">
         <Avatar
           url={person?.avatar_url ?? ""}
           name={person?.name ?? ""}
           size="xl"
           ring={connection ? "connection" : person?.open_to_collaborate ? "open" : null}
         />
-      </Link>
+      </PersonLink>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <Link href={`/u/${id}`} className="text-base font-semibold hover:text-accent">{you ? "You" : person?.name || "Unnamed"}</Link>
+          <PersonLink id={id} className="text-base font-semibold hover:text-accent">{you ? "You" : person?.name || "Unnamed"}</PersonLink>
           {connection && <span className="text-meta font-medium text-accent">Your connection</span>}
         </div>
         {person?.headline && <p className="text-sm leading-snug text-ink2">{person.headline}</p>}
@@ -205,10 +207,10 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
           )}
           <div className="mt-1 flex items-center gap-2 text-sm text-ink2">
             Started by
-            <Link href={`/u/${t.owner_id}`} className="flex items-center gap-2 font-medium text-foreground hover:text-accent">
+            <PersonLink id={t.owner_id} className="flex items-center gap-2 font-medium text-foreground hover:text-accent">
               <Avatar url={owner?.avatar_url ?? ""} name={owner?.name ?? ""} size="xs" ring={owner?.open_to_collaborate ? "open" : null} />
               {isOwner ? "you" : owner?.name || "Unnamed"}
-            </Link>
+            </PersonLink>
           </div>
           {/* Everyone can share a team; for its owner it's the main thing to do here */}
           <div className="mt-2">
@@ -282,7 +284,9 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
                 })}
               </div>
             ) : (
-              <p className="max-w-measure text-base text-ink2">Not in any event yet. Open an event and choose Enter your team.</p>
+              <EmptyState icon={CalendarDays} action={<ButtonLink href="/opportunities" variant="secondary" size="sm">Browse events</ButtonLink>}>
+                Not in any event yet. Open an event and choose Enter your team.
+              </EmptyState>
             )}
           </Section>
         )}
@@ -320,7 +324,9 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
               </div>
             )}
             {byRole.length === 0 ? (
-              <p className="text-base text-ink2">Nobody has applied yet. People see your open roles on the Teams page.</p>
+              <EmptyState icon={Inbox} action={<ButtonLink href="/people" variant="secondary" size="sm">Browse people</ButtonLink>}>
+                Nobody has applied yet. People see your open roles on the Teams page.
+              </EmptyState>
             ) : (
               <div className="flex flex-col gap-8">
                 {byRole.map((g) => (
@@ -337,7 +343,7 @@ export function TeamView({ team: t, applications, userId, isGuest, connections, 
                         }
                       >
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <PersonLink id={a.user_id} person={a.person} you={false} />
+                          <Applicant id={a.user_id} person={a.person} you={false} />
                           {a.person?.university && <span className="text-sm text-ink2">{a.person.university}</span>}
                         </div>
                         {a.note && <p className="max-w-measure text-base leading-normal">{a.note}</p>}
