@@ -1,14 +1,15 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
-// A row that goes somewhere: a soft background under the pointer (reaching a little past the text), and room on the
-// right for the arrow that slides in. Rows drawn by hand (the opportunity table) use these two as well.
+// A row that goes somewhere: a soft background under the pointer, and an arrow that slides in just past its right
+// edge, in the page's margin, so the row's own content stays on the page's lines. Rows drawn by hand (the
+// opportunity table) use these two as well. Phones have no pointer and a narrow margin: no arrow there.
 export const linkedRowClass =
-  "group/row relative isolate pr-6 before:absolute before:inset-y-0 before:-inset-x-2 before:-z-10 before:rounded-md before:bg-chip before:opacity-0 before:transition-opacity hover:before:opacity-100";
+  "group/row relative isolate before:absolute before:inset-y-0 before:-inset-x-2 sm:before:-right-6 before:-z-10 before:rounded-md before:bg-chip before:opacity-0 before:transition-opacity hover:before:opacity-100";
 
 export function RowArrow() {
   return (
-    <svg viewBox="0 0 16 16" aria-hidden className="pointer-events-none absolute top-1/2 right-0 h-4 w-4 -translate-y-1/2 -translate-x-2 fill-none stroke-muted opacity-0 transition-[opacity,translate] duration-150 group-focus-within/row:translate-x-0 group-focus-within/row:opacity-100 group-hover/row:translate-x-0 group-hover/row:opacity-100" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 16 16" aria-hidden className="pointer-events-none absolute top-1/2 -right-5 hidden h-4 w-4 sm:block -translate-y-1/2 -translate-x-2 fill-none stroke-muted opacity-0 transition-[opacity,translate] duration-150 group-focus-within/row:translate-x-0 group-focus-within/row:opacity-100 group-hover/row:translate-x-0 group-hover/row:opacity-100" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="m6 4 4 4-4 4" />
     </svg>
   );

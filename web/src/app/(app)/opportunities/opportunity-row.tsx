@@ -16,7 +16,7 @@ export type OpportunityRowData = {
 // The column labels above the rows, from lg up
 export function OpportunityHeader() {
   return (
-    <div className={`hidden border-b border-border py-3 pr-6 text-xs font-semibold tracking-wide text-muted ${columns}`}>
+    <div className={`hidden border-b border-border py-3 text-xs font-semibold tracking-wide text-muted ${columns}`}>
       <span>TYPE</span>
       <span>OPPORTUNITY</span>
       <span>WHERE</span>

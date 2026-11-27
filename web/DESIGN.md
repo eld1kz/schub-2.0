@@ -140,7 +140,7 @@ CSS transitions only, no animation library. Hover and press take 120ms or less, 
 | `PageHeader` | The top of every page: title, a line about it, the page's action. `stack` for detail pages (the action goes under the title on phones), `ruled` for forms, `eyebrow` for a MonoLabel above |
 | `Section` | A titled section with the title in the label column (profile, team page, settings). `count`, `add` (+ Add under the title), `owner` + `edit` (the pencil), `quiet` for an empty one on your own page |
 | `SectionTitle` | A full-width title over a ruled list, on pages without a label column |
-| `Row` | One item of a ruled list: a team, a person, an application. `media` (avatar column), `actions` (right side), `stack` (actions under the content on phones), `center`, `flush` (no space above the first), `spacious`, `href` (the whole row links there, with a hover background and arrow; `linkedRowClass` and `RowArrow` for rows drawn by hand) |
+| `Row` | One item of a ruled list: a team, a person, an application. `media` (avatar column), `actions` (right side), `stack` (actions under the content on phones), `center`, `flush` (no space above the first), `spacious`, `href` (the whole row links there, with a hover background and, from sm up, an arrow in the right margin; `linkedRowClass` and `RowArrow` for rows drawn by hand) |
 | `Timeline`, `TimelineEntry` | Experience: a line with a dot per entry, `current` fills the dot |
 | `EmptyState` | Nothing to show. Plain: a line where a list would be. With `title` and `action`: a dashed prompt for the owner's own empty section |
 | `SubmitButton` | The submit button of a server action's form: a spinner while it's sent, at the same width. Never a bare `<button>` there |
