@@ -11,7 +11,11 @@ export function NotificationMenu({ unread, children }: { unread: boolean; childr
   const router = useRouter();
   const pathname = usePathname();
 
+  // Only when the page changes, not when this first runs: the menu may have been opened before the script arrived
+  const openedOn = useRef(pathname);
   useEffect(() => {
+    if (openedOn.current === pathname) return;
+    openedOn.current = pathname;
     ref.current?.removeAttribute("open");
   }, [pathname]);
 
@@ -24,7 +28,7 @@ export function NotificationMenu({ unread, children }: { unread: boolean; childr
   }, []);
 
   return (
-    <details ref={ref} className="motion-menu relative" onToggle={(e) => e.currentTarget.open && router.refresh()}>
+    <details ref={ref} suppressHydrationWarning className="motion-menu relative" onToggle={(e) => e.currentTarget.open && router.refresh()}>
       <summary aria-label={unread ? "Notifications, some unread" : "Notifications"} className="relative block cursor-pointer list-none text-muted hover:text-foreground [&::-webkit-details-marker]:hidden">
         <Icon icon={Bell} />
         {unread && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 animate-pop rounded-full bg-danger" />}
