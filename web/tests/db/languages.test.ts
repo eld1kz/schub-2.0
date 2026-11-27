@@ -77,9 +77,9 @@ describe("teams", () => {
     });
   });
 
-  it("nobody can change a team's languages afterwards", async () => {
+  it("nobody but the owner can change a team's languages or work mode", async () => {
     await expectNoChange(["teams"], async () => {
-      await userA.from("teams").update({ languages: ["German"] }).eq("id", teamId(1));
+      await userB.from("teams").update({ languages: ["German"] }).eq("id", teamId(1));
       await userB.from("teams").update({ work_mode: "Remote" }).eq("id", teamId(1));
     });
   });
