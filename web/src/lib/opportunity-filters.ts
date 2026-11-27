@@ -4,7 +4,7 @@
 // Signed-in members with no filters picked see events "for you": in their country (from their profile city) or
 // online, in one of their languages. Events that don't say where or in which language still show, since they might
 // suit them. ?all=1 turns it off. Picking any filter replaces it.
-import { countryName } from "./countries";
+import { COUNTRY_OPTIONS, countryName, isCountryCode } from "./countries";
 import { LANGUAGES } from "./languages";
 import { opportunityTypes, type OpportunityType } from "./opportunities";
 
@@ -16,6 +16,8 @@ export type Filters = { type: OpportunityType | null; country: string; lang: str
 
 // Where you are and what you speak; null country when your profile's city isn't one we know
 export type Me = { country: string | null; languages: string[] };
+
+type Place = { country: string | null; online: boolean };
 
 export type Listing = {
   type: OpportunityType;
@@ -40,7 +42,7 @@ export function readFilters(params: Params): Filters {
   const sort = one(params.sort);
   return {
     type: type in opportunityTypes ? (type as OpportunityType) : null,
-    country: country === ONLINE || /^[A-Z]{2}$/.test(country) ? country : "",
+    country: country === ONLINE || isCountryCode(country) ? country : "",
     lang: LANGUAGES.includes(lang) ? lang : "",
     canJoin: one(params.canjoin) === "1",
     sort: sort in SORTS ? (sort as Sort) : "deadline",
@@ -99,15 +101,20 @@ export function sortListings<T extends Listing>(list: T[], sort: Sort) {
   return sorted.sort((a, b) => Number(b.featured) - Number(a.featured) || soonest(a, b));
 }
 
-// The country choices with how many events each has: online first, then Korea, then every other country with events,
-// most events first
-export function countryOptions(list: Listing[]) {
+// Every country, for a picker: online first, then Korea, then the other countries with events (most first), then all
+// the rest by name under "Other countries". `events` says which countries have any; `counted` (those the other filters
+// leave) gives the numbers, so each is what picking it would show. The rest show no number.
+export function countryOptions(events: Place[], counted: Place[] = events) {
   const counts = new Map<string, number>();
-  for (const o of list) if (o.country) counts.set(o.country, (counts.get(o.country) ?? 0) + 1);
-  const others = [...counts].filter(([code]) => code !== "KR").sort((a, b) => b[1] - a[1] || countryName(a[0]).localeCompare(countryName(b[0])));
+  for (const o of counted) if (o.country) counts.set(o.country, (counts.get(o.country) ?? 0) + 1);
+  const count = (code: string) => counts.get(code) ?? 0;
+  const busy = new Set(events.flatMap((o) => (o.country && o.country !== "KR" ? [o.country] : [])));
+  const withEvents = [...busy].sort((a, b) => count(b) - count(a) || countryName(a).localeCompare(countryName(b)));
+  const option = (code: string) => ({ value: code, label: countryName(code), hint: String(count(code)) });
   return [
-    { value: ONLINE, label: "Online / worldwide", count: list.filter((o) => o.online).length },
-    { value: "KR", label: countryName("KR"), count: counts.get("KR") ?? 0 },
-    ...others.map(([code, count]) => ({ value: code, label: countryName(code), count })),
+    { value: ONLINE, label: "Online / worldwide", hint: String(counted.filter((o) => o.online).length) },
+    option("KR"),
+    ...withEvents.map(option),
+    ...COUNTRY_OPTIONS.filter((c) => c.value !== "KR" && !busy.has(c.value)).map((c) => ({ ...c, group: "Other countries" })),
   ];
 }

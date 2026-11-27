@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { id, service, signInAs } from "./auth";
+import { pick } from "./combobox";
 
 // Student 17 (Rin Sandbox) is open to a team with no roles yet; student 12 (Woojin Seedling) looks at people and posts a team
 // (not 18: delete-account.spec.ts deletes that account).
@@ -61,7 +62,7 @@ test("Discover filters people open to a team, and by the role they want", async 
   await expect(names.filter({ hasText: "Eunbi Notreal" })).toHaveCount(0);
   await expect(names.filter({ hasText: "Jisoo Sampleton" })).toHaveCount(1);
 
-  await page.getByLabel("Role they're open to").selectOption("Designer");
+  await pick(page.getByRole("combobox", { name: "Role they're open to", exact: true }), "As Designer");
   await expect(page).toHaveURL(/role=Designer/);
   await expect(names.filter({ hasText: "Seoyeon Mockford" })).toHaveCount(1);
   await expect(names.filter({ hasText: "Minho Ipsum" })).toHaveCount(1);

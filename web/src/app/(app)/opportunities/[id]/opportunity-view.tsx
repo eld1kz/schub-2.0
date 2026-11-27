@@ -15,7 +15,7 @@ import { PersonRow } from "../../people/person-row";
 import { ToastProvider } from "../../u/[id]/toast";
 import { Placement, TrustLabels, awardPeople } from "../../u/[id]/awards";
 import { EventActions } from "../event-actions";
-import { Avatar, ButtonAnchor, Chip, ChipList, EmptyState, MonoLabel, PageHeader, Select, buttonClass } from "@/components/ui";
+import { Avatar, ButtonAnchor, Chip, ChipList, Combobox, EmptyState, MonoLabel, PageHeader, buttonClass } from "@/components/ui";
 
 export type Opportunity = {
   id: string;
@@ -277,7 +277,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
             <details className="group">
               <summary className="cursor-pointer list-none hover:text-foreground [&::-webkit-details-marker]:hidden">Report this listing</summary>
               <form action={reportOpportunity.bind(null, o.id)} className="mt-3 flex flex-wrap items-center gap-2">
-                <Select name="reason" label="What's wrong" small options={reportReasons} />
+                <Combobox name="reason" label="What's wrong" small options={reportReasons} />
                 <button className={buttonClass({ variant: "secondary", size: "sm" })}>Report</button>
               </form>
             </details>

@@ -68,7 +68,7 @@ export function EditDialog({ title, trigger, label, cta = label, note, save, rem
     if (!open) return;
     dialog.current?.showModal();
     // Start on the first field rather than the close button
-    dialog.current?.querySelector<HTMLElement>("input:not([type=hidden]):not([type=file]):not([type=checkbox]), textarea")?.focus();
+    dialog.current?.querySelector<HTMLElement>("input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([data-combobox-value]), textarea")?.focus();
     checkValid();
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -130,7 +130,8 @@ story image), `align-icon` (an inline icon on the text baseline) and `max-h-inhe
 | `IconButton` | A square 34px button with an icon: the pencil, Close, Share in a row. Always give it a `label` |
 | `Field` | Label, control, hint and error together, tied by `id`. `required` adds an accent star, `optional` adds "(optional)" or your words |
 | `FieldLabel` | A label on its own (`as="legend"` in a fieldset). `quiet` for fields grouped under a label of their own (the profile's edit dialogs) |
-| `Input`, `Textarea`, `Select` | Form controls: 44px on phones, 40px from sm up. `small` (36px) in filter bars, `search` (40px, smaller text) over a list, `large` (44px everywhere) beside `lg` buttons |
+| `Input`, `Textarea` | Form controls: 44px on phones, 40px from sm up. `small` (36px) in filter bars, `search` (40px, smaller text) over a list, `large` (44px everywhere) beside `lg` buttons |
+| `Combobox` | Every dropdown, never a native `<select>`. A popup from sm up, a bottom sheet on phones; a search field over 8 options. `label` always (it names the list), plus `labelled` when a `FieldLabel` points at `id`. `name` posts it with a form; `ref` focuses it or sets a validity message. Options take a `hint` (a count) and a `group`. `ComboboxPanel` is its open list, for `/design` |
 | `Switch` | An on/off setting posted as a checkbox |
 | `ErrorText` | An error. `under` right under a field, `size="sm"` for the whole form, `as="span"` in a row of buttons |
 | `Chip`, `ChipList` | Skills. `sm` (mono, the default) under an entry; `md` with where the skill is used |

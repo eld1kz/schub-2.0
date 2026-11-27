@@ -5,7 +5,7 @@ import { completeOnboarding } from "@/app/actions";
 import { GOALS } from "@/lib/goals";
 import { LANGUAGES } from "@/lib/languages";
 import { SkillPicker } from "@/app/(app)/profile/skill-picker";
-import { CheckChip, ErrorText, FieldLabel, Input, Select, buttonClass } from "@/components/ui";
+import { CheckChip, Combobox, ErrorText, FieldLabel, Input, buttonClass } from "@/components/ui";
 
 const years = [2025, 2026, 2027, 2028, 2029, 2030];
 const yearOptions = years.map((y) => ({ value: String(y), label: String(y) }));
@@ -86,7 +86,7 @@ export function OnboardingFlow({ needsName, university, graduationYear, skills, 
         </div>
         <div>
           <FieldLabel htmlFor="graduation_year" optional>Graduation year</FieldLabel>
-          <Select id="graduation_year" name="graduation_year" placeholder="Select a year" value={year} onChange={setYear} options={yearOptions} required={false} />
+          <Combobox id="graduation_year" label="Graduation year" labelled name="graduation_year" placeholder="Select a year" value={year} onChange={setYear} options={yearOptions} required={false} />
         </div>
         <fieldset>
           <FieldLabel as="legend" optional>Languages you work in</FieldLabel>

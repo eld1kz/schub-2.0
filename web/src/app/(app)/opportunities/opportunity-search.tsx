@@ -4,7 +4,7 @@ import { Fragment, useState, type ReactNode } from "react";
 import { Input } from "@/components/ui";
 
 // Filters the already-loaded list by title as you type; no server call. `header` sits above the rows.
-export function OpportunitySearch({ rows, header, empty }: { rows: { id: string; title: string; node: ReactNode }[]; header: ReactNode; empty: string }) {
+export function OpportunitySearch({ rows, header, empty }: { rows: { id: string; title: string; node: ReactNode }[]; header: ReactNode; empty: ReactNode }) {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
   const shown = q ? rows.filter((r) => r.title.toLowerCase().includes(q)) : rows;

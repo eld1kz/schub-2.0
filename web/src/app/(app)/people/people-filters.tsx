@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ROLES } from "@/lib/roles";
 import { LANGUAGES } from "@/lib/languages";
 import { peopleHref, type PeopleQuery } from "./people-query";
-import { Select } from "@/components/ui";
+import { Combobox } from "@/components/ui";
 
 const roleOptions = ROLES.map((r) => ({ value: r, label: `As ${r}` }));
 const languageOptions = LANGUAGES.map((l) => ({ value: l, label: l }));
@@ -27,13 +27,13 @@ export function PeopleFilters({ query }: { query: PeopleQuery }) {
         Open to a team
       </Link>
       <div className="w-44">
-        <Select label="Role they're open to" placeholder="Any role" value={query.role} onChange={(role) => router.push(peopleHref({ ...query, role, open: query.open || role !== "", page: 1 }))} options={roleOptions} required={false} small />
+        <Combobox label="Role they're open to" placeholder="Any role" value={query.role} onChange={(role) => router.push(peopleHref({ ...query, role, open: query.open || role !== "", page: 1 }))} options={roleOptions} required={false} small />
       </div>
       <div className="w-36">
-        <Select label="Language" placeholder="Any language" value={query.lang} onChange={(lang) => router.push(peopleHref({ ...query, lang, page: 1 }))} options={languageOptions} required={false} small />
+        <Combobox label="Language" placeholder="Any language" value={query.lang} onChange={(lang) => router.push(peopleHref({ ...query, lang, page: 1 }))} options={languageOptions} required={false} small />
       </div>
       <div className="w-36">
-        <Select label="Work mode" placeholder="Any work mode" value={query.mode} onChange={(mode) => router.push(peopleHref({ ...query, mode, page: 1 }))} options={modeOptions} required={false} small />
+        <Combobox label="Work mode" placeholder="Any work mode" value={query.mode} onChange={(mode) => router.push(peopleHref({ ...query, mode, page: 1 }))} options={modeOptions} required={false} small />
       </div>
     </div>
   );

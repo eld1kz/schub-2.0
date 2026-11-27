@@ -74,7 +74,7 @@ web/src/
     teams.ts                team rows, open roles, entries: a team's current event (its soonest upcoming entry,
                             else the one that ended last) and recruitingRoles (none once that event is over)
     opportunities.ts, goals.ts
-    opportunity-filters.ts  /opportunities filters, sorting, "for you" and the country choices with counts
+    opportunity-filters.ts  /opportunities filters, sorting, "for you" and the list of every country (counts for those with events)
     countries.ts            ISO country codes and names, and the country a typed-in city or address is in
     importers/              one module per source (Hack Club, Kaggle, K-Startup, Luma) returning one shape
                             (types.ts), dedupe.ts across sources, run.ts writes them; run by

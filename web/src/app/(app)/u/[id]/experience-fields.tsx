@@ -6,7 +6,7 @@ import { knownSkills } from "@/lib/skills";
 import { SkillPicker } from "../../profile/skill-picker";
 import { FieldError } from "./edit-dialog";
 import { PeriodFields } from "./period-fields";
-import { Field, FieldLabel, Input, Select, Textarea } from "@/components/ui";
+import { Combobox, Field, FieldLabel, Input, Textarea } from "@/components/ui";
 
 const typeOptions = EXPERIENCE_TYPES.map((t) => ({ value: t, label: t }));
 
@@ -14,7 +14,7 @@ const typeOptions = EXPERIENCE_TYPES.map((t) => ({ value: t, label: t }));
 export function nextOnEnter(e: KeyboardEvent<HTMLDivElement>) {
   if (e.key !== "Enter" || e.defaultPrevented || !(e.target instanceof HTMLInputElement)) return;
   e.preventDefault();
-  const fields = [...e.currentTarget.querySelectorAll<HTMLElement>("input:not([type=hidden]), select, textarea")].filter((f) => f.getClientRects().length > 0);
+  const fields = [...e.currentTarget.querySelectorAll<HTMLElement>("input:not([type=hidden]):not([data-combobox-value]), [role=combobox], textarea")].filter((f) => f.getClientRects().length > 0);
   fields[fields.indexOf(e.target) + 1]?.focus();
 }
 
@@ -38,7 +38,7 @@ export function ExperienceFields({ experience: e }: { experience?: Experience })
       </Field>
 
       <Field id="experience-type" label="Type">
-        <Select id="experience-type" name="type" placeholder="Choose a type" value={type} onChange={setType} options={typeOptions} required={false} />
+        <Combobox id="experience-type" label="Type" labelled name="type" placeholder="Choose a type" value={type} onChange={setType} options={typeOptions} required={false} />
       </Field>
 
       <Field id="experience-company" label="Organization" required>

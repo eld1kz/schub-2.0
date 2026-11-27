@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { id, service, signInAs } from "./auth";
+import { pick } from "./combobox";
 
 // Filters, sorting, "for you", Review imports and "Fill from link" (supabase/opportunity-engine.sql).
 // Upcoming and listed in the seed: "Mock AI Challenge Winter" (online, English, deadline in 10 days), "Placeholder Hack
@@ -23,7 +24,7 @@ test.afterAll(async () => {
 const list = (page: Page) => page.getByRole("article");
 // The listed titles, top to bottom
 const titles = (page: Page) => list(page).getByRole("link").filter({ hasNotText: /going|connection/i }).allInnerTexts();
-const country = (page: Page) => page.getByLabel("Country", { exact: true });
+const country = (page: Page) => page.getByRole("combobox", { name: "Country", exact: true });
 
 test("signed out: every event, each row with its place and languages; imports waiting for review aren't listed", async ({ page }) => {
   await page.goto("/opportunities");
@@ -47,21 +48,15 @@ test("each type tab counts the events of that type, with the other filters appli
 
 test("country, language and Can I join? filter the list and live in the URL", async ({ page }) => {
   await page.goto("/opportunities");
-  // Online first, then Korea, then the other countries with events
-  const options = await country(page).locator("option").allInnerTexts();
-  expect(options.slice(0, 3)).toEqual(["Any country", "Online / worldwide (2)", "South Korea (1)"]);
-  expect(options).toContain("Japan (1)");
-  expect(options).toContain("United States (1)");
-
-  await country(page).selectOption("JP");
+  await pick(country(page), "Japan");
   await expect(page).toHaveURL(/\/opportunities\?country=JP$/);
   await expect.poll(() => titles(page)).toEqual([tokyo]);
 
-  await country(page).selectOption("online");
+  await pick(country(page), "Online / worldwide");
   await expect(page).toHaveURL(/country=online/);
   await expect.poll(async () => (await titles(page)).sort()).toEqual([winter, grant].sort());
 
-  await page.getByLabel("Language", { exact: true }).selectOption("English");
+  await pick(page.getByLabel("Language", { exact: true }), "English");
   await expect(page).toHaveURL(/country=online&lang=English/);
   await expect.poll(() => titles(page)).toEqual([winter]);
 
@@ -84,11 +79,11 @@ test("sorting: deadline soonest by default, then newest, then most people lookin
   await expect.poll(async () => before(await titles(page), winter, seoul)).toBe(true);
   await expect.poll(async () => before(await titles(page), seoul, tokyo)).toBe(true);
 
-  await page.getByLabel("Sort").selectOption("newest");
+  await pick(page.getByRole("combobox", { name: "Sort", exact: true }), "Newest");
   await expect(page).toHaveURL(/sort=newest/);
   await expect.poll(async () => before(await titles(page), tokyo, winter)).toBe(true);
 
-  await page.getByLabel("Sort").selectOption("looking");
+  await pick(page.getByRole("combobox", { name: "Sort", exact: true }), "Most people looking");
   await expect(page).toHaveURL(/sort=looking/);
   await expect.poll(async () => (await titles(page))[0]).toBe(seoul);
 });
@@ -156,10 +151,11 @@ test("Fill from link copies the event page into the form", async ({ browser }) =
   await fill.click();
   await expect(page.getByRole("status").filter({ hasText: "Filled from the page. Check every field before adding." })).toBeVisible();
   await expect(page.getByLabel("Title")).toHaveValue("Busan Sample Hackathon 2027");
-  await expect(page.locator("#type")).toHaveValue("hackathon");
+  await expect(page.locator("#type")).toHaveText("Hackathon");
   await expect(page.getByLabel("Organizer")).toHaveValue("Sample Club");
   await expect(page.getByLabel("City")).toHaveValue("Busan");
-  await expect(page.locator("#country")).toHaveValue("KR");
+  await expect(page.locator("#country")).toHaveText("South Korea");
+  await expect(page.locator('input[name="country"]')).toHaveValue("KR");
   await expect(page.getByRole("checkbox", { name: "Korean" })).toBeChecked();
   await expect(page.getByRole("checkbox", { name: "English" })).toBeChecked();
   await expect(page.locator('input[name="deadline"]')).toHaveValue("2027-03-31");

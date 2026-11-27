@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { setEntryStatus } from "@/app/actions";
 import { ENTRY_STATUSES, type EntryStatus } from "@/lib/teams";
-import { ErrorText, MonoLabel, Select } from "@/components/ui";
+import { Combobox, ErrorText, MonoLabel } from "@/components/ui";
 
 const options = Object.entries(ENTRY_STATUSES).map(([value, label]) => ({ value, label }));
 
@@ -40,7 +40,7 @@ export function EntryStatusControl({ teamId, teamTitle, event, status, userId }:
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className={`w-40 ${saving ? "opacity-60" : ""}`}>
-          <Select label={`Status of ${teamTitle} for ${event.title}`} placeholder="Status" value={value} onChange={change} options={options} small />
+          <Combobox label={`Status of ${teamTitle} for ${event.title}`} placeholder="Status" value={value} onChange={change} options={options} small />
         </div>
         {(value === "going" || value === "registered") && event.url && (
           <a href={event.url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-accent hover:underline">Official registration page ↗</a>

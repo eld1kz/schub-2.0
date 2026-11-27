@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { COUNTRY_OPTIONS } from "./countries";
 import { countryOptions, filtersHref, forYou, forYouLabel, matches, readFilters, sortListings, type Listing } from "./opportunity-filters";
 
 const event = (over: Partial<Listing> & { id: string }): Listing & { id: string } => ({
@@ -23,6 +24,8 @@ describe("readFilters and filtersHref", () => {
     expect(f).toEqual({ type: "hackathon", country: "KR", lang: "Korean", canJoin: true, sort: "newest", all: true });
     expect(filtersHref(f)).toBe("/opportunities?type=hackathon&country=KR&lang=Korean&canjoin=1&sort=newest&all=1");
     expect(readFilters({ type: "party", country: "korea", lang: "Klingon", sort: "random" })).toEqual(none);
+    // Two letters that name no country
+    expect(readFilters({ country: "XX" })).toEqual(none);
     expect(filtersHref(none)).toBe("/opportunities");
   });
 });
@@ -84,12 +87,26 @@ describe("sortListings", () => {
 });
 
 describe("countryOptions", () => {
+  const brief = (options: ReturnType<typeof countryOptions>) => options.map((o) => [o.value, "hint" in o ? o.hint : null]);
+
   it("lists online, Korea, then countries with events, with counts", () => {
-    expect(countryOptions(all)).toEqual([
-      { value: "online", label: "Online / worldwide", count: 1 },
-      { value: "KR", label: "South Korea", count: 2 },
-      { value: "JP", label: "Japan", count: 1 },
-    ]);
-    expect(countryOptions([]).map((o) => o.value)).toEqual(["online", "KR"]);
+    expect(brief(countryOptions(all)).slice(0, 3)).toEqual([["online", "1"], ["KR", "2"], ["JP", "1"]]);
+  });
+
+  it("then every other country by name, under Other countries and without a count", () => {
+    const rest = countryOptions(all).slice(3);
+    expect(rest.every((o) => "group" in o && o.group === "Other countries" && !("hint" in o))).toBe(true);
+    expect(rest.map((o) => o.label)).toEqual(rest.map((o) => o.label).sort((a, b) => a.localeCompare(b)));
+    expect(rest.some((o) => o.value === "KR" || o.value === "JP")).toBe(false);
+    expect(countryOptions(all)).toHaveLength(COUNTRY_OPTIONS.length + 1);
+  });
+
+  it("keeps a country with events in its place when the other filters leave none of them", () => {
+    expect(brief(countryOptions(all, [online])).slice(0, 3)).toEqual([["online", "1"], ["KR", "0"], ["JP", "0"]]);
+  });
+
+  it("has online and Korea on top even with no events", () => {
+    expect(brief(countryOptions([])).slice(0, 2)).toEqual([["online", "0"], ["KR", "0"]]);
+    expect(countryOptions([])[2]).toMatchObject({ group: "Other countries" });
   });
 });

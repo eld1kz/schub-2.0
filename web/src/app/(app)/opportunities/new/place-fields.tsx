@@ -4,17 +4,16 @@ import { useState } from "react";
 import { LANGUAGES } from "@/lib/languages";
 import { ELIGIBILITY } from "@/lib/opportunities";
 import { FieldError } from "../../u/[id]/edit-dialog";
-import { CheckChip, FieldLabel, Input, Select } from "@/components/ui";
+import { CheckChip, Combobox, FieldLabel, Input, type ComboboxOption } from "@/components/ui";
 
 const eligibilityOptions = Object.entries(ELIGIBILITY).map(([value, text]) => ({ value, label: text }));
 
-export type Option = { value: string; label: string };
 export type PlaceValues = { city: string; country: string; online: boolean; languages: string[]; eligibility: string; eligibility_note: string };
 
 // Where it happens, the languages it runs in, and who can join. A country restriction is to the country above.
-// `countries` comes from the server (COUNTRY_OPTIONS): browsers name some countries differently from Node's Intl, which
+// `countries` comes from the server (countryChoices): browsers name some countries differently from Node's Intl, which
 // broke hydration when the list was built on both sides.
-export function PlaceFields({ initial, countries, countryError }: { initial: PlaceValues; countries: Option[]; countryError: string }) {
+export function PlaceFields({ initial, countries, countryError }: { initial: PlaceValues; countries: ComboboxOption[]; countryError: string }) {
   const [country, setCountry] = useState(initial.country);
   const [eligibility, setEligibility] = useState(initial.eligibility || "anyone");
 
@@ -27,7 +26,7 @@ export function PlaceFields({ initial, countries, countryError }: { initial: Pla
         </div>
         <div>
           <FieldLabel htmlFor="country" optional>Country</FieldLabel>
-          <Select id="country" name="country" placeholder="No country (online)" value={country} onChange={setCountry} options={countries} required={false} />
+          <Combobox id="country" name="country" label="Country" labelled value={country} onChange={setCountry} options={countries} required={false} />
           <FieldError field="country" message={countryError} />
         </div>
       </div>
@@ -52,7 +51,7 @@ export function PlaceFields({ initial, countries, countryError }: { initial: Pla
 
       <div>
         <FieldLabel htmlFor="eligibility">Who can join</FieldLabel>
-        <Select id="eligibility" name="eligibility" placeholder="Anyone" value={eligibility} onChange={setEligibility} options={eligibilityOptions} />
+        <Combobox id="eligibility" label="Who can join" labelled name="eligibility" placeholder="Anyone" value={eligibility} onChange={setEligibility} options={eligibilityOptions} />
         {eligibility === "country" && !country && <p className="mt-1.5 text-meta text-muted">Pick the country above.</p>}
         {eligibility !== "anyone" && (
           <Input

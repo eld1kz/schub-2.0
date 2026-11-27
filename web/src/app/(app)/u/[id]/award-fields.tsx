@@ -6,7 +6,7 @@ import { AWARD_DESCRIPTION_MAX, AWARD_TEAMMATES_MAX, PLACEMENTS, placementLabel,
 import { FieldError } from "./edit-dialog";
 import { nextOnEnter } from "./experience-fields";
 import { monthOptions, yearOptions } from "./period-fields";
-import { Avatar, Field, FieldLabel, Input, Select, Textarea } from "@/components/ui";
+import { Avatar, Combobox, Field, FieldLabel, Input, Textarea, type ComboboxHandle } from "@/components/ui";
 
 export type AwardOptions = { opportunities: { id: string; title: string }[]; projects: { id: string; title: string }[] };
 
@@ -27,8 +27,8 @@ function pickOnEnter(e: KeyboardEvent<HTMLInputElement>, pick: () => void) {
 export function AwardFields({ award: a, opportunities, projects }: { award?: Award } & AwardOptions) {
   const root = useRef<HTMLDivElement>(null);
   const eventInput = useRef<HTMLInputElement>(null);
-  const placementRef = useRef<HTMLSelectElement>(null);
-  const monthRef = useRef<HTMLSelectElement>(null);
+  const placementRef = useRef<ComboboxHandle>(null);
+  const monthRef = useRef<ComboboxHandle>(null);
 
   // A Schub opportunity ({ id, title }), or a typed-in name (id "")
   const [event, setEvent] = useState(a ? { id: a.opportunity?.id ?? "", title: a.opportunity?.title ?? a.event_name } : null);
@@ -139,7 +139,7 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
       </Field>
 
       <Field id="award-placement" label="Placement" required>
-        <Select id="award-placement" name="placement" placeholder="Choose a placement" value={placement} onChange={setPlacement} options={placementOptions} selectRef={placementRef} />
+        <Combobox id="award-placement" label="Placement" labelled name="placement" placeholder="Choose a placement" value={placement} onChange={setPlacement} options={placementOptions} ref={placementRef} />
         <FieldError field="placement" />
       </Field>
 
@@ -151,15 +151,15 @@ export function AwardFields({ award: a, opportunities, projects }: { award?: Awa
         <FieldLabel as="legend" required>Date</FieldLabel>
         <input type="hidden" name="awarded_on" value={month && year ? `${year}-${month}` : ""} />
         <div className="grid grid-cols-2 gap-3">
-          <Select label="Month" placeholder="Month" value={month} onChange={setMonth} options={monthOptions} selectRef={monthRef} />
-          <Select label="Year" placeholder="Year" value={year} onChange={setYear} options={yearOptions(new Date().getFullYear())} />
+          <Combobox label="Month" placeholder="Month" value={month} onChange={setMonth} options={monthOptions} ref={monthRef} />
+          <Combobox label="Year" placeholder="Year" value={year} onChange={setYear} options={yearOptions(new Date().getFullYear())} />
         </div>
         <FieldError field="awarded_on" message={future ? "Pick a month that has already passed." : ""} />
       </fieldset>
 
       <Field id="award-project" label="Project">
         {projects.length > 0 ? (
-          <Select id="award-project" name="project_id" placeholder="No project" value={project} onChange={setProject} options={projects.map((p) => ({ value: p.id, label: p.title }))} required={false} />
+          <Combobox id="award-project" label="Project" labelled name="project_id" placeholder="No project" value={project} onChange={setProject} options={projects.map((p) => ({ value: p.id, label: p.title }))} required={false} />
         ) : (
           <p className="text-sm text-ink2">Add the project to your profile first, then link it here.</p>
         )}

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { id, service, signInAs } from "./auth";
+import { pick } from "./combobox";
 
 // Student 06 (Joon Dummyson) has a sparse profile: no bio, interests, links, experience or projects
 const me = id(6);
@@ -53,8 +54,8 @@ test("add and delete an experience", async ({ page }) => {
   await dialog.getByLabel("Title").fill("E2E Tester");
   await dialog.getByLabel("Organization").fill("Playwright Club");
   await dialog.getByLabel("I currently work here").check();
-  await dialog.getByLabel("Start month").selectOption("03");
-  await dialog.getByLabel("Start year").selectOption("2025");
+  await pick(dialog.getByRole("combobox", { name: "Start month", exact: true }), "March");
+  await pick(dialog.getByRole("combobox", { name: "Start year", exact: true }), "2025");
   await dialog.getByRole("button", { name: "Save", exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole("heading", { name: "E2E Tester" })).toBeVisible();

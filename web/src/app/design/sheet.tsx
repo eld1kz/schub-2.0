@@ -6,6 +6,8 @@ import {
   Chip,
   ChipList,
   CloseIcon,
+  Combobox,
+  ComboboxPanel,
   EmptyState,
   ErrorText,
   Field,
@@ -17,7 +19,6 @@ import {
   Row,
   Section,
   SectionTitle,
-  Select,
   Switch,
   Tabs,
   Textarea,
@@ -27,6 +28,7 @@ import {
   type AvatarSize,
   type ButtonSize,
   type ButtonVariant,
+  type ComboboxOption,
 } from "@/components/ui";
 import { ModalDemo } from "./modal-demo";
 
@@ -60,6 +62,16 @@ const typeSizes = [
 ] as const;
 // A GitHub avatar, one of the two outside hosts photoUrl allows
 const photo = "https://avatars.githubusercontent.com/u/9919";
+// Short: no search field. Long (more than 8): searchable, with counts and a named group.
+const types: ComboboxOption[] = [{ value: "hackathon", label: "Hackathon" }, { value: "competition", label: "Competition" }, { value: "grant", label: "Grant" }];
+const modes: ComboboxOption[] = [{ value: "remote", label: "Remote" }, { value: "in_person", label: "In person" }];
+const places: ComboboxOption[] = [
+  { value: "online", label: "Online / worldwide", hint: "2" },
+  { value: "KR", label: "South Korea", hint: "1" },
+  { value: "JP", label: "Japan", hint: "1" },
+  ...["Kazakhstan", "Mongolia", "Uzbekistan", "Vietnam", "France", "Germany", "Spain"].map((label) => ({ value: label, label, group: "Other countries" })),
+];
+const openBox = "flex max-h-90 w-full max-w-narrow flex-col overflow-hidden rounded-md border border-line2 shadow-modal";
 const pencil = (
   <IconButton label="Edit">
     <svg viewBox="0 0 16 16" aria-hidden className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth={1.5}>
@@ -135,10 +147,10 @@ export function Sheet({ scheme }: { scheme: "light" | "dark" }) {
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field id={id("d-type")} label="Type">
-              <Select id={id("d-type")} placeholder="Pick a type" defaultValue="" options={[{ value: "hackathon", label: "Hackathon" }, { value: "competition", label: "Competition" }]} />
+              <Combobox id={id("d-type")} label="Type" labelled placeholder="Pick a type" defaultValue="" options={types} />
             </Field>
             <Field id={id("d-mode")} label="Work mode">
-              <Select id={id("d-mode")} defaultValue="remote" required={false} placeholder="Not set" options={[{ value: "remote", label: "Remote" }, { value: "in_person", label: "In person" }]} />
+              <Combobox id={id("d-mode")} label="Work mode" labelled defaultValue="remote" required={false} placeholder="Not set" options={modes} />
             </Field>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -153,6 +165,34 @@ export function Sheet({ scheme }: { scheme: "light" | "dark" }) {
           <Switch name={id("d-switch-off")} label="Off" defaultChecked={false} />
           <ErrorText>An error under a field or in a row</ErrorText>
           <ErrorText size="sm">An error for the whole form</ErrorText>
+        </div>
+      </Section>
+
+      <Section title="Combobox">
+        <div className="flex flex-col gap-6">
+          <div className="grid max-w-form grid-cols-2 gap-3">
+            <Combobox label="Country" placeholder="Any country" required={false} options={places} />
+            <Combobox label="Chosen country" defaultValue="KR" options={places} />
+            <Combobox label="Small (filter bars)" placeholder="Any language" required={false} small options={modes} />
+            <Combobox label="Disabled" defaultValue="remote" disabled options={modes} />
+            <div>
+              <Combobox label="With an error" placeholder="Choose a type" options={types} />
+              <ErrorText under>Choose a type.</ErrorText>
+            </div>
+          </div>
+          <FieldLabel as="span" quiet>Open: a short list</FieldLabel>
+          <div className={openBox}>
+            <ComboboxPanel id={id("open-short")} label="Example type" options={types} selected="competition" active={0} query="" searchable={false} />
+          </div>
+          <FieldLabel as="span" quiet>Open: a long list, with search and a group</FieldLabel>
+          <div className={openBox}>
+            <ComboboxPanel id={id("open-long")} label="Example country" options={places} selected="KR" active={2} query="" searchable />
+          </div>
+          <FieldLabel as="span" quiet>Open: nothing found</FieldLabel>
+          <div className={openBox}>
+            <ComboboxPanel id={id("open-none")} label="Example search" options={[]} selected="" active={0} query="Atlantis" searchable />
+          </div>
+          <p className="text-meta text-muted">On phones the list opens as a bottom sheet: narrow the window and open one.</p>
         </div>
       </Section>
 
