@@ -14,11 +14,12 @@ export function knownRoles(values: unknown[]) {
 
 // A new team's open roles from its form: each "roles" value paired with the "role_notes" value at the same position.
 // Unknown and repeated roles are dropped; notes are trimmed and cut to ROLE_NOTE_MAX, and empty ones left out.
-export function rolesWithNotes(roles: unknown[], notes: unknown[]) {
+export function rolesWithNotes(roles: unknown[], notes: unknown[], own: string[] = []) {
   const picked: string[] = [];
   const noteFor: Record<string, string> = {};
   roles.forEach((value, i) => {
-    const role = knownRoles([value])[0];
+    // From the fixed list, or one of `own`: roles the team already has (older teams typed theirs in)
+    const role = knownRoles([value])[0] ?? own.find((r) => r === value);
     if (!role || picked.includes(role)) return;
     picked.push(role);
     const note = String(notes[i] ?? "").trim().slice(0, ROLE_NOTE_MAX);
