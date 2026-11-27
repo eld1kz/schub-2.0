@@ -489,11 +489,13 @@ export async function connect(receiverId: string): Promise<SaveResult> {
 }
 
 // Server actions can be called with any arguments, so the status is checked here too
-export async function respond(connectionId: string, status: "accepted" | "declined") {
+export async function respond(connectionId: string, status: "accepted" | "declined"): Promise<SaveResult> {
   const { supabase } = await requireMember();
-  if (status !== "accepted" && status !== "declined") return;
-  await supabase.from("connections").update({ status }).eq("id", connectionId);
+  if (status !== "accepted" && status !== "declined") return {};
+  const { data, error } = await supabase.from("connections").update({ status }).eq("id", connectionId).select("id");
   revalidatePath("/", "layout");
+  // No rows: they withdrew it meanwhile
+  return error || !data?.length ? { error: "Couldn't answer the request. Try again." } : {};
 }
 
 // The sender takes back a request the other person hasn't answered yet (policy in supabase/people-requests.sql)
@@ -836,11 +838,12 @@ export async function withdrawApplication(teamId: string) {
   revalidatePath("/", "layout");
 }
 
-export async function respondToApplication(teamId: string, applicationId: string, status: "accepted" | "declined") {
+export async function respondToApplication(teamId: string, applicationId: string, status: "accepted" | "declined"): Promise<SaveResult> {
   const { supabase } = await requireMember();
-  if (status !== "accepted" && status !== "declined") return;
-  await supabase.from("team_applications").update({ status }).eq("id", applicationId).eq("team_id", teamId);
+  if (status !== "accepted" && status !== "declined") return {};
+  const { data, error } = await supabase.from("team_applications").update({ status }).eq("id", applicationId).eq("team_id", teamId).select("id");
   revalidatePath("/", "layout");
+  return error || !data?.length ? { error: "Couldn't answer the application. Try again." } : {};
 }
 
 // The owner invites someone to one of the team's roles. The database checks it's your team and role, and that
@@ -872,11 +875,12 @@ export async function withdrawInvite(teamId: string, inviteId: string) {
 }
 
 // The invited person accepts (and joins in that role, like an accepted application) or declines
-export async function answerInvite(inviteId: string, status: "accepted" | "declined") {
+export async function answerInvite(inviteId: string, status: "accepted" | "declined"): Promise<SaveResult> {
   const { supabase, userId } = await requireMember();
-  if (status !== "accepted" && status !== "declined") return;
-  await supabase.from("team_applications").update({ status }).eq("id", inviteId).eq("user_id", userId).eq("direction", "invite");
+  if (status !== "accepted" && status !== "declined") return {};
+  const { data, error } = await supabase.from("team_applications").update({ status }).eq("id", inviteId).eq("user_id", userId).eq("direction", "invite").select("id");
   revalidatePath("/", "layout");
+  return error || !data?.length ? { error: "Couldn't answer the invitation. Try again." } : {};
 }
 
 // The team's owner records what the team built, or edits it (one per team). The database checks it's your team

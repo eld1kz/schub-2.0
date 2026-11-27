@@ -1,20 +1,19 @@
 "use client";
 
-import { useActionState } from "react";
 import { connect } from "@/app/actions";
 import { SignInButton } from "./sign-in";
-import { ErrorText, buttonClass } from "@/components/ui";
+import { Button, ErrorText, buttonClass, useOptimisticAction, type ButtonSize, type ButtonVariant } from "@/components/ui";
 
-// `className` styles the button: secondary by default, primary for the main action on a profile.
-// When the request isn't sent (the daily cap), the reason shows under the button.
-export function ConnectButton({ profileId, status, isGuest, className = buttonClass({ variant: "secondary" }) }: { profileId: string; status?: string; isGuest: boolean; className?: string }) {
-  const [result, action, pending] = useActionState(connect.bind(null, profileId), {});
-  if (isGuest) return <SignInButton label="Sign in to connect" className={className} />;
-  if (status) return <span className="text-xs text-muted capitalize">{status}</span>;
+// Secondary by default, primary for the main action on a profile. A check shows at once, then the status; when the
+// request isn't sent (the daily cap), the button comes back with the reason under it.
+export function ConnectButton({ profileId, status, isGuest, variant = "secondary", size = "md" }: { profileId: string; status?: string; isGuest: boolean; variant?: ButtonVariant; size?: ButtonSize }) {
+  const { done, error, run } = useOptimisticAction();
+  if (isGuest) return <SignInButton label="Sign in to connect" className={buttonClass({ variant, size })} />;
+  if (status && !done) return <span className="text-xs text-muted capitalize">{status}</span>;
   return (
-    <form action={action} className="flex flex-col items-start gap-1.5">
-      <button disabled={pending} className={`${className} disabled:opacity-60`}>Connect</button>
-      {result.error && <ErrorText className="max-w-note">{result.error}</ErrorText>}
-    </form>
+    <span className="flex flex-col items-start gap-1.5">
+      <Button type="button" variant={variant} size={size} done={done !== null} onClick={() => run(() => connect(profileId))}>Connect</Button>
+      {error && <ErrorText className="max-w-note">{error}</ErrorText>}
+    </span>
   );
 }

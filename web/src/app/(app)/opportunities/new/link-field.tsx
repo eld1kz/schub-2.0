@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { fillFromLink } from "@/app/actions";
 import type { Prefill } from "@/lib/link-preview";
 import { FieldError } from "../../u/[id]/edit-dialog";
-import { ErrorText, FieldLabel, Input, buttonClass } from "@/components/ui";
+import { ErrorText, FieldLabel, Input, Button } from "@/components/ui";
 
 // The event's link, with "Fill from link" beside it when adding: it reads the page and hands what it found to
 // `onFill`. `error` is the server's check of the link on submit.
@@ -30,9 +30,9 @@ export function LinkField({ initial, onFill, error }: { initial: string; onFill?
       <div className="flex flex-col gap-2 sm:flex-row">
         <Input large id="url" name="url" type="url" required placeholder="https://" value={url} onChange={(e) => setUrl(e.target.value)} className="min-w-0 flex-1" />
         {onFill && (
-          <button type="button" onClick={fill} disabled={filling || !/^https?:\/\/\S+\.\S+/.test(url)} className={buttonClass({ variant: "secondary", size: "lg" })}>
-            {filling ? "Reading the page..." : "Fill from link"}
-          </button>
+          <Button type="button" variant="secondary" size="lg" onClick={fill} pending={filling} disabled={!/^https?:\/\/\S+\.\S+/.test(url)}>
+            Fill from link
+          </Button>
         )}
       </div>
       <p className="mt-1.5 text-meta text-muted">

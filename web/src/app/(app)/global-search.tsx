@@ -82,7 +82,7 @@ export function GlobalSearch() {
       />
       <button type="button" onClick={close} className="text-sm font-medium text-ink2 sm:hidden">Cancel</button>
       {results && (
-        <div className="fixed inset-x-4 top-16 z-10 rounded-md border border-border bg-background py-2 shadow-lg sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-75">
+        <div className="motion-in fixed inset-x-4 top-16 z-10 rounded-md border border-border bg-background py-2 shadow-lg sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-75">
           {results.people.length === 0 && results.teams.length === 0 && <p className="px-4 py-2 text-muted">No results</p>}
           {results.people.length > 0 && (
             <>

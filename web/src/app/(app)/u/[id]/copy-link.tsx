@@ -1,7 +1,6 @@
 "use client";
 
-import { useToast } from "./toast";
-import { buttonClass } from "@/components/ui";
+import { buttonClass, useToast } from "@/components/ui";
 
 export function CopyLinkButton({ path }: { path: string }) {
   const toast = useToast();

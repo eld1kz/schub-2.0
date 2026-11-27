@@ -7,7 +7,7 @@ import { today } from "@/lib/opportunities";
 import { awardedIds } from "@/lib/awards";
 import { myConnections } from "@/lib/connections";
 import { TeamList } from "../../../team-list";
-import { Row, buttonClass } from "@/components/ui";
+import { Row, buttonClass, AnswerButtons, SubmitButton } from "@/components/ui";
 
 export const instant = false;
 
@@ -35,7 +35,7 @@ function Heading({ title, count }: { title: string; count: number }) {
 // One of your teams or applications: the team, a line about you on it, and an action on the right
 function TeamRow({ teamId, title, children, action }: { teamId: string; title: string; children: ReactNode; action?: ReactNode }) {
   return (
-    <Row center flush actions={action}>
+    <Row center flush actions={action} href={`/teams/${teamId}`}>
       <Link href={`/teams/${teamId}`} className="w-fit text-base font-semibold hover:text-accent">{title}</Link>
       <p className="text-sm text-ink2">{children}</p>
     </Row>
@@ -96,10 +96,12 @@ export default async function YourTeamsPage() {
               teamId={a.team_id}
               title={a.team?.title ?? ""}
               action={
-                <div className="flex shrink-0 gap-2">
-                  <form action={answerInvite.bind(null, a.id, "accepted")}><button aria-label={`Accept the invitation to ${a.team?.title ?? ""}`} className={buttonClass({ size: "sm" })}>Accept</button></form>
-                  <form action={answerInvite.bind(null, a.id, "declined")}><button aria-label={`Decline the invitation to ${a.team?.title ?? ""}`} className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
-                </div>
+                <AnswerButtons
+                  accept={answerInvite.bind(null, a.id, "accepted")}
+                  decline={answerInvite.bind(null, a.id, "declined")}
+                  acceptLabel={`Accept the invitation to ${a.team?.title ?? ""}`}
+                  declineLabel={`Decline the invitation to ${a.team?.title ?? ""}`}
+                />
               }
             >
               <span className="text-foreground">{a.role}</span> · Invited by {a.team?.owner?.name || "Unnamed"}
@@ -135,7 +137,7 @@ export default async function YourTeamsPage() {
               teamId={a.team_id}
               title={a.team?.title ?? ""}
               action={a.status === "pending" && (
-                <form action={withdrawApplication.bind(null, a.team_id)}><button className="h-9 text-sm text-ink2 hover:text-foreground">Withdraw</button></form>
+                <form action={withdrawApplication.bind(null, a.team_id)}><SubmitButton variant="quiet" size="sm">Withdraw</SubmitButton></form>
               )}
             >
               {a.role} ·{" "}

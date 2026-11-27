@@ -6,7 +6,7 @@ import { mediaUrl, webLink } from "@/lib/portfolio";
 import { builtWith, type SharedProject } from "@/lib/shared-projects";
 import type { Award } from "@/lib/awards";
 import { Placement } from "./awards";
-import { Avatar, buttonClass } from "@/components/ui";
+import { Avatar, SubmitButton } from "@/components/ui";
 
 const outLink = "text-accent hover:underline";
 
@@ -75,7 +75,7 @@ export function SharedProjectBody({ project: p, award, except, edit, showTeam = 
 export function HideButton({ projectId }: { projectId: string }) {
   return (
     <form action={hideSharedProject.bind(null, projectId, true)}>
-      <button className="h-9 text-meta text-ink2 hover:text-foreground">Hide from my profile</button>
+      <SubmitButton variant="bare" className="h-9 text-meta text-ink2 hover:text-foreground">Hide from my profile</SubmitButton>
     </form>
   );
 }
@@ -84,7 +84,7 @@ export function HideButton({ projectId }: { projectId: string }) {
 export function ShowAgainButton({ projectId }: { projectId: string }) {
   return (
     <form action={hideSharedProject.bind(null, projectId, false)}>
-      <button className="text-meta font-medium text-accent hover:underline">Show on my profile</button>
+      <SubmitButton variant="bare" className="text-meta font-medium text-accent hover:underline">Show on my profile</SubmitButton>
     </form>
   );
 }
@@ -100,8 +100,8 @@ export function PendingSharedProjects({ projects }: { projects: SharedProject[] 
             <span className="font-semibold">{p.title}</span>. Show it on your profile?
           </p>
           <div className="flex shrink-0 gap-2">
-            <form action={answerSharedProject.bind(null, p.id, "confirmed")}><button className={buttonClass({ size: "sm" })}>Confirm</button></form>
-            <form action={answerSharedProject.bind(null, p.id, "declined")}><button className={buttonClass({ variant: "secondary", size: "sm" })}>Decline</button></form>
+            <form action={answerSharedProject.bind(null, p.id, "confirmed")}><SubmitButton size="sm">Confirm</SubmitButton></form>
+            <form action={answerSharedProject.bind(null, p.id, "declined")}><SubmitButton variant="secondary" size="sm">Decline</SubmitButton></form>
           </div>
         </div>
       ))}

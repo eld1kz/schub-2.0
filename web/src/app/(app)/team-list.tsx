@@ -51,6 +51,7 @@ export function TeamList({ teams, userId, awarded, applied, connections = new Se
           <Row
             key={t.id}
             spacious
+            href={`/teams/${t.id}`}
             actions={
               <>
                 {share && <ShareTeamButton teamId={t.id} title={t.title} version={storyVersion(t)} variant="icon" />}

@@ -7,7 +7,6 @@ import { awardColumns, type Award } from "@/lib/awards";
 import { sharedProjectColumns, type SharedProject } from "@/lib/shared-projects";
 import { ConnectButton } from "../../connect-button";
 import { ProfileView, type Connection, type ProfileData, type Suggestion } from "./profile-view";
-import { buttonClass } from "@/components/ui";
 
 type Opportunity = { id: string; title: string; starts_at: string | null; deadline: string | null } | null;
 type Person = { id: string; name: string; headline: string; avatar_url: string; skills: string[]; interests: string[]; open_to_collaborate: boolean; languages: string[] };
@@ -15,7 +14,6 @@ type Person = { id: string; name: string; headline: string; avatar_url: string; 
 const suggestionCount = 4;
 // "People you may team up with" picks the best matches from this many recently updated open collaborators
 const suggestionPool = 50;
-const suggestionButton = buttonClass({ variant: "accent", size: "xs" });
 
 export const instant = false;
 
@@ -101,7 +99,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
     .map((x) => ({ ...x, score: matchScore(x, me).score }))
     .sort((a, b) => b.score - a.score)
     .slice(0, suggestionCount)
-    .map((x) => ({ id: x.id, name: x.name, headline: x.headline, avatar_url: x.avatar_url, connect: <ConnectButton profileId={x.id} isGuest={isGuest} className={suggestionButton} /> }));
+    .map((x) => ({ id: x.id, name: x.name, headline: x.headline, avatar_url: x.avatar_url, connect: <ConnectButton profileId={x.id} isGuest={isGuest} variant="accent" size="xs" /> }));
 
   return (
     <ProfileView
@@ -110,7 +108,7 @@ export default async function UserPage(props: PageProps<"/u/[id]">) {
       canEdit={canEdit && !preview}
       // Requests sent to you are the pending ones you received
       owner={canEdit ? { preview, requests: links.filter((c) => c.receiver_id === userId && c.status === "pending").length } : undefined}
-      action={!isSelf && <ConnectButton profileId={id} status={statusWith(id)} isGuest={isGuest} className={buttonClass()} />}
+      action={!isSelf && <ConnectButton profileId={id} status={statusWith(id)} isGuest={isGuest} variant="primary" />}
       contact={preview ? undefined : (contacts.data as { telegram: string; email: string }[] | null)?.[0]}
       projects={projectList}
       awards={awards}

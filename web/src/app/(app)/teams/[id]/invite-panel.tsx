@@ -3,7 +3,7 @@ import { withdrawInvite } from "@/app/actions";
 import { knownRoles } from "@/lib/roles";
 import { ROLE_SKILLS, type Candidate } from "@/lib/invites";
 import { InviteButton } from "./invite-button";
-import { Avatar, MonoLabel } from "@/components/ui";
+import { Avatar, MonoLabel, SubmitButton } from "@/components/ui";
 
 export type PendingInvite = { id: string; user_id: string; role: string; person: { name: string; avatar_url: string; open_to_collaborate: boolean } | null };
 
@@ -35,7 +35,7 @@ export function InvitePanel({ teamId, role, invites, suggestions, showRole = fal
                 <span className="shrink-0 text-meta text-accent">{showRole ? `Invited as ${i.role}` : "Invited"}</span>
               </Link>
               <form action={withdrawInvite.bind(null, teamId, i.id)}>
-                <button aria-label={`Withdraw the invitation to ${i.person?.name || "Unnamed"}`} className="h-9 text-meta text-ink2 hover:text-foreground">Withdraw</button>
+                <SubmitButton variant="bare" aria-label={`Withdraw the invitation to ${i.person?.name || "Unnamed"}`} className="h-9 text-meta text-ink2 hover:text-foreground">Withdraw</SubmitButton>
               </form>
             </li>
           ))}

@@ -12,10 +12,9 @@ import { formatMonth } from "@/lib/portfolio";
 import { ConnectButton } from "../../connect-button";
 import { TeamList } from "../../team-list";
 import { PersonRow } from "../../people/person-row";
-import { ToastProvider } from "../../u/[id]/toast";
 import { Placement, TrustLabels, awardPeople } from "../../u/[id]/awards";
 import { EventActions } from "../event-actions";
-import { Avatar, ButtonAnchor, Chip, ChipList, Combobox, EmptyState, MonoLabel, PageHeader, buttonClass } from "@/components/ui";
+import { Avatar, ButtonAnchor, Chip, ChipList, Combobox, EmptyState, MonoLabel, PageHeader, ToastProvider, SubmitButton } from "@/components/ui";
 
 export type Opportunity = {
   id: string;
@@ -243,7 +242,7 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
                 actions={
                   <>
                     <span className="text-meta text-muted tabular-nums">{p.score}% match</span>
-                    <ConnectButton profileId={p.user_id} status={statusWith[p.user_id]} isGuest={isGuest} className={buttonClass({ variant: "secondary", size: "sm" })} />
+                    <ConnectButton profileId={p.user_id} status={statusWith[p.user_id]} isGuest={isGuest} size="sm" />
                   </>
                 }
               >
@@ -278,18 +277,18 @@ export function OpportunityView({ o, participants, me, statusWith, connections, 
               <summary className="cursor-pointer list-none hover:text-foreground [&::-webkit-details-marker]:hidden">Report this listing</summary>
               <form action={reportOpportunity.bind(null, o.id)} className="mt-3 flex flex-wrap items-center gap-2">
                 <Combobox name="reason" label="What's wrong" small options={reportReasons} />
-                <button className={buttonClass({ variant: "secondary", size: "sm" })}>Report</button>
+                <SubmitButton variant="secondary" size="sm">Report</SubmitButton>
               </form>
             </details>
           ))}
         {isAdmin && (
           <form action={setFeatured.bind(null, o.id, !o.featured)}>
-            <button className="hover:text-foreground">{o.featured ? "Stop featuring" : "Feature this event"}</button>
+            <SubmitButton variant="bare" className="hover:text-foreground">{o.featured ? "Stop featuring" : "Feature this event"}</SubmitButton>
           </form>
         )}
         {canDelete && (
           <form action={deleteOpportunity.bind(null, o.id)}>
-            <button className="hover:text-danger">Delete this listing</button>
+            <SubmitButton variant="bare" className="hover:text-danger">Delete this listing</SubmitButton>
           </form>
         )}
       </footer>

@@ -183,8 +183,13 @@ test.describe("on a phone", () => {
     await open(country(page));
     const sheet = page.getByRole("dialog", { name: "Pick: Country" });
     await expect(sheet).toBeVisible();
-    const box = await sheet.boundingBox();
-    expect(box && [Math.round(box.x), Math.round(box.width), Math.round(box.y + box.height)]).toEqual([0, 390, 844]);
+    // It slides up, so wait for it to arrive
+    await expect
+      .poll(async () => {
+        const box = await sheet.boundingBox();
+        return box && [Math.round(box.x), Math.round(box.width), Math.round(box.y + box.height)];
+      })
+      .toEqual([0, 390, 844]);
     // The keyboard stays down until the search field is tapped
     await expect(search(page)).not.toBeFocused();
     await search(page).tap();

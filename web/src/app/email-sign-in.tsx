@@ -2,7 +2,7 @@
 
 import { useActionState, useId, useState } from "react";
 import type { EmailSignInState } from "./actions";
-import { ErrorText, Input, buttonClass } from "@/components/ui";
+import { ErrorText, Input, Button } from "@/components/ui";
 
 // Email field and "Send sign-in link"; once sent, "Check your inbox" until they pick a different email
 // `lastUsed`: this browser signed in with email last time
@@ -43,11 +43,11 @@ export function EmailSignIn({ action, lastUsed }: { action: (prev: EmailSignInSt
         defaultValue={state.error ? state.email : ""}
       />
       {state.error && <ErrorText>{state.error}</ErrorText>}
-      <button className={`${buttonClass({ size: "lg" })} w-full`} disabled={pending}>
-        <span className="flex-1">{pending ? "Sending..." : "Send sign-in link"}</span>
+      <Button size="lg" className="w-full" pending={pending}>
+        <span className="flex-1">Send sign-in link</span>
         {/* Muted for the accent button: its own text color, faded */}
         {lastUsed && <span className="font-mono text-xs font-normal text-on-accent/75">Last used</span>}
-      </button>
+      </Button>
     </form>
   );
 }

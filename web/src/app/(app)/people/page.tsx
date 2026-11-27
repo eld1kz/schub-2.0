@@ -8,7 +8,7 @@ import { PersonRow } from "./person-row";
 import { PeopleFilters } from "./people-filters";
 import { peopleHref, readPeopleQuery } from "./people-query";
 import { suitedModes, workStyleLine } from "@/lib/languages";
-import { Chip, ChipList, buttonClass } from "@/components/ui";
+import { Chip, ChipList } from "@/components/ui";
 
 const chipCount = 12;
 const pageSize = 20;
@@ -113,7 +113,7 @@ export default async function PeoplePage(props: PageProps<"/people">) {
                 actions={
                   <>
                     <span className="text-meta text-muted tabular-nums">{p.score}% match</span>
-                    <ConnectButton profileId={p.id} status={statusWith(p.id)} isGuest={isGuest} className={buttonClass({ variant: "secondary", size: "sm" })} />
+                    <ConnectButton profileId={p.id} status={statusWith(p.id)} isGuest={isGuest} size="sm" />
                   </>
                 }
               >

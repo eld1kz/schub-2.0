@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Pop, TabUnderline } from "@/components/ui";
 
 type Counts = Record<string, number>;
 
@@ -21,7 +22,7 @@ const countLinks: Record<string, { href: string; label: string }> = {
 };
 
 function Count({ n }: { n?: number }) {
-  return n ? <span className="ml-1 font-semibold text-accent tabular-nums">{n}</span> : null;
+  return n ? <Pop value={n} className="ml-1 font-semibold text-accent tabular-nums" /> : null;
 }
 
 // A tab's count: a link of its own when it has a page, otherwise part of the tab's label
@@ -30,7 +31,7 @@ function CountLink({ tab, n }: { tab: string; n?: number }) {
   if (!n || !link) return null;
   return (
     <Link href={link.href} aria-label={`${n} ${link.label}`} className="ml-1 font-semibold text-accent tabular-nums hover:underline">
-      {n}
+      <Pop value={n} />
     </Link>
   );
 }
@@ -39,13 +40,13 @@ function CountLink({ tab, n }: { tab: string; n?: number }) {
 export function NavTabs({ counts = {} }: { counts?: Counts }) {
   const pathname = usePathname();
   return (
-    <nav className="hidden h-15 gap-6 text-sm font-medium text-ink2 sm:flex">
+    <nav className="relative hidden h-15 gap-6 text-sm font-medium text-ink2 sm:flex [&[data-slides]_a]:shadow-none">
       {tabs.map((t) => (
         <span key={t.href} className="flex items-center">
           <Link
             href={t.href}
             aria-current={isActive(pathname, t.href) ? "page" : undefined}
-            className="flex h-full items-center hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:shadow-tab"
+            className="flex h-full items-center transition-colors hover:text-foreground aria-[current=page]:text-foreground aria-[current=page]:shadow-tab"
           >
             {t.label}
             {!countLinks[t.href] && <Count n={counts[t.href]} />}
@@ -53,6 +54,7 @@ export function NavTabs({ counts = {} }: { counts?: Counts }) {
           <CountLink tab={t.href} n={counts[t.href]} />
         </span>
       ))}
+      <TabUnderline />
     </nav>
   );
 }

@@ -22,7 +22,7 @@ export function AccountMenu({ avatar, children }: { avatar: ReactNode; children:
   }, []);
 
   return (
-    <details ref={ref} className="relative">
+    <details ref={ref} className="motion-menu relative">
       <summary aria-label="Account menu" className="block cursor-pointer list-none rounded-full hover:opacity-80 [&::-webkit-details-marker]:hidden">
         {avatar}
       </summary>

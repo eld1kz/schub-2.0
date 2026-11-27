@@ -13,10 +13,9 @@ import { CopyLinkButton } from "./copy-link";
 import { OpenToTeamSwitch } from "./open-to-team-switch";
 import { ExperienceEntry, KeyValue, SideBlock, SkillRows } from "./profile-parts";
 import { AboutEdit, ContactEdit, ExperienceEdit, HeroEdit, InterestsEdit, LinksEdit, ProjectEdit, SkillsEdit } from "./section-edits";
-import { ToastProvider } from "./toast";
 import type { SharedProject } from "@/lib/shared-projects";
 import { HideButton, PendingSharedProjects, SharedProjectBody, ShowAgainButton } from "./shared-projects";
-import { Avatar, Chip, ChipList, EmptyState, Section, Timeline } from "@/components/ui";
+import { Avatar, Chip, ChipList, EmptyState, Section, Timeline, ToastProvider } from "@/components/ui";
 
 export type ProfileData = {
   name: string;
